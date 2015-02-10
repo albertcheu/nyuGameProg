@@ -14,41 +14,50 @@ void housekeeping(){
 
 	//Establish how big our screen is
 	glViewport(0, 0, 800, 600);
-	//Adjust the scale (ought to fit the screen!)
 	glMatrixMode(GL_PROJECTION);
+	//This is a 2D game, so it ought to be orthographic
+	//Adjust the scale (ought to fit the screen!)
 	glOrtho(-1.33, 1.33, -1, 1, -1, 1);
+	
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void gradientSquareCode(){
+void gradientCode(){
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	glTranslatef(0.5f, -0.5f, 0);
 
 	//What are we going to draw?
-	GLfloat square[] = { -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f };
+	GLfloat tri[] = { -0.5f, -0.5f, 0.5f, -0.5f, 0, 0.5f };
+
 	//What color(s) is it going to be?
-	GLfloat squareColors[] = {
+	GLfloat triColors[] = {
 		1.0f, 1.0f, 0.0f,//yellow
-		1.0f, 0.55f, 0.0f,//orange
-		0.8f, 0.0f, 0.0f,//dark red
-		0.0f, 0.7f, 1.0f//sky blue
+		1.0f, 0.6f, 0.0f,//orange
+		1.0f, 0.0f, 0.0f//dark red
 	};
 
 	//Actually draw our vertices
-	glVertexPointer(2, GL_FLOAT, 0, square);
+	glVertexPointer(2, GL_FLOAT, 0, tri);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glDrawArrays(GL_QUADS, 0, 4);
-
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	
 	//And then their colors
-	glColorPointer(3, GL_FLOAT, 0, squareColors);
+	glColorPointer(3, GL_FLOAT, 0, triColors);
 	glEnableClientState(GL_COLOR_ARRAY);
-	glDrawArrays(GL_COLOR, 0, 4);
-
+	glDrawArrays(GL_COLOR, 0, 3);
+	
 }
 
-GLuint LoadTexture(const char *image_path, GLint internalFormat, GLenum format) {
+typedef struct{
+	GLuint id;
+	GLint width;
+	GLint height;
+} TextureData;
+
+TextureData LoadTexture(const char *image_path, GLint internalFormat, GLenum format) {
 	SDL_Surface *surface = IMG_Load(image_path);
 	if (!surface) {	OutputDebugString("Error loading image"); }
 
@@ -63,15 +72,16 @@ GLuint LoadTexture(const char *image_path, GLint internalFormat, GLenum format) 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	
+	TextureData ret = { textureID, surface->w, surface->h };
 	SDL_FreeSurface(surface);
-	
-	return textureID;
+
+	return ret;
 }
 
-GLuint LoadTextureRGB(const char* image_path) { return LoadTexture(image_path, GL_RGB, GL_RGB); }
-GLuint LoadTextureRGBA(const char* image_path) { return LoadTexture(image_path, GL_RGBA, GL_RGBA); }
+TextureData LoadTextureRGB(const char* image_path) { return LoadTexture(image_path, GL_RGB, GL_RGB); }
+TextureData LoadTextureRGBA(const char* image_path) { return LoadTexture(image_path, GL_RGBA, GL_RGBA); }
 
-void DrawSprite(GLint texture, float x, float y, float angle) {
+void DrawSprite(GLint texture, float x, float y, float angle, GLfloat width, GLfloat height) {
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -80,7 +90,13 @@ void DrawSprite(GLint texture, float x, float y, float angle) {
 	glTranslatef(x, y, 0.0);
 	glRotatef(angle, 0.0, 0.0, 1.0);
 
-	GLfloat quad[] = { -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f };
+	GLfloat left, right, top, bottom;
+	left = width * -0.5f;
+	right = width * 0.5f;
+	bottom= height* -0.5f;
+	top = height * 0.5f;
+
+	GLfloat quad[] = { left, top, left, bottom, right, bottom, right, top};
 	glVertexPointer(2, GL_FLOAT, 0, quad);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	
@@ -92,6 +108,7 @@ void DrawSprite(GLint texture, float x, float y, float angle) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	glDrawArrays(GL_QUADS, 0, 4);
+	
 	glDisable(GL_TEXTURE_2D);
 }
 
@@ -103,10 +120,10 @@ int main(int argc, char *argv[])
 	SDL_Event event;
 	float lastTickCount = 0.0f;
 
-	GLuint ship = LoadTextureRGBA("player.png");
+	TextureData ship = LoadTextureRGBA("player.png");
 	GLfloat shipAngle = 0.0f;
-	GLuint ball = LoadTextureRGBA("ballBlue.png");
-	GLuint box = LoadTextureRGBA("box.png");
+	TextureData ball = LoadTextureRGBA("ballBlue.png");
+	TextureData box = LoadTextureRGBA("box.png");
 
 	//Main loop
 	while (!done) {
@@ -125,12 +142,12 @@ int main(int argc, char *argv[])
 
 		shipAngle += elapsed;
 		shipAngle = (shipAngle > 360.0f) ? shipAngle-360.0f: shipAngle;
-		
-		DrawSprite(ship, 0.4f, 0.4f, shipAngle);
-		DrawSprite(ball, -0.5f, -0.5f, 0.0);
-		DrawSprite(box, -0.5f, 0.5f, 0.0);
 
-		//gradientSquareCode();
+		gradientCode();
+		
+		DrawSprite(ship.id, 0.4f, 0.4f, shipAngle, ship.width/100.0f,ship.height/100.0f);
+		DrawSprite(ball.id, -0.5f, -0.5f, 0.0, ball.width / 100.0f, ball.height / 100.0f);
+		DrawSprite(box.id, -0.5f, 0.5f, 0.0, box.width / 100.0f, box.height / 100.0f);
 
 		//Render the window
 		SDL_GL_SwapWindow(displayWindow);
