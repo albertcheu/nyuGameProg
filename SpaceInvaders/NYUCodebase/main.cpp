@@ -2,12 +2,14 @@
 
 int main(int argc, char *argv[])
 {
-	GameClass gc;
+	//WindowClass w;
+	GameClass g;
 
 	OutputDebugString("About to enter Main loop");
 
 	//Main loop
-	while (gc.run()){}
+	//while (w.run()){}
+	while (g.run()){}
 
 	return 0;
 }

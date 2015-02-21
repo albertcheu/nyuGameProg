@@ -17,7 +17,7 @@ TextureData LoadTexture(const char *image_path, int internalFormat, GLenum forma
 
 	TextureData ret = { textureID, surface->w, surface->h };
 	SDL_FreeSurface(surface);
-
+	
 	return ret;
 }
 

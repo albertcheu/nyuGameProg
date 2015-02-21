@@ -6,10 +6,6 @@
 #include <sstream>
 #include <string>
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
-#define UNIT_WIDTH 1.33f
-#define UNIT_HEIGHT 1.0f
 #define SHIP_WIDTH 0.2f
 #define SHIP_SPEED 1.2f
 #define BEAM_SPEED 1.7f
@@ -27,14 +23,9 @@ class GameClass{
 public:
 	GameClass();
 	~GameClass();
-
 	bool run();
-	bool update(float elapsed);
-	void render();
 
-private:
-	
-
+private:	
 	enum ObjLoc{
 		PB1, PB2, PB3, PB4, PB5, PB6,
 		PLAYER, TOP, BOT, LEFT, RIGHT,
@@ -42,15 +33,22 @@ private:
 		EB6, EB7, EB8, EB9, EB10,
 		ESTART
 	};
-
-	SDL_Window* displayWindow;
+	
 	std::vector<Entity> entities;
-	float lastTickCount;
 	int whichPB, whichEB;
+	SDL_Window* displayWindow;
+	float lastTickCount, nextShift;
 
-	void setup();
+	enum GAMESTATE{ START, GAME, PAUSE};
+	int state;
+
 	void fillEntities();
+	bool updateGame(float elapsed);
+	void renderGame();
 	void moveBeams(float elapsed);
 	void movePlayer(float elapsed);
 	void moveEnemies(float elapsed);
+
+	bool updatePause(float elapsed);
+	void renderPause();
 };

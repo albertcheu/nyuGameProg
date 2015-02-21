@@ -1,18 +1,8 @@
 #include "GameClass.h"
 
+GameClass::~GameClass(){ SDL_Quit(); }
 GameClass::GameClass()
-	:lastTickCount(0), whichPB(PB1), whichEB(EB1)
-{
-	setup();
-
-	fillEntities();
-}
-
-GameClass::~GameClass(){
-	SDL_Quit();
-}
-
-void GameClass::setup(){
+	: whichPB(PB1), whichEB(EB1), state(GAME), nextShift(-0.02f), lastTickCount(0) {
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("SPACE INVADERS", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -31,6 +21,8 @@ void GameClass::setup(){
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	OutputDebugString("Finished setup");
+
+	fillEntities();
 }
 
 void GameClass::fillEntities(){
@@ -38,7 +30,7 @@ void GameClass::fillEntities(){
 	TextureData td = LoadTextureRGBA("sheet.png");
 	int swidth = td.width;
 	int sheight = td.height;
-
+	
 	//Six player beams: x="856" y="869" width="9" height="57"
 	for (int i = 0; i < 6; i++){
 		entities.push_back(Entity(0,0,0.01f, 0.01f*57.0f/9.0f,
@@ -77,19 +69,11 @@ void GameClass::fillEntities(){
 	}
 
 	//Center of the enemy box
-	entities.push_back(Entity(-0.11f, 0, 0.05f, 0.05f, Sprite(),false));
-}
-
-bool GameClass::run(){
-	float ticks = (float)SDL_GetTicks() / 1000.0f;
-	float elapsed = ticks - lastTickCount;
-	lastTickCount = ticks;
-
-	bool ans = update(elapsed);
-
-	render();
-
-	return ans;
+	Entity center(-0.14f, 0, 0.05f, 0.05f, Sprite()
+		,false);
+		//);
+	center.setXspeed(0.08f);
+	entities.push_back(center);
 }
 
 void GameClass::moveBeams(float elapsed){
@@ -119,25 +103,52 @@ void GameClass::movePlayer(float elapsed){
 void GameClass::moveEnemies(float elapsed){
 	//First move the center
 	int center = entities.size() - 1;
-	double s = sin(lastTickCount * 50 * M_PI / 180.0);
-	double c = cos(lastTickCount * 50 * M_PI / 180.0);
 	float x = entities[center].getX();
 	float y = entities[center].getY();
-	//Move down
-	if ((0 > s && s > c) || (c > s && s > 0)){ y -= 0.02f*elapsed; }
-	//Move right or left
-	else { x = x + (s > c ? 1 : -1)*0.08f*elapsed; }
-	entities[center].setX(x);
-	entities[center].setY(y);
+	float xSpeed = entities[center].getXspeed();
+	float ySpeed = entities[center].getYspeed();
+	//We've moved down far enough
+	if (xSpeed == 0 && y < nextShift){
+		xSpeed = 0.08f * (x < 0 ? 1 : -1);
+		ySpeed = 0;
+		nextShift -= 0.02f;
+	}
+	//We've moved horizontally far enough
+	else if (ySpeed == 0 && (x <= -0.14f || x >= 0.14f)){
+		ySpeed = -0.02f;
+		xSpeed = 0;
+	}
+	entities[center].setX(x + elapsed*xSpeed);
+	entities[center].setY(y + elapsed*ySpeed);
+	entities[center].setXspeed(xSpeed);
+	entities[center].setYspeed(ySpeed);
+	
 	//Then move enemies relative to center
 	for (unsigned i = ESTART; i < ESTART + ENEMIES; i++){
-		entities[i].setY(y + dy[(i - ESTART) % 3]);
-		entities[i].setX(x + dx[(i - ESTART) / 3]);
+		entities[i].setY(entities[center].getY() + dy[(i - ESTART) % 3]);
+		entities[i].setX(entities[center].getX() + dx[(i - ESTART) / 3]);
 		//Game over when hit bottom or player!
 	}
 }
 
-bool GameClass::update(float elapsed){
+bool GameClass::run(){
+	float ticks = (float)SDL_GetTicks() / 1000.0f;
+	float elapsed = ticks - lastTickCount;
+	lastTickCount = ticks;
+	bool ans = true;
+	if (state == GAME){
+		ans = updateGame(elapsed);
+		renderGame();
+	}
+	else if (state == PAUSE){
+		ans = updatePause(elapsed);
+		renderPause();
+		
+	}
+	return ans;
+}
+
+bool GameClass::updateGame(float elapsed){
 	SDL_Event event;
 	//Enable closing of window
 	while (SDL_PollEvent(&event)) {
@@ -145,18 +156,19 @@ bool GameClass::update(float elapsed){
 			return false;
 		}
 		else if (event.type == SDL_KEYDOWN){
-			//If we press escape, also quit
-			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){ return false; }
+			//If we press escape, pause
+			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){ state = PAUSE; }
 			else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
 				//Fire!				
 				entities[whichPB].setVisibility(true);
 				entities[whichPB].setPos(entities[PLAYER].getX(), entities[PLAYER].getY());
 				entities[whichPB].setYspeed(BEAM_SPEED);
-				whichPB = PB1 + ((whichPB + 1) % 6);
+				whichPB++;
+				if (whichPB > PB6) { whichPB = PB1; }
 			}
 		}
 	}
-	
+
 	moveBeams(elapsed);
 	movePlayer(elapsed);
 	moveEnemies(elapsed);
@@ -164,13 +176,30 @@ bool GameClass::update(float elapsed){
 	return true;
 }
 
-void GameClass::render(){
-	//
+void GameClass::renderGame(){
 	glClear(GL_COLOR_BUFFER_BIT);
+	for (size_t i = 0; i < entities.size(); i++){ entities[i].draw(); }
+	SDL_GL_SwapWindow(displayWindow);
+}
 
-	for (size_t i = 0; i < entities.size(); i++){
-		entities[i].draw();
+bool GameClass::updatePause(float elapsed){
+	SDL_Event event;
+	//Enable closing of window
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
+			return false;
+		}
+		else if (event.type == SDL_KEYDOWN){
+			//If we press escape, pause
+			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){ state = GAME; }
+		}
 	}
+	return true;
+}
+void GameClass::renderPause(){
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	//Draw fancy pause screen
 
 	SDL_GL_SwapWindow(displayWindow);
 }
