@@ -19,6 +19,7 @@ Entity::Entity(float x, float y, float width, float height, Sprite s, bool visib
 }
 
 void Entity::setVisibility(bool v){ visible = v; }
+bool Entity::getVisibility() { return visible; }
 
 void Entity::draw(){
 	if (visible){
@@ -57,6 +58,7 @@ void Entity::setYspeed(float val){ ySpeed = val; }
 
 void Entity::reset(){
 	setYspeed(0);
+	setXspeed(0);
 	setPos(0, 0);
 	setVisibility(false);
 }

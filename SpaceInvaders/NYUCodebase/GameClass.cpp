@@ -2,7 +2,8 @@
 
 GameClass::~GameClass(){ SDL_Quit(); }
 GameClass::GameClass()
-	: whichPB(PB1), whichEB(EB1), state(GAME), nextShift(-0.02f), lastTickCount(0) {
+	: whichPB(PB1), whichEB(EB1), health(HEALTH), state(GAME),
+	nextShift(-0.02f), lastTickCount(0), shouldFire(false) {
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("SPACE INVADERS", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -21,16 +22,21 @@ GameClass::GameClass()
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	OutputDebugString("Finished setup");
+	
+	td = LoadTextureRGBA("sheet.png");
+	restartGame();
+}
 
+void GameClass::restartGame(){
+	nextShift = -0.02f; health = HEALTH;
+	entities.clear();
 	fillEntities();
 }
 
 void GameClass::fillEntities(){
-	//Objects are all in one 1024x1024 sheet
-	TextureData td = LoadTextureRGBA("sheet.png");
 	int swidth = td.width;
 	int sheight = td.height;
-	
+
 	//Six player beams: x="856" y="869" width="9" height="57"
 	for (int i = 0; i < 6; i++){
 		entities.push_back(Entity(0,0,0.01f, 0.01f*57.0f/9.0f,
@@ -76,14 +82,34 @@ void GameClass::fillEntities(){
 	entities.push_back(center);
 }
 
-void GameClass::moveBeams(float elapsed){
+void GameClass::movePlayerBeams(float elapsed){
 	for (unsigned i = PB1; i <= PB6; i++){
 		float speed = entities[i].getYspeed();
 		if (!speed) { continue; }
 		entities[i].setY(entities[i].getY() + elapsed*speed);
 		if (entities[i].collide(entities[TOP])){ entities[i].reset(); }
+		
+		//For the column of enemies nearest to the beam, check if there is a collision
+		float x = entities[i].getX();
+		float minDiff = 1.0f; float centerX = entities[entities.size() - 1].getX(); unsigned whichCol = 0;
+		for (unsigned j = 0; j < 5; j++){
+			float diff = abs((dx[j] + centerX) - x);
+			if (diff < minDiff){
+				minDiff = diff;
+				whichCol = j;
+			}
+		}
+		for (unsigned j = 0; j < 3; j++){
+			unsigned loc = ESTART + (whichCol * 3 + j);
+			if (entities[i].collide(entities[loc]) && entities[loc].getVisibility()){
+				entities[loc].reset();
+				entities[i].reset();
+				break;
+			}
+		}
 	}
 }
+
 void GameClass::movePlayer(float elapsed){
 	//Poll for arrow key
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
@@ -100,7 +126,24 @@ void GameClass::movePlayer(float elapsed){
 		entities[PLAYER].setX(UNIT_WIDTH - entities[RIGHT].getHalfWidth() - entities[PLAYER].getHalfWidth());
 	}
 }
-void GameClass::moveEnemies(float elapsed){
+
+bool GameClass::moveEnemyBeams(float elapsed){
+	for (unsigned i = EB1; i <= EB10; i++){
+		float speed = entities[i].getYspeed();
+		if (!speed) { continue; }
+		entities[i].setY(entities[i].getY() + elapsed*speed);
+		if (entities[i].collide(entities[BOT])){ entities[i].reset(); }
+		if (entities[i].collide(entities[PLAYER])){
+			//Damage
+			health--;
+			entities[i].reset();
+			if (!health) { return true; }
+		}
+	}
+	return false;
+}
+
+bool GameClass::moveEnemies(float elapsed){
 	//First move the center
 	int center = entities.size() - 1;
 	float x = entities[center].getX();
@@ -112,11 +155,13 @@ void GameClass::moveEnemies(float elapsed){
 		xSpeed = 0.08f * (x < 0 ? 1 : -1);
 		ySpeed = 0;
 		nextShift -= 0.02f;
+		shouldFire = true;
 	}
 	//We've moved horizontally far enough
 	else if (ySpeed == 0 && (x <= -0.14f || x >= 0.14f)){
 		ySpeed = -0.02f;
 		xSpeed = 0;
+		shouldFire = true;
 	}
 	entities[center].setX(x + elapsed*xSpeed);
 	entities[center].setY(y + elapsed*ySpeed);
@@ -125,9 +170,28 @@ void GameClass::moveEnemies(float elapsed){
 	
 	//Then move enemies relative to center
 	for (unsigned i = ESTART; i < ESTART + ENEMIES; i++){
+		if (!entities[i].getVisibility()) { continue; }
 		entities[i].setY(entities[center].getY() + dy[(i - ESTART) % 3]);
 		entities[i].setX(entities[center].getX() + dx[(i - ESTART) / 3]);
 		//Game over when hit bottom or player!
+	}
+	return false;
+}
+
+void GameClass::enemyFire(){
+	if (shouldFire){
+		//Bottommost enemies shoot
+		for (unsigned i = 0; i < ENEMIES; i+=3){
+			for (unsigned j = i + 2; j >= i; j--){
+				if (entities[ESTART+j].getVisibility()) {
+					fireBeam(whichEB, -1, ESTART + j);
+					whichEB++;
+					if (whichEB > EB10) { whichEB = EB1; }
+					break;
+				}
+			}
+		}
+		shouldFire = false;
 	}
 }
 
@@ -143,9 +207,14 @@ bool GameClass::run(){
 	else if (state == PAUSE){
 		ans = updatePause(elapsed);
 		renderPause();
-		
 	}
 	return ans;
+}
+
+void GameClass::fireBeam(unsigned whichBeam, int dir, unsigned whichShip){
+	entities[whichBeam].setVisibility(true);
+	entities[whichBeam].setPos(entities[whichShip].getX(), entities[whichShip].getY());
+	entities[whichBeam].setYspeed(dir*BEAM_SPEED);
 }
 
 bool GameClass::updateGame(float elapsed){
@@ -160,18 +229,22 @@ bool GameClass::updateGame(float elapsed){
 			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){ state = PAUSE; }
 			else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
 				//Fire!				
-				entities[whichPB].setVisibility(true);
-				entities[whichPB].setPos(entities[PLAYER].getX(), entities[PLAYER].getY());
-				entities[whichPB].setYspeed(BEAM_SPEED);
+				fireBeam(whichPB, 1, PLAYER);
 				whichPB++;
 				if (whichPB > PB6) { whichPB = PB1; }
 			}
 		}
 	}
 
-	moveBeams(elapsed);
+	movePlayerBeams(elapsed);
 	movePlayer(elapsed);
-	moveEnemies(elapsed);
+
+	if (moveEnemyBeams(elapsed) || moveEnemies(elapsed)){
+		//lost
+		//change state to Game Over
+		restartGame();
+	}
+	else{ enemyFire(); }
 
 	return true;
 }
@@ -190,7 +263,7 @@ bool GameClass::updatePause(float elapsed){
 			return false;
 		}
 		else if (event.type == SDL_KEYDOWN){
-			//If we press escape, pause
+			//If we press escape, resume game
 			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){ state = GAME; }
 		}
 	}

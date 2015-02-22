@@ -42,6 +42,7 @@ public:
 	float getYspeed();
 	float getHalfWidth();
 	float getHalfHeight();
+	bool getVisibility();
 
 	bool collide(const Entity& other);
 };

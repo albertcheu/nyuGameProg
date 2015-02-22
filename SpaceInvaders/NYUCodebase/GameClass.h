@@ -10,6 +10,7 @@
 #define SHIP_SPEED 1.2f
 #define BEAM_SPEED 1.7f
 #define ENEMIES 15
+#define HEALTH 5
 
 const float dy[3] = {
 	2.5f*84.0f / (WINDOW_HEIGHT / 2.0f),
@@ -34,20 +35,32 @@ private:
 		ESTART
 	};
 	
+	TextureData td;
 	std::vector<Entity> entities;
-	int whichPB, whichEB;
+	unsigned whichPB, whichEB, health;
 	SDL_Window* displayWindow;
 	float lastTickCount, nextShift;
+	bool shouldFire;
 
 	enum GAMESTATE{ START, GAME, PAUSE};
 	int state;
 
+	void restartGame();
 	void fillEntities();
 	bool updateGame(float elapsed);
-	void renderGame();
-	void moveBeams(float elapsed);
+	void fireBeam(unsigned whichBeam, int dir, unsigned whichShip);
+
+	void movePlayerBeams(float elapsed);	
 	void movePlayer(float elapsed);
-	void moveEnemies(float elapsed);
+
+	//return true if health is 0
+	bool moveEnemyBeams(float elapsed);
+	//return true if an enemy hits the player or bottom
+	bool moveEnemies(float elapsed);
+
+	void enemyFire();
+
+	void renderGame();
 
 	bool updatePause(float elapsed);
 	void renderPause();
