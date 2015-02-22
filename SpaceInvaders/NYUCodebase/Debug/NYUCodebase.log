@@ -1,16 +1,27 @@
-﻿Build started 2/22/2015 11:40:04 AM.
+﻿Build started 2/22/2015 3:01:24 PM.
      1>Project "C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\SpaceInvaders\NYUCodebase\NYUCodebase.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /IC:\SDL2\include /IC:\SDL2_image\include /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt GameClass.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /IC:\SDL2\include /IC:\SDL2_image\include /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Entity.cpp GameClass.cpp Helpers.cpp main.cpp Sprite.cpp
+         Helpers.cpp
          GameClass.cpp
+         Generating Code...
+         Compiling...
+         Sprite.cpp
+         main.cpp
+         Entity.cpp
+     1>c:\users\albert\documents\sharedwithvm\nyugameprog\spaceinvaders\nyucodebase\entity.cpp(57): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\users\albert\documents\sharedwithvm\nyugameprog\spaceinvaders\nyucodebase\entity.cpp(58): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+         Generating Code...
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\SpaceInvaders\Debug\AlbertHW.exe" /INCREMENTAL /NOLOGO /LIBPATH:C:\SDL2\lib\x86 /LIBPATH:C:\SDL2_image\lib\x86 SDL2.lib SDL2main.lib SDL2_image.lib OpenGL32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\SpaceInvaders\Debug\AlbertHW.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\SpaceInvaders\Debug\AlbertHW.lib" /MACHINE:X86 Debug\Entity.obj
          Debug\GameClass.obj
+         Debug\Helpers.obj
          Debug\main.obj
          Debug\Sprite.obj
+     1>MSVCRTD.lib(cinitexe.obj) : warning LNK4098: defaultlib 'msvcrt.lib' conflicts with use of other libs; use /NODEFAULTLIB:library
          NYUCodebase.vcxproj -> C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\SpaceInvaders\Debug\AlbertHW.exe
      1>Done Building Project "C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\SpaceInvaders\NYUCodebase\NYUCodebase.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.41
+Time Elapsed 00:00:04.40

@@ -21,6 +21,7 @@ public:
 	void setX(float xPos);
 	void setY(float yPos);
 	void setPos(float xPos, float yPos);
+	void setPos(float elapsed);
 	void setAngle(float theta);
 	void setSize(float scale);
 	void setSize(float newWidth, float newHeight);

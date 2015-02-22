@@ -1,68 +1,63 @@
 #include "GameClass.h"
+#include "Helpers.h"
 
 GameClass::~GameClass(){ SDL_Quit(); }
 GameClass::GameClass()
-	: whichPB(PB1), whichEB(EB1), health(HEALTH), state(GAME),
-	nextShift(-0.02f), lastTickCount(0), shouldFire(false) {
+	: whichPB(PB1), whichEB(EB1), health(HEALTH), numAlive(ENEMIES),
+	state(GAME), nextShift(-0.02f), lastTickCount(0), shouldFire(false) {
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("SPACE INVADERS", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
 	SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
 	SDL_GL_MakeCurrent(displayWindow, context);
-
 	//Establish how big our screen is
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glMatrixMode(GL_PROJECTION);
 	//This is a 2D game, so it ought to be orthographic
-	//Adjust the scale (ought to fit the screen!)
 	glOrtho(-UNIT_WIDTH, UNIT_WIDTH, -UNIT_HEIGHT, UNIT_HEIGHT, -1, 1);
-
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	OutputDebugString("Finished setup");
-	
 	td = LoadTextureRGBA("sheet.png");
-	restartGame();
-}
-
-void GameClass::restartGame(){
-	nextShift = -0.02f; health = HEALTH;
-	entities.clear();
 	fillEntities();
 }
 
-void GameClass::fillEntities(){
-	int swidth = td.width;
-	int sheight = td.height;
+void GameClass::restartGame(){
+	nextShift = -0.02f; health = HEALTH; numAlive = ENEMIES;
+	whichEB = EB1; whichPB = PB1; shouldFire = false;
+	//reset beams
+	for (unsigned i = PB1; i <= PB6; i++){ entities[i].reset(); }
+	for (unsigned i = EB1; i <= EB10; i++){ entities[i].reset(); }
+	for (unsigned i = 0; i < ENEMIES; i++){ entities[ESTART + i].setVisibility(true); }
+	entities.back().setPos(0, -0.14f);
+	entities.back().setSpeed(0.08f,0);
+}
 
+void GameClass::fillEntities(){
+	int swidth = td.width; int sheight = td.height;
 	//Six player beams: x="856" y="869" width="9" height="57"
 	for (int i = 0; i < 6; i++){
 		entities.push_back(Entity(0,0,0.01f, 0.01f*57.0f/9.0f,
 			Sprite(td.id, 856.0f / swidth, 869.0f/sheight, 9.0f/swidth, 57.0f/sheight),
 			false));
 	}
-
 	//Player: x="211" y="941" width="99" height="75"
 	Sprite playerSprite(td.id, 211.0f / swidth, 941.0f / sheight, 99.0f / swidth, 75.0f / sheight);
 	Entity player(0, -0.6f, SHIP_WIDTH, SHIP_WIDTH*75.0f / 99.0f, playerSprite);
 	entities.push_back(player);
-
 	//Four walls
 	Entity top(0, 1, 2 * UNIT_WIDTH, 0.12f, Sprite(), false);
 	Entity bot(0, -1, 2 * UNIT_WIDTH, 0.12f, Sprite(), false);
 	Entity left(-UNIT_WIDTH, 0, 0.12f, 2 * UNIT_HEIGHT, Sprite(), false);
 	Entity right(UNIT_WIDTH, 0, 0.12f, 2 * UNIT_HEIGHT, Sprite(), false);
 	entities.push_back(top); entities.push_back(bot); entities.push_back(left); entities.push_back(right);
-
-	//Eight enemy beams: x="855" y="173" width="9" height="57"
+	//Ten enemy beams: x="855" y="173" width="9" height="57"
 	for (int i = 0; i < 10; i++){
 		entities.push_back(Entity(0, 0, 0.01f, 0.01f*57.0f / 9.0f,
 			Sprite(td.id, 855.0f / swidth, 173.0f / sheight, 9.0f / swidth, 57.0f / sheight),
 			false));
 	}
-
 	//Three enemy types: here are their uv coordinates and dimensions
 	float ex[3] = { 423.0f, 144.0f, 518.0f }; float ey[3] = { 728.0f, 156.0f, 325.0f };
 	float ew[3] = { 93.0f, 103.0f, 82.0f }; //height is always 84pix
@@ -73,8 +68,7 @@ void GameClass::fillEntities(){
 			);
 		entities.push_back(enemy);
 	}
-
-	//Center of the enemy box
+	//Center of the grid of enemies
 	Entity center(-0.14f, 0, 0.05f, 0.05f, Sprite()
 		,false);
 		//);
@@ -104,6 +98,7 @@ void GameClass::movePlayerBeams(float elapsed){
 			if (entities[i].collide(entities[loc]) && entities[loc].getVisibility()){
 				entities[loc].reset();
 				entities[i].reset();
+				numAlive--;
 				break;
 			}
 		}
@@ -133,7 +128,7 @@ bool GameClass::moveEnemyBeams(float elapsed){
 		if (!speed) { continue; }
 		entities[i].setY(entities[i].getY() + elapsed*speed);
 		if (entities[i].collide(entities[BOT])){ entities[i].reset(); }
-		if (entities[i].collide(entities[PLAYER])){
+		else if (entities[i].collide(entities[PLAYER])){
 			//Damage
 			health--;
 			entities[i].reset();
@@ -163,10 +158,10 @@ bool GameClass::moveEnemies(float elapsed){
 		xSpeed = 0;
 		shouldFire = true;
 	}
-	entities[center].setX(x + elapsed*xSpeed);
-	entities[center].setY(y + elapsed*ySpeed);
+	
 	entities[center].setXspeed(xSpeed);
 	entities[center].setYspeed(ySpeed);
+	entities[center].setPos(elapsed);
 	
 	//Then move enemies relative to center
 	for (unsigned i = ESTART; i < ESTART + ENEMIES; i++){
@@ -174,6 +169,7 @@ bool GameClass::moveEnemies(float elapsed){
 		entities[i].setY(entities[center].getY() + dy[(i - ESTART) % 3]);
 		entities[i].setX(entities[center].getX() + dx[(i - ESTART) / 3]);
 		//Game over when hit bottom or player!
+		if (entities[i].collide(entities[PLAYER]) || entities[i].collide(entities[BOT])){ return true; }
 	}
 	return false;
 }
@@ -181,10 +177,11 @@ bool GameClass::moveEnemies(float elapsed){
 void GameClass::enemyFire(){
 	if (shouldFire){
 		//Bottommost enemies shoot
-		for (unsigned i = 0; i < ENEMIES; i+=3){
-			for (unsigned j = i + 2; j >= i; j--){
-				if (entities[ESTART+j].getVisibility()) {
-					fireBeam(whichEB, -1, ESTART + j);
+		for (int i = 0; i < ENEMIES; i+=3){
+			for (int j = i + 2; j >= i; j--){
+				int whichEnemy = ESTART + j;
+				if (entities[whichEnemy].getVisibility()) {
+					fireBeam(whichEB, -1, whichEnemy);
 					whichEB++;
 					if (whichEB > EB10) { whichEB = EB1; }
 					break;
@@ -200,14 +197,24 @@ bool GameClass::run(){
 	float elapsed = ticks - lastTickCount;
 	lastTickCount = ticks;
 	bool ans = true;
-	if (state == GAME){
+
+	switch (state){
+	case GAME:
 		ans = updateGame(elapsed);
 		renderGame();
-	}
-	else if (state == PAUSE){
+		break;
+	case PAUSE:
 		ans = updatePause(elapsed);
 		renderPause();
+		break;
+	case START:
+		break;
+	case WIN:
+		break;
+	case LOSE:
+		break;
 	}
+	
 	return ans;
 }
 
@@ -218,28 +225,30 @@ void GameClass::fireBeam(unsigned whichBeam, int dir, unsigned whichShip){
 }
 
 bool GameClass::updateGame(float elapsed){
-	SDL_Event event;
-	//Enable closing of window
-	while (SDL_PollEvent(&event)) {
-		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-			return false;
-		}
-		else if (event.type == SDL_KEYDOWN){
-			//If we press escape, pause
-			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){ state = PAUSE; }
-			else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
-				//Fire!				
-				fireBeam(whichPB, 1, PLAYER);
-				whichPB++;
-				if (whichPB > PB6) { whichPB = PB1; }
-			}
-		}
+	switch (getKey()){
+	case UNPRESSED: break;
+	case KEY_SPACE:
+		fireBeam(whichPB, 1, PLAYER);
+		whichPB++;
+		if (whichPB > PB6) { whichPB = PB1; }
+		break;
+	case KEY_ESCAPE:
+		state = PAUSE;
+		return true;
+		break;
+	case CLOSE_WINDOW:
+		return false;
+		break;
 	}
 
 	movePlayerBeams(elapsed);
 	movePlayer(elapsed);
 
-	if (moveEnemyBeams(elapsed) || moveEnemies(elapsed)){
+	if (!numAlive) {
+		//won: change state to Win
+		restartGame();
+	}
+	else if (moveEnemyBeams(elapsed) || moveEnemies(elapsed)){
 		//lost
 		//change state to Game Over
 		restartGame();
@@ -256,16 +265,15 @@ void GameClass::renderGame(){
 }
 
 bool GameClass::updatePause(float elapsed){
-	SDL_Event event;
-	//Enable closing of window
-	while (SDL_PollEvent(&event)) {
-		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-			return false;
-		}
-		else if (event.type == SDL_KEYDOWN){
-			//If we press escape, resume game
-			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){ state = GAME; }
-		}
+	switch (getKey()){
+	case UNPRESSED: break;
+	case KEY_SPACE:break;
+	case KEY_ESCAPE:
+		state = GAME;
+		break;
+	case CLOSE_WINDOW:
+		return false;
+		break;
 	}
 	return true;
 }

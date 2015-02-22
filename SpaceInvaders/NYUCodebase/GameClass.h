@@ -37,12 +37,12 @@ private:
 	
 	TextureData td;
 	std::vector<Entity> entities;
-	unsigned whichPB, whichEB, health;
+	unsigned whichPB, whichEB, health, numAlive;
 	SDL_Window* displayWindow;
 	float lastTickCount, nextShift;
 	bool shouldFire;
 
-	enum GAMESTATE{ START, GAME, PAUSE};
+	enum GAMESTATE{ START, GAME, PAUSE, WIN, LOSE};
 	int state;
 
 	void restartGame();

@@ -48,6 +48,10 @@ void Entity::setPos(float xPos, float yPos){
 		x = xPos;
 		y = yPos;
 	}
+void Entity::setPos(float elapsed){
+	setX(x + elapsed*xSpeed);
+	setY(y + elapsed*ySpeed);
+}
 void Entity::setAngle(float theta) { angle = theta; }
 void Entity::setSpeed(float v, float dir) {
 		xSpeed = v*cos(dir * M_PI / 180.0f);
