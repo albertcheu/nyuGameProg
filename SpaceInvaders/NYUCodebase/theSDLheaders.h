@@ -12,4 +12,4 @@
 #define KEY_ESCAPE 0
 #define KEY_SPACE 1
 #define CLOSE_WINDOW 2
-#define UNPRESSED 3
+#define OTHER 3

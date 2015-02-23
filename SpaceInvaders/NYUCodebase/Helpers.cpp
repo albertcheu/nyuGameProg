@@ -11,7 +11,7 @@ unsigned getKey(){
 			else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){ return KEY_SPACE; }
 		}
 	}
-	return UNPRESSED;
+	return OTHER;
 }
 /*
 void renderPause(SDL_Window* displayWindow){

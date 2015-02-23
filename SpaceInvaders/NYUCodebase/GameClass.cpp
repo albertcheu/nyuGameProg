@@ -21,17 +21,27 @@ GameClass::GameClass()
 	glClear(GL_COLOR_BUFFER_BIT);
 	td = LoadTextureRGBA("sheet.png");
 	fillEntities();
+	fillLife();
 }
 
-void GameClass::restartGame(){
+void GameClass::restartGame(unsigned newState){
 	nextShift = -0.02f; health = HEALTH; numAlive = ENEMIES;
-	whichEB = EB1; whichPB = PB1; shouldFire = false;
-	//reset beams
+	whichEB = EB1; whichPB = PB1; shouldFire = false; state = newState;
+	entities.back().setPos(-0.14f, 0);	entities.back().setSpeed(0.08f, 0);
 	for (unsigned i = PB1; i <= PB6; i++){ entities[i].reset(); }
 	for (unsigned i = EB1; i <= EB10; i++){ entities[i].reset(); }
 	for (unsigned i = 0; i < ENEMIES; i++){ entities[ESTART + i].setVisibility(true); }
-	entities.back().setPos(0, -0.14f);
-	entities.back().setSpeed(0.08f,0);
+	entities[PLAYER].setX(0);
+	for (unsigned i = 0; i < HEALTH; i++){ lifeCounters[i].setVisibility(true); }
+}
+
+void GameClass::fillLife(){
+	int swidth = td.width; int sheight = td.height;
+	//x = "482" y = "358" width = "33" height = "26"
+	for (int i = 0; i < HEALTH; i++){
+		lifeCounters.push_back(Entity(-0.12f+i*0.06f,-0.81f, 0.05f, 0.05f*26.0f / 33.0f,
+			Sprite(td.id, 482.0f/swidth,358.0f/sheight,33.0f/swidth,26.0f/sheight)));
+	}
 }
 
 void GameClass::fillEntities(){
@@ -47,11 +57,10 @@ void GameClass::fillEntities(){
 	Entity player(0, -0.6f, SHIP_WIDTH, SHIP_WIDTH*75.0f / 99.0f, playerSprite);
 	entities.push_back(player);
 	//Four walls
-	Entity top(0, 1, 2 * UNIT_WIDTH, 0.12f, Sprite(), false);
-	Entity bot(0, -1, 2 * UNIT_WIDTH, 0.12f, Sprite(), false);
-	Entity left(-UNIT_WIDTH, 0, 0.12f, 2 * UNIT_HEIGHT, Sprite(), false);
-	Entity right(UNIT_WIDTH, 0, 0.12f, 2 * UNIT_HEIGHT, Sprite(), false);
-	entities.push_back(top); entities.push_back(bot); entities.push_back(left); entities.push_back(right);
+	entities.push_back(Entity(0, 1, 2 * UNIT_WIDTH, 0.12f, Sprite(), false));
+	entities.push_back(Entity(0, -1, 2 * UNIT_WIDTH, 0.12f, Sprite(), false));
+	entities.push_back(Entity(-UNIT_WIDTH, 0, 0.12f, 2 * UNIT_HEIGHT, Sprite(), false));
+	entities.push_back(Entity(UNIT_WIDTH, 0, 0.12f, 2 * UNIT_HEIGHT, Sprite(), false));
 	//Ten enemy beams: x="855" y="173" width="9" height="57"
 	for (int i = 0; i < 10; i++){
 		entities.push_back(Entity(0, 0, 0.01f, 0.01f*57.0f / 9.0f,
@@ -85,7 +94,7 @@ void GameClass::movePlayerBeams(float elapsed){
 		
 		//For the column of enemies nearest to the beam, check if there is a collision
 		float x = entities[i].getX();
-		float minDiff = 1.0f; float centerX = entities[entities.size() - 1].getX(); unsigned whichCol = 0;
+		float minDiff = 1.0f; float centerX = entities.back().getX(); unsigned whichCol = 0;
 		for (unsigned j = 0; j < 5; j++){
 			float diff = abs((dx[j] + centerX) - x);
 			if (diff < minDiff){
@@ -131,6 +140,9 @@ bool GameClass::moveEnemyBeams(float elapsed){
 		else if (entities[i].collide(entities[PLAYER])){
 			//Damage
 			health--;
+			for (unsigned j = 0; j < HEALTH; j++){
+				if (j + 1 > health) { lifeCounters[j].setVisibility(false); }
+			}
 			entities[i].reset();
 			if (!health) { return true; }
 		}
@@ -197,6 +209,7 @@ bool GameClass::run(){
 	float elapsed = ticks - lastTickCount;
 	lastTickCount = ticks;
 	bool ans = true;
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	switch (state){
 	case GAME:
@@ -205,7 +218,7 @@ bool GameClass::run(){
 		break;
 	case PAUSE:
 		ans = updatePause(elapsed);
-		renderPause();
+		//renderPause();
 		break;
 	case START:
 		break;
@@ -214,7 +227,8 @@ bool GameClass::run(){
 	case LOSE:
 		break;
 	}
-	
+
+	SDL_GL_SwapWindow(displayWindow);
 	return ans;
 }
 
@@ -226,7 +240,6 @@ void GameClass::fireBeam(unsigned whichBeam, int dir, unsigned whichShip){
 
 bool GameClass::updateGame(float elapsed){
 	switch (getKey()){
-	case UNPRESSED: break;
 	case KEY_SPACE:
 		fireBeam(whichPB, 1, PLAYER);
 		whichPB++;
@@ -239,48 +252,39 @@ bool GameClass::updateGame(float elapsed){
 	case CLOSE_WINDOW:
 		return false;
 		break;
+	case OTHER: break;
 	}
 
 	movePlayerBeams(elapsed);
 	movePlayer(elapsed);
 
-	if (!numAlive) {
-		//won: change state to Win
-		restartGame();
-	}
-	else if (moveEnemyBeams(elapsed) || moveEnemies(elapsed)){
-		//lost
-		//change state to Game Over
-		restartGame();
-	}
+	//Win
+	if (!numAlive) { restartGame(GAME); }
+	//Lose
+	else if (moveEnemyBeams(elapsed) || moveEnemies(elapsed)){ restartGame(GAME); }
 	else{ enemyFire(); }
 
 	return true;
 }
 
 void GameClass::renderGame(){
-	glClear(GL_COLOR_BUFFER_BIT);
 	for (size_t i = 0; i < entities.size(); i++){ entities[i].draw(); }
-	SDL_GL_SwapWindow(displayWindow);
+	for (size_t i = 0; i < HEALTH; i++){ lifeCounters[i].draw(); }
 }
 
 bool GameClass::updatePause(float elapsed){
 	switch (getKey()){
-	case UNPRESSED: break;
-	case KEY_SPACE:break;
 	case KEY_ESCAPE:
 		state = GAME;
 		break;
 	case CLOSE_WINDOW:
 		return false;
 		break;
+	case OTHER: break;
+	case KEY_SPACE:break;
 	}
 	return true;
 }
 void GameClass::renderPause(){
-	glClear(GL_COLOR_BUFFER_BIT);
-	
 	//Draw fancy pause screen
-
-	SDL_GL_SwapWindow(displayWindow);
 }

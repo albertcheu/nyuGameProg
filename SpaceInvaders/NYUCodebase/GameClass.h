@@ -36,7 +36,7 @@ private:
 	};
 	
 	TextureData td;
-	std::vector<Entity> entities;
+	std::vector<Entity> entities; std::vector<Entity> lifeCounters;
 	unsigned whichPB, whichEB, health, numAlive;
 	SDL_Window* displayWindow;
 	float lastTickCount, nextShift;
@@ -45,8 +45,9 @@ private:
 	enum GAMESTATE{ START, GAME, PAUSE, WIN, LOSE};
 	int state;
 
-	void restartGame();
+	void restartGame(unsigned newState);
 	void fillEntities();
+	void fillLife();
 	bool updateGame(float elapsed);
 	void fireBeam(unsigned whichBeam, int dir, unsigned whichShip);
 
