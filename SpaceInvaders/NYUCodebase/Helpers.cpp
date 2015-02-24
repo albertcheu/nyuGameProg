@@ -13,18 +13,63 @@ unsigned getKey(){
 	}
 	return OTHER;
 }
-/*
-void renderPause(SDL_Window* displayWindow){
 
+StateAndRun updateStart(){
+	StateAndRun ans = { START, true };
+	switch (getKey()){
+	case KEY_ESCAPE: break;
+	case CLOSE_WINDOW:
+		ans.keepRunning = false;
+		break;
+	case OTHER: break;
+	case KEY_SPACE:
+		ans.newState = GAME;
+		break;
+	}
+	return ans;
 }
 
-void renderStart(SDL_Window* displayWindow){
-
+StateAndRun updatePause(){
+	StateAndRun ans = { PAUSE, true };
+	switch (getKey()){
+	case KEY_ESCAPE:
+		ans.newState = GAME;
+		break;
+	case CLOSE_WINDOW:
+		ans.keepRunning = false;
+		break;
+	case OTHER: break;
+	case KEY_SPACE:break;
+	}
+	return ans;
 }
-void renderWin(SDL_Window* displayWindow){
 
+StateAndRun updateWin(){
+	StateAndRun ans = { WIN, true };
+	switch (getKey()){
+	case KEY_ESCAPE: break;
+	case CLOSE_WINDOW:
+		ans.keepRunning = false;
+		break;
+	case OTHER: break;
+	case KEY_SPACE:
+		ans.newState = GAME;
+		break;
+	}
+	return ans;
 }
-void renderLose(SDL_Window* displayWindow){
 
+StateAndRun updateLose(){
+	StateAndRun ans = { LOSE, true };
+	switch (getKey()){
+	case KEY_ESCAPE: break;
+	case CLOSE_WINDOW:
+		ans.keepRunning = false;
+		break;
+	case OTHER: break;
+	case KEY_SPACE:
+		ans.newState = GAME;
+		break;
+	}
+	return ans;
 }
-*/
