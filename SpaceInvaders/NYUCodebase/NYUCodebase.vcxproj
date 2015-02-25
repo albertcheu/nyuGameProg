@@ -84,7 +84,6 @@
     <ClInclude Include="GameClass.h" />
     <ClInclude Include="Helpers.h" />
     <ClInclude Include="Sprite.h" />
-    <ClInclude Include="theSDLheaders.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

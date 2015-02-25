@@ -3,7 +3,7 @@ GameClass::~GameClass(){ SDL_Quit(); }
 GameClass::GameClass()
 	: whichPB(PB1), whichEB(EB1), health(HEALTH), numAlive(ENEMIES),
 	state(START), nextShift(-0.02f), lastTickCount(0), enemySpeed(ENEMY_SPEED), speedup(SPEEDUP),
-	shouldFire(false){
+	shouldFire(false), points(0){
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("SPACE INVADERS", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -19,7 +19,15 @@ GameClass::GameClass()
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	sheet = LoadTextureRGBA("sheet.png");
-	fillEntities(); fillLife(); 
+	fillEntities();
+}
+
+void GameClass::loadDigits(){
+	for (int i = 0; i < 3; i++){
+		Sprite s(sheet.id, 367.0f / sheet.width, 644.0f / sheet.height,
+			19.0f / sheet.width, 19.0f / sheet.height);
+		entities.push_back(Entity(-0.09f+i*0.08f,0.84f,0.07f,0.07f,s));
+	}
 }
 
 void GameClass::loadScreens(){
@@ -41,20 +49,20 @@ void GameClass::restartGame(float factor){
 	for (unsigned i = EB1; i <= EB10; i++){ entities[i].reset(); }
 	for (unsigned i = 0; i < ENEMIES; i++){ entities[ESTART + i].setVisibility(true); }
 	entities[PLAYER].setX(0);
-	for (unsigned i = 0; i < HEALTH; i++){ lifeCounters[i].setVisibility(true); }
+	for (unsigned i = H1; i < HEALTH; i++){ entities[i].setVisibility(true); }
 }
 
-void GameClass::fillLife(){
+void GameClass::loadLife(){
 	int swidth = sheet.width; int sheight = sheet.height;
 	//x = "482" y = "358" width = "33" height = "26"
 	for (int i = 0; i < HEALTH; i++){
-		lifeCounters.push_back(Entity(-0.12f+i*0.06f,-0.81f, 0.05f, 0.05f*26.0f / 33.0f,
+		entities.push_back(Entity(-0.12f+i*0.06f,-0.81f, 0.05f, 0.05f*26.0f / 33.0f,
 			Sprite(sheet.id, 482.0f/swidth,358.0f/sheight,33.0f/swidth,26.0f/sheight)));
 	}
 }
 
 void GameClass::fillEntities(){
-	loadScreens();
+	loadScreens(); loadDigits(); loadLife();
 	int swidth = sheet.width; int sheight = sheet.height;
 	//Six player beams: x="856" y="869" width="9" height="57"
 	for (int i = 0; i < 6; i++){
@@ -95,6 +103,18 @@ void GameClass::fillEntities(){
 	entities.push_back(center);
 }
 
+void GameClass::getPoints(unsigned earned){
+	float xcoor[10] = { 367.0f, 205.0f, 406.0f, 580.0f, 386.0f, 628.0f,
+		671.0f, 690.0f, 709.0f, 491.0f };
+	float ycoor[10] = { 644.0f, 688.0f, 290.0f, 707.0f, 644.0f, 646.0f,
+		1002.0f, 1004.0f, 1004.0f, 215.0f };
+	points += 5; int p = points;
+	for (int i = 0; i < 3; i++){
+		entities[DIGIT_RIGHT - i].setUV(xcoor[p % 10] / sheet.width, ycoor[p % 10] / sheet.height);
+		p /= 10;
+	}
+}
+
 void GameClass::movePlayerBeams(float elapsed){
 	for (unsigned i = PB1; i <= PB6; i++){
 		float speed = entities[i].getYspeed();
@@ -117,7 +137,7 @@ void GameClass::movePlayerBeams(float elapsed){
 			if (entities[i].collide(entities[loc]) && entities[loc].getVisibility()){
 				entities[loc].reset();	entities[i].reset();
 				enemySpeed *= speedup;//Speed up every time an enemy is killed
-				numAlive--;
+				numAlive--; getPoints(5);
 				break;
 			}
 		}
@@ -151,7 +171,7 @@ bool GameClass::moveEnemyBeams(float elapsed){
 			//Damage
 			health--;
 			for (unsigned j = 0; j < HEALTH; j++){
-				if (j + 1 > health) { lifeCounters[j].setVisibility(false); }
+				if (j + 1 > health) { entities[H1+j].setVisibility(false); }
 			}
 			entities[i].reset();
 			if (!health) { return true; }
@@ -290,6 +310,5 @@ StateAndRun GameClass::updateGame(float elapsed){
 }
 
 void GameClass::renderGame(){
-	for (size_t i = PB1; i < entities.size(); i++){ entities[i].draw(); }
-	for (size_t i = 0; i < HEALTH; i++){ lifeCounters[i].draw(); }
+	for (size_t i = DIGIT_LEFT; i < entities.size(); i++){ entities[i].draw(); }
 }

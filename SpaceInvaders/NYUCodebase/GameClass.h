@@ -1,8 +1,5 @@
 #pragma once
-#include "theSDLheaders.h"
 #include "Entity.h"
-#include "Helpers.h"
-
 #include <vector>
 #include <string>
 
@@ -30,20 +27,22 @@ public:
 
 private:
 	TextureData sheet;
-	std::vector<Entity> entities; std::vector<Entity> lifeCounters;
-	unsigned whichPB, whichEB, health, numAlive;
+	std::vector<Entity> entities;
+	unsigned whichPB, whichEB, health, numAlive, points;
 	SDL_Window* displayWindow;
 	float lastTickCount, nextShift, enemySpeed, speedup;
 	bool shouldFire;
 	int state;
 
-	void fillEntities();void fillLife();void loadScreens();
+	void loadScreens(); void loadDigits(); void loadLife();
+	void fillEntities();
 
 	void restartGame(float factor);
 
 	void fireBeam(unsigned whichBeam, int dir, unsigned whichShip);
 
-	void movePlayerBeams(float elapsed);	
+	void movePlayerBeams(float elapsed);
+	void getPoints(unsigned earned);
 	void movePlayer(float elapsed);
 
 	//return true if health is 0

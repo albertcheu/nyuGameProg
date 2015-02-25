@@ -21,6 +21,8 @@ Entity::Entity(float x, float y, float width, float height, Sprite s, bool visib
 void Entity::setVisibility(bool v){ visible = v; }
 bool Entity::getVisibility() { return visible; }
 
+void Entity::setUV(float newU, float newV){ s.setUV(newU,newV); }
+
 void Entity::draw(){
 	if (visible){
 		glMatrixMode(GL_MODELVIEW);

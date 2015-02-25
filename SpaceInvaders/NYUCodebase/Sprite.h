@@ -1,5 +1,5 @@
 #pragma once
-#include "theSDLheaders.h"
+#include "Helpers.h"
 
 typedef struct{
 	//Bundle that holds id, pixel width, pixel height

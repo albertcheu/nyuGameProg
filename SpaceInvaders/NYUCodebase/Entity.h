@@ -1,5 +1,4 @@
 #pragma once
-#include "theSDLheaders.h"
 #include "Sprite.h"
 
 class Entity{
@@ -16,6 +15,7 @@ public:
 	Entity();
 	Entity(float x, float y, float width, float height, Sprite s, bool visible=true);
 
+	void setUV(float newU, float newV);
 	void draw();
 
 	void setX(float xPos);
