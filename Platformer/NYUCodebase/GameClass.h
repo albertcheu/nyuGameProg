@@ -4,10 +4,15 @@
 #include <string>
 #define TIMESTEP 0.0166f
 #define MAX_STEPS 6
-#define GRAVITY -10.0f
-#define FRICTION 5.4f
-#define MOVE 1.9f
-#define JUMP 2.1f
+
+#define GRAVITY -7.8f
+#define FRIC_Y 5.7f
+#define JUMP 3.1f
+
+#define FRIC_X 7.0f
+#define MOVE 2.8f
+
+#define PLAYER 0
 
 class GameClass{
 public:
