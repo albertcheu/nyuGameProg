@@ -6,15 +6,24 @@ void Entity::calcHalves(){
 
 Entity::Entity()
 	:x(0), y(0), width(0), height(0), angle(0),
-	vx(0), vy(0), ax(0), ay(0), halfWidth(0), halfHeight(0),
-	visible(true), s(), touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)
+	halfWidth(0), halfHeight(0), s(),
+	visible(true)
+{}
+
+Dynamic::Dynamic()
+	: Entity(), vx(0), vy(0), ax(0), ay(0),
+	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)
 {}
 
 Entity::Entity(float x, float y, float width, float height, Sprite s, bool visible)
 	:x(x), y(y), width(width), height(height), s(s),
-	angle(0), vx(0), vy(0), ax(0), ay(0),
-	visible(visible), touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)
+	angle(0), visible(visible)
 { calcHalves(); }
+
+Dynamic::Dynamic(float x, float y, float width, float height, Sprite s, bool visible)
+	:Entity(x, y, width, height, s, visible), vx(0), vy(0), ax(0), ay(0),
+	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)
+{}
 
 void Entity::setVisibility(bool v){ visible = v; }
 bool Entity::getVisibility() { return visible; }
@@ -42,23 +51,23 @@ void Entity::setSize(float newWidth, float newHeight){
 	calcHalves();
 }
 
-void Entity::bumpX(float val){ x += val; } void Entity::bumpY(float val){ y += val; }
+void Dynamic::bumpX(float val){ x += val; } void Dynamic::bumpY(float val){ y += val; }
 void Entity::setX(float xPos) { x = xPos; } void Entity::setY(float yPos) { y = yPos; }
 void Entity::setPos(float xPos, float yPos){ x = xPos; y = yPos; }
 void Entity::setAngle(float theta) { angle = theta; }
-void Entity::setSpeed(float v, float dir) {
+void Dynamic::setSpeed(float v, float dir) {
 	vx = v*cos(dir * M_PI / 180.0f);
 	vy = v*sin(dir * M_PI / 180.0f);
 }
 
-void Entity::bumpVx(float val){ vx += val; } void Entity::bumpVy(float val){ vy += val; }
-void Entity::setVx(float val){ vx = val; } void Entity::setVy(float val){ vy = val; }
-void Entity::setAx(float val){ ax = val; } void Entity::setAy(float val){ ay = val; }
-void Entity::setLeft(){ touchLeft = true; } void Entity::setRight(){ touchRight = true; }
-void Entity::setTop(){ touchTop = true; } void Entity::setBottom(){ touchBottom = true; }
-void Entity::noTouch(){ touchBottom = touchTop = touchRight = touchLeft = false; }
+void Dynamic::bumpVx(float val){ vx += val; } void Dynamic::bumpVy(float val){ vy += val; }
+void Dynamic::setVx(float val){ vx = val; } void Dynamic::setVy(float val){ vy = val; }
+void Dynamic::setAx(float val){ ax = val; } void Dynamic::setAy(float val){ ay = val; }
+void Dynamic::setLeft(){ touchLeft = true; } void Dynamic::setRight(){ touchRight = true; }
+void Dynamic::setTop(){ touchTop = true; } void Dynamic::setBottom(){ touchBottom = true; }
+void Dynamic::noTouch(){ touchBottom = touchTop = touchRight = touchLeft = false; }
 
-void Entity::reset(){
+void Dynamic::reset(){
 	setAy(0);	setAx(0);	setVy(0);	setVx(0);	setPos(0, 0);
 	setVisibility(false); noTouch();
 }
@@ -66,12 +75,12 @@ void Entity::reset(){
 float Entity::getX(){ return x; } float Entity::getY(){ return y; }
 float Entity::getWidth(){ return width; } float Entity::getHeight(){ return height; }
 float Entity::getAngle(){ return angle; }
-float Entity::getVx(){ return vx; } float Entity::getVy(){ return vy; }
-float Entity::getAx(){ return ax; } float Entity::getAy(){ return ay; }
+float Dynamic::getVx(){ return vx; } float Dynamic::getVy(){ return vy; }
+float Dynamic::getAx(){ return ax; } float Dynamic::getAy(){ return ay; }
 float Entity::getHalfWidth() { return halfWidth; }
 float Entity::getHalfHeight() { return halfHeight; }
-bool Entity::getLeft(){ return touchLeft; } bool Entity::getRight(){ return touchRight; }
-bool Entity::getTop(){ return touchTop; } bool Entity::getBottom(){ return touchBottom; }
+bool Dynamic::getLeft(){ return touchLeft; } bool Dynamic::getRight(){ return touchRight; }
+bool Dynamic::getTop(){ return touchTop; } bool Dynamic::getBottom(){ return touchBottom; }
 
 bool Entity::collide(const Entity& other){
 	//Are our boxes overlapping?

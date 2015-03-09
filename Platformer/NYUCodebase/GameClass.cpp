@@ -1,6 +1,6 @@
 #include "GameClass.h"
 GameClass::~GameClass(){ SDL_Quit(); }
-GameClass::GameClass(): lastTickCount(0), leftover(0) {
+GameClass::GameClass(): lastTickCount(0), leftover(0), player(NULL) {
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("Dope Platformer",
@@ -15,18 +15,28 @@ GameClass::GameClass(): lastTickCount(0), leftover(0) {
 	glOrtho(-UNIT_WIDTH, UNIT_WIDTH, -UNIT_HEIGHT, UNIT_HEIGHT, -1, 1);
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	sheet = LoadTextureRGBA("JnRTiles.png");
+	
+	sheet = LoadTextureRGBA("superPowerSuit.png");
+	
 	fillEntities();
 }
 
 void GameClass::fillEntities(){
 	int swidth = sheet.width; int sheight = sheet.height;
-	//player
-	dynamics.push_back(Entity(0, -0.56, 0.05f, 0.05f, Sprite()));
+	//play as Samus
+	//26x46, 11th row
+	//Sprite p(sheet.id, 17.0f / swidth, 21.0f / sheight, 25.0f / swidth, 42.0f / sheight);
+	float y = 64.0f * 11 - 46; float x = (64.0f - 26.0f) / 2;
+	Sprite p(sheet.id, x / swidth, y / sheight, 26.0f / swidth, 46.0f / sheight);
+	dynamics.push_back(Dynamic(0, -0.56, 0.07f, 0.07f*46.0f/26.0f, p));
 
-	//pickups (13x13)
-	Sprite s(sheet.id, (swidth-22.0f)/swidth, 10.0f/sheight, 15.0f / swidth, 15.0f / sheight);
-	dynamics.push_back(Entity(0, -0.2f, 0.05f, 0.05f, s));
+	//pickup the morph balls
+	Sprite s(sheet.id, 24.0f / swidth, 1264.0f / sheight, 15.0f / swidth, 15.0f / sheight);
+	dynamics.push_back(Dynamic(0, -0.2f, 0.05f, 0.05f, s));
+	dynamics.push_back(Dynamic(-0.5f, 0.2f, 0.05f, 0.05f, s));
+	dynamics.push_back(Dynamic(0.5f, 0.2f, 0.05f, 0.05f, s));
+
+	player = &dynamics[PLAYER];//do last: the vector's location in memory changes after pushes
 
 	//floor
 	statics.push_back(Entity(0, -0.66f, 1.5f, 0.05f, Sprite()));
@@ -36,29 +46,40 @@ void GameClass::fillEntities(){
 	statics.push_back(Entity(0.775f, 0, 0.05f, 1.32f, Sprite()));
 
 	//ceiling
-	statics.push_back(Entity(0, 0.8f, 1.5f, 0.05f, Sprite()));
+	statics.push_back(Entity(0, 0.7f, 1.5f, 0.05f, Sprite()));
 
 	//platforms
 	statics.push_back(Entity(-0.5f, -0.45f, 0.5f, 0.05f, Sprite()));
 	statics.push_back(Entity(0.5f, -0.45f, 0.5f, 0.05f, Sprite()));
-	statics.push_back(Entity(0, -0.25f, 0.4f, 0.05f, Sprite()));
+	statics.push_back(Entity(0, -0.25f, 0.4f, 0.05f, Sprite()));//middle
 	statics.push_back(Entity(-0.5f, -0.05f, 0.5f, 0.05f, Sprite()));
 	statics.push_back(Entity(0.5f, -0.05f, 0.5f, 0.05f, Sprite()));
+	statics.push_back(Entity(-0.5f, 0.15f, 0.3f, 0.05f, Sprite()));
+	statics.push_back(Entity(0.5f, 0.15f, 0.3f, 0.05f, Sprite()));
 }
+
+/*
+while no key is pressed:
+if facing left, loop left resting animation
+else, loop right resting animation
+
+while left key pressed, loop leftward run animation and set left
+while right key pressed, loop rightward run animation and set right
+*/
 
 void GameClass::movePlayer(){
 	//Poll for arrow key
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
-	if (keys[SDL_SCANCODE_LEFT]) { dynamics[PLAYER].setAx(-MOVE); }
-	else if (keys[SDL_SCANCODE_RIGHT]) { dynamics[PLAYER].setAx(MOVE); }
-	else { dynamics[PLAYER].setAx(0); }
+	if (keys[SDL_SCANCODE_LEFT]) { player->setAx(-MOVE); }
+	else if (keys[SDL_SCANCODE_RIGHT]) { player->setAx(MOVE); }
+	else { player->setAx(0); }
 }
 
 StateAndRun GameClass::updateGame(){
 	StateAndRun ans = { 0, true };
 	switch (getKey()){
 	case KEY_SPACE:
-		if (dynamics[0].getBottom()) { dynamics[0].setVy(JUMP); }
+		if (player->getBottom()) { player->setVy(JUMP); }
 		break;
 	case KEY_ESCAPE:
 		ans = { 0, false };
@@ -109,13 +130,12 @@ void GameClass::physics(){
 				//Set vx to 0
 				dynamics[i].setVx(0);
 			}
-		}
-
-		for (size_t j = PLAYER + 1; j < dynamics.size(); j++){
-			//Pickups disappear
-			if (dynamics[j].getVisibility() && dynamics[PLAYER].collide(dynamics[j])) {
-				dynamics[j].reset();
-			}
+		}	
+	}
+	for (size_t i = PLAYER + 1; i < dynamics.size(); i++){
+		//Pickups disappear
+		if (dynamics[i].getVisibility() && dynamics[PLAYER].collide(dynamics[i])) {
+			dynamics[i].reset();
 		}
 	}
 }

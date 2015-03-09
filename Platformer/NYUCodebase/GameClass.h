@@ -22,9 +22,11 @@ public:
 
 private:
 	SDL_Window* displayWindow;
-
 	TextureData sheet;
-	std::vector<Entity> statics, dynamics;
+	std::vector<Entity> statics;
+	std::vector<Dynamic> dynamics;
+
+	Dynamic* player;
 
 	float lastTickCount, leftover;
 	
