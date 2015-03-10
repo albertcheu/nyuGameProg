@@ -52,4 +52,6 @@ public:
 	void bumpX(float val); void bumpY(float val); void bumpVx(float val); void bumpVy(float val);
 	void setAx(float val); void setAy(float val);
 	void noTouch();
+
+	void setFrame(SpriteFrame sf);
 };

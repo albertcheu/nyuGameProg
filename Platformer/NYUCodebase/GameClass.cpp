@@ -1,6 +1,7 @@
 #include "GameClass.h"
 GameClass::~GameClass(){ SDL_Quit(); }
-GameClass::GameClass(): lastTickCount(0), leftover(0), player(NULL) {
+GameClass::GameClass()
+	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0) {
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("Dope Platformer",
@@ -23,12 +24,21 @@ GameClass::GameClass(): lastTickCount(0), leftover(0), player(NULL) {
 
 void GameClass::fillEntities(){
 	int swidth = sheet.width; int sheight = sheet.height;
+	cycles.push_back(AnimCycle(swidth, sheight, 25, 42, 3, 1));
+	cycles.push_back(AnimCycle(swidth, sheight, 25, 42, 3, 1, 3));
+	cycles.push_back(AnimCycle(swidth, sheight, 35, 41, 10, 3));
+	cycles.push_back(AnimCycle(swidth, sheight, 35, 41, 10, 7));
+
 	//play as Samus
 	//26x46, 11th row
 	//Sprite p(sheet.id, 17.0f / swidth, 21.0f / sheight, 25.0f / swidth, 42.0f / sheight);
 	float y = 64.0f * 11 - 46; float x = (64.0f - 26.0f) / 2;
 	Sprite p(sheet.id, x / swidth, y / sheight, 26.0f / swidth, 46.0f / sheight);
-	dynamics.push_back(Dynamic(0, -0.56, 0.07f, 0.07f*46.0f/26.0f, p));
+	//float playerHeight = 0.07f*46.0f / 26.0f;
+	//float playerWidth = 0.07f;
+	float playerHeight = 0.12f;
+	float playerWidth = playerHeight*26.0f/46.0f;
+	dynamics.push_back(Dynamic(0, -0.56f, playerWidth, playerHeight, p));
 
 	//pickup the morph balls
 	Sprite s(sheet.id, 24.0f / swidth, 1264.0f / sheight, 15.0f / swidth, 15.0f / sheight);
@@ -58,25 +68,35 @@ void GameClass::fillEntities(){
 	statics.push_back(Entity(0.5f, 0.15f, 0.3f, 0.05f, Sprite()));
 }
 
-/*
-while no key is pressed:
-if facing left, loop left resting animation
-else, loop right resting animation
-
-while left key pressed, loop leftward run animation and set left
-while right key pressed, loop rightward run animation and set right
-*/
-
-void GameClass::movePlayer(){
+void GameClass::movePlayer(float elapsed){
 	//Poll for arrow key
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
-	if (keys[SDL_SCANCODE_LEFT]) { player->setAx(-MOVE); }
-	else if (keys[SDL_SCANCODE_RIGHT]) { player->setAx(MOVE); }
-	else { player->setAx(0); }
+	SpriteFrame sf;
+	if (keys[SDL_SCANCODE_LEFT]) {
+		lookLeft = true;
+		player->setAx(-MOVE);
+		sf = cycles[RUNLEFT].getNext();
+	}
+	else if (keys[SDL_SCANCODE_RIGHT]) {
+		lookLeft = false;
+		player->setAx(MOVE);
+		sf = cycles[RUNRIGHT].getNext();
+	}
+	else {
+		player->setAx(0);
+		if (lookLeft) { sf = cycles[STANDLEFT].getNext(); }
+		else { sf = cycles[STANDRIGHT].getNext(); }
+	}
+	if (lastTickCount - frameChange >= 0.06f){
+		frameChange = lastTickCount;
+		player->setFrame(sf);
+	}	
 }
 
-StateAndRun GameClass::updateGame(){
+StateAndRun GameClass::updateGame(float elapsed){
 	StateAndRun ans = { 0, true };
+
+	//Keyboard (and close-window) events
 	switch (getKey()){
 	case KEY_SPACE:
 		if (player->getBottom()) { player->setVy(JUMP); }
@@ -90,7 +110,7 @@ StateAndRun GameClass::updateGame(){
 	case OTHER: break;
 	}
 
-	movePlayer();
+	movePlayer(elapsed);
 
 	return ans;
 }
@@ -155,8 +175,7 @@ bool GameClass::run(){
 	}
 	leftover = fixedElapsed;
 	//variable update = animation
-
-	StateAndRun sar = updateGame();
+	StateAndRun sar = updateGame(elapsed);
 	renderGame();
 	SDL_GL_SwapWindow(displayWindow);
 	

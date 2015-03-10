@@ -57,3 +57,18 @@ void Sprite::setUV(float newU, float newV){
 	u = newU;
 	v = newV;
 }
+void Sprite::setSize(float newWidth, float newHeight){ width = newWidth; height = newHeight; }
+
+AnimCycle::AnimCycle(int swidth, int sheight, int width, int height,
+	int numFrames, int row, int col)
+	:swidth(swidth), sheight(sheight), width(width), height(height),
+	numFrames(numFrames), row(row), col(col), i(col)
+{}
+SpriteFrame AnimCycle::getNext(){
+	float u = (64 * i + ((64.0f - width) / 2)) / swidth;
+	float v = ((64.0f * row) - height) / sheight;
+	SpriteFrame ans = { u, v, 1.0f*width/swidth, 1.0f*height/sheight };
+	i++;
+	if (i - col == numFrames){ i = col; }
+	return ans;
+}
