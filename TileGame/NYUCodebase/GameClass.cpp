@@ -2,9 +2,25 @@
 
 int levelOne[LEVELHEIGHT][LEVELWIDTH] = {
 	{ 98, 99, 102, 103, 102, 103, 102, 103, 102, 103 },
+	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
+	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
+	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
+	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
+	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
 	{ 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 },
 	{ 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 }
 };
+
+void tile2world(float* worldX, float* worldY, int tileCol, int tileRow){
+	//Center of tile
+	*worldX = TILEUNITS*tileCol + OFFSETX + TILEUNITS / 2;
+	*worldY = -TILEUNITS*tileRow + OFFSETY - TILEUNITS / 2;
+}
+
+void world2tile(float worldX, float worldY, int*tileCol , int*tileRow){
+	*tileCol = (int)floor((worldX - OFFSETX) / TILEUNITS);
+	*tileRow = (int)floor((worldY - OFFSETY) / -TILEUNITS);
+}
 
 GameClass::~GameClass(){ SDL_Quit(); }
 GameClass::GameClass()
@@ -32,9 +48,10 @@ GameClass::GameClass()
 }
 
 void GameClass::fillLevel(){
-	OutputDebugString("Filling level.");
 	for (int y = 0; y < LEVELHEIGHT; y++) {
 		for (int x = 0; x < LEVELWIDTH; x++) {
+			if (!levelOne[y][x]) { continue; }
+
 			float u = (float)(((int)levelOne[y][x]) % TILECOUNTX) / (float)TILECOUNTX;
 			float v = (float)(((int)levelOne[y][x]) / TILECOUNTX) / (float) TILECOUNTY;
 			tileVerts.insert(tileVerts.end(), {
@@ -52,7 +69,6 @@ void GameClass::fillLevel(){
 			});
 		}
 	}
-	OutputDebugString("Filled level.");
 }
 
 void GameClass::fillEntities(){
@@ -71,13 +87,7 @@ void GameClass::fillEntities(){
 	//float playerWidth = 0.07f;
 	float playerHeight = 0.12f;
 	float playerWidth = playerHeight*26.0f/46.0f;
-	dynamics.push_back(Dynamic(0, -0.56f, playerWidth, playerHeight, p));
-
-	//pickup the morph balls
-	Sprite s(spriteSheet.id, 24.0f / swidth, 1264.0f / sheight, 15.0f / swidth, 15.0f / sheight);
-	//dynamics.push_back(Dynamic(0, -0.2f, 0.05f, 0.05f, s));
-	//dynamics.push_back(Dynamic(-0.5f, 0.2f, 0.05f, 0.05f, s));
-	//dynamics.push_back(Dynamic(0.5f, 0.2f, 0.05f, 0.05f, s));
+	dynamics.push_back(Dynamic(TILEUNITS/2, 0, playerWidth, playerHeight, p));
 
 	player = &dynamics[PLAYER];//do last: the vector's location in memory changes after pushes
 
@@ -130,38 +140,53 @@ StateAndRun GameClass::updateGame(float elapsed){
 	return ans;
 }
 
+float tileCollide(float x, float y, float v, float h, bool isY){
+	int tileCol, tileRow;
+	world2tile(x, y, &tileCol, &tileRow);
+
+	float tileX, tileY;
+	if (tileCol > -1 && tileRow > -1 && tileCol < LEVELWIDTH && tileRow < LEVELHEIGHT &&
+		levelOne[tileRow][tileCol] > 97) {
+		tile2world(&tileX, &tileY, tileCol, tileRow);
+		return depenetrate(v, h, isY ? tileY : tileX, TILEUNITS / 2);
+	}
+	return v;
+}
+
 void GameClass::physics(){
 	//For every dynamic object...
 	for (size_t i = 0; i < dynamics.size(); i++){
 		dynamics[i].noTouch();
+		int tileCol, tileRow;
 		//Move in y
 		dynamics[i].setVy(lerp(dynamics[i].getVy(), 0, TIMESTEP*FRIC_Y));
 		dynamics[i].bumpVy(dynamics[i].getAy() * TIMESTEP + GRAVITY * TIMESTEP);
 		dynamics[i].bumpY(dynamics[i].getVy()*TIMESTEP);
 
-		//resolve collisions
-		
-		/*
-		//De-penetrate
-		dynamics[i].setY(depenetrate(dynamics[i].getY(), dynamics[i].getHalfHeight(),
-					statics[j].getY(), statics[j].getHalfHeight()));
-				if (dynamics[i].getY() > statics[j].getY()) { dynamics[i].setBottom(); }
-				else { dynamics[i].setTop(); }
-		//Set vy to 0
-		dynamics[i].setVy(0);
-		*/
+		float x = dynamics[i].getX(); float y = dynamics[i].getY();
 
+		//resolve collisions
+		float hh = dynamics[i].getHalfHeight();
+
+		float newY = tileCollide(x, y - hh, y, hh, true);
+		if (newY != y){ dynamics[i].stickBottom(newY); }
+
+		newY = tileCollide(x, y + hh, y, hh, true);
+		if (newY != y){ dynamics[i].stickTop(newY); }
 
 		//Move in x and resolve collisions
 		dynamics[i].setVx(lerp(dynamics[i].getVx(), 0, TIMESTEP*FRIC_X));
 		dynamics[i].bumpVx(dynamics[i].getAx() * TIMESTEP);
 		dynamics[i].bumpX(dynamics[i].getVx() * TIMESTEP);
-	}
-	for (size_t i = PLAYER + 1; i < dynamics.size(); i++){
-		//Pickups disappear
-		if (dynamics[i].getVisibility() && dynamics[PLAYER].collide(dynamics[i])) {
-			dynamics[i].reset();
+		float hw = dynamics[i].getHalfWidth(); float quart = dynamics[i].getHeight() / 4.0f;
+		for (int j = 1; j < 4; j++){
+			float newX = tileCollide(x - hw, y - hh + quart*j, x, hw, false);
+			if (newX != x) { dynamics[i].stickLeft(newX); }
+
+			newX = tileCollide(x + hw, y - hh + quart*j, x, hw, false);
+			if (newX != x) { dynamics[i].stickRight(newX); }
 		}
+		
 	}
 }
 
@@ -189,18 +214,19 @@ bool GameClass::run(){
 
 void GameClass::drawLevel(){
 	glLoadIdentity();
-	glTranslatef(-TILEUNITS * LEVELWIDTH / 2, TILEUNITS * LEVELHEIGHT / 2, 0.0f);
+	glTranslatef(OFFSETX, OFFSETY, 0.0f);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, tileMap.id);
 	glVertexPointer(2, GL_FLOAT, 0, tileVerts.data());
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glTexCoordPointer(2, GL_FLOAT, 0, tileTexts.data());
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDrawArrays(GL_QUADS, 0, LEVELHEIGHT*LEVELWIDTH * 3);//RGB is 3 ints
+	glDrawArrays(GL_QUADS, 0, tileVerts.size() * 4);
 	glDisable(GL_TEXTURE_2D);
 }
 
 void GameClass::renderGame(){
+	
 	for (size_t i = 0; i < dynamics.size(); i++){ dynamics[i].draw(); }
 	drawLevel();
 }

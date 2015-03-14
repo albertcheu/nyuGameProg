@@ -53,5 +53,8 @@ public:
 	void setAx(float val); void setAy(float val);
 	void noTouch();
 
+	void stickLeft(float val); void stickRight(float val);
+	void stickTop(float val); void stickBottom(float val);
+
 	void setFrame(SpriteFrame sf);
 };

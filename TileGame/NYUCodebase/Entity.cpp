@@ -94,6 +94,12 @@ float Dynamic::getAx(){ return ax; } float Dynamic::getAy(){ return ay; }
 bool Dynamic::getLeft(){ return touchLeft; } bool Dynamic::getRight(){ return touchRight; }
 bool Dynamic::getTop(){ return touchTop; } bool Dynamic::getBottom(){ return touchBottom; }
 
+void Dynamic::stickLeft(float val){ setLeft(); setVx(0); setX(val); }
+void Dynamic::stickRight(float val){ setRight(); setVx(0); setX(val); }
+void Dynamic::stickTop(float val){ setTop(); setVy(0); setY(val); }
+void Dynamic::stickBottom(float val){ setBottom(); setVy(0); setY(val); }
+
+
 void Dynamic::setFrame(SpriteFrame sf){
 	s.setUV(sf.u, sf.v); s.setSize(sf.w, sf.h);
 }
