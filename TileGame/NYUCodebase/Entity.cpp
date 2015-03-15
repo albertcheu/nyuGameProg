@@ -20,15 +20,21 @@ bool Entity::getVisibility() { return visible; }
 
 void Entity::setUV(float newU, float newV){ s.setUV(newU,newV); }
 
-void Entity::draw(){
+void Entity::draw(float delX, float delY){
 	if (visible){
 		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+		glPushMatrix();
+		glTranslatef(delX, delY, 0);
+
 		glTranslatef(x, y, 0.0f);
 		glRotatef(angle, 0.0f, 0.0f, 1.0f);
 		s.draw(width, height);
+
+		glPopMatrix();
 	}
 }
+
+void Entity::draw(){ draw(0, 0); }
 
 void Entity::setSize(float scale){
 	width *= scale;

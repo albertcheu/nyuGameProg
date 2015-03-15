@@ -16,7 +16,7 @@ public:
 	Entity(float x, float y, float width, float height, Sprite s, bool visible=true);
 
 	void setUV(float newU, float newV);
-	void draw();
+	void draw(float delX, float delY); void draw();
 
 	void setX(float xPos);	void setY(float yPos);
 	void setPos(float xPos, float yPos);

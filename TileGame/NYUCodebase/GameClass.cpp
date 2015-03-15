@@ -18,7 +18,9 @@ GameClass::~GameClass(){
 	SDL_Quit();
 }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0) {
+	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
+	level(NULL), width(0), height(0), offsetX(0), offsetY(0)
+	{
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("Dope Platformer",
@@ -34,16 +36,16 @@ GameClass::GameClass()
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
-	tileMap = LoadTextureRGB("mfTRO.jpg");//16x24
+	tileMap = LoadTextureRGB("mfTRO.jpg");
 	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
 	
-	fillLevel();
+	fillLevel("levelOne.txt");
 	fillEntities();
 }
 
-void GameClass::fillLevel(){
-	loadLevel("levelOne.txt", &width, &height, &level);
-	OutputDebugString("Loaded level one");
+void GameClass::fillLevel(const char* fname){
+	if (level){ freeLevel(height, &level); }
+	loadLevel(fname, &width, &height, &level);
 	offsetX = -TILEUNITS * width / 2; offsetY = TILEUNITS * height / 2;
 	OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
 	
@@ -82,9 +84,7 @@ void GameClass::fillEntities(){
 	//Sprite p(sheet.id, 17.0f / swidth, 21.0f / sheight, 25.0f / swidth, 42.0f / sheight);
 	float y = 64.0f * 11 - 46; float x = (64.0f - 26.0f) / 2;
 	Sprite p(spriteSheet.id, x / swidth, y / sheight, 26.0f / swidth, 46.0f / sheight);
-	//float playerHeight = 0.07f*46.0f / 26.0f;
-	//float playerWidth = 0.07f;
-	float playerHeight = 0.12f;
+	float playerHeight = 0.17f;
 	float playerWidth = playerHeight*26.0f/46.0f;
 	dynamics.push_back(Dynamic(0, 0, playerWidth, playerHeight, p));
 
@@ -191,8 +191,6 @@ void GameClass::physics(){
 }
 
 bool GameClass::run(){
-	glClear(GL_COLOR_BUFFER_BIT);
-
 	float ticks = (float)SDL_GetTicks() / 1000.0f;
 	float elapsed = ticks - lastTickCount;
 	lastTickCount = ticks;
@@ -204,16 +202,18 @@ bool GameClass::run(){
 		physics();
 	}
 	leftover = fixedElapsed;
-	//variable update = animation
+	
 	StateAndRun sar = updateGame(elapsed);
+	
 	renderGame();
-	SDL_GL_SwapWindow(displayWindow);
 	
 	return sar.keepRunning;
 }
 
 void GameClass::drawLevel(){
-	glLoadIdentity();
+	glPushMatrix();
+	glTranslatef(-player->getX(), -player->getY(), 0.0f);
+
 	glTranslatef(offsetX, offsetY, 0.0f);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, tileMap.id);
@@ -223,10 +223,20 @@ void GameClass::drawLevel(){
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glDrawArrays(GL_QUADS, 0, tileVerts.size() * 4);
 	glDisable(GL_TEXTURE_2D);
+
+	glPopMatrix();
 }
 
 void GameClass::renderGame(){
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glMatrixMode(GL_MODELVIEW);
+
+	for (size_t i = 0; i < dynamics.size(); i++){
+		dynamics[i].draw(-player->getX(), -player->getY());
+	}
 	
-	for (size_t i = 0; i < dynamics.size(); i++){ dynamics[i].draw(); }
 	drawLevel();
+
+	SDL_GL_SwapWindow(displayWindow);
 }

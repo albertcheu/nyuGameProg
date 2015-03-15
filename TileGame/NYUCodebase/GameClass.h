@@ -6,11 +6,11 @@
 #define MAX_STEPS 6
 
 #define GRAVITY -7.8f
-#define FRIC_Y 5.7f
-#define JUMP 3.1f
+#define FRIC_Y 5.6f
+#define JUMP 4.0f
 
-#define FRIC_X 7.0f
-#define MOVE 2.8f
+#define FRIC_X 7.7f
+#define MOVE 3.8f
 
 #define TILEUNITS 0.07f//how big a tile is in OpenGL units
 #define TILEPIX 16//how big a tile is in pixels
@@ -47,7 +47,7 @@ private:
 	
 	int** level; int width, height; float offsetX, offsetY;
 
-	void fillLevel();
+	void fillLevel(const char* fname);
 	void fillEntities();
 
 	void physics();

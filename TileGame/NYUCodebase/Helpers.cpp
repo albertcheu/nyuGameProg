@@ -38,13 +38,9 @@ void readHeader(std::ifstream &stream, int* width, int* height, int*** level){
 		else if (key == "height"){ *height = atoi(value.c_str()); }
 	}
 
-	OutputDebugString("Read header");
-
 	// allocate our map data
 	*level = new int*[*height];
-	for (int i = 0; i < *height; ++i) { (*level)[i] = new int[*width]; }	
-
-	OutputDebugString("Allocated level");
+	for (int i = 0; i < *height; ++i) { (*level)[i] = new int[*width]; }
 }
 
 void freeLevel(int height, int*** level){
@@ -81,7 +77,6 @@ void readLayerData(std::ifstream &stream, int width, int height, int*** level){
 
 void loadLevel(const char* levelFile, int* width, int* height, int*** level){
 	std::ifstream infile(levelFile);
-	OutputDebugString("Loaded file");
 	std::string line;
 	while (getline(infile, line)) {
 		if (line == "[header]") { readHeader(infile, width, height, level); }
