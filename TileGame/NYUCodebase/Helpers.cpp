@@ -81,7 +81,7 @@ void loadLevel(const char* levelFile, int* width, int* height, int*** level){
 	while (getline(infile, line)) {
 		if (line == "[header]") { readHeader(infile, width, height, level); }
 		else if (line == "[layer]") { readLayerData(infile, *width, *height, level); }
-		else if (line == "[ObjectsLayer]") {
+		else if (line == "[StartLocations]") {
 			//To do
 			//readEntityData(infile);
 		}

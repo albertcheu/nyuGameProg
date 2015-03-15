@@ -47,20 +47,22 @@ void GameClass::fillLevel(const char* fname){
 	if (level){ freeLevel(height, &level); }
 	loadLevel(fname, &width, &height, &level);
 	offsetX = -TILEUNITS * width / 2; offsetY = TILEUNITS * height / 2;
-	OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
 	
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			if (!level[y][x]) { continue; }
 
-			float u = (float)(((int)level[y][x]) % TILECOUNTX) / (float)TILECOUNTX;
-			float v = (float)(((int)level[y][x]) / TILECOUNTX) / (float) TILECOUNTY;
+			float u = (float)(level[y][x] % TILECOUNTX) / (float) TILECOUNTX;
+			float v = (float)(level[y][x] / TILECOUNTX) / (float) TILECOUNTY;
+			
 			tileVerts.insert(tileVerts.end(), {
 				TILEUNITS * x, -TILEUNITS * y,
 				TILEUNITS * x, (-TILEUNITS * y) - TILEUNITS,
 				(TILEUNITS * x) + TILEUNITS, (-TILEUNITS * y) - TILEUNITS,
 				(TILEUNITS * x) + TILEUNITS, -TILEUNITS * y
 			});
+			
+			OutputDebugString(std::to_string(tileVerts.back()).c_str());
 			float spriteWidth = 1.0f / (float)TILECOUNTX;
 			float spriteHeight = 1.0f / (float)TILECOUNTY;
 			tileTexts.insert(tileTexts.end(), { u, v,
@@ -145,8 +147,18 @@ float tileCollide(float x, float y, float v, float h, bool isY,
 	world2tile(x, y, &tileCol, &tileRow, offsetX, offsetY);
 
 	float tileX, tileY;
-	if (//tileCol > -1 && tileRow > -1 && tileCol < width && tileRow < height &&
-		level[tileRow][tileCol] > 97) {
+	float t = level[tileRow][tileCol];
+
+	bool solid = false;
+	for (int i = 144; i <= 208; i += 16){
+		if (t >= i && t <= i + 4){ solid = true; break; }
+	}
+	for (int i = 267; i <= 379; i += 16){ if (t == i){ solid = true; break; } }
+	
+	if (solid || (t >= 96 && t <= 103) || (t >= 112 && t <= 119) || (t >= 128 && t <= 134) ||
+		(t >= 320 && t <= 328) || (t >= 336 && t <= 338) ||
+		t == 368 || t == 266 || t == 282 || t == 298
+		) {
 		tile2world(&tileX, &tileY, tileCol, tileRow, offsetX, offsetY);
 		return depenetrate(v, h, isY ? tileY : tileX, TILEUNITS / 2);
 	}

@@ -12,8 +12,8 @@
 #define FRIC_X 7.7f
 #define MOVE 3.8f
 
-#define TILEUNITS 0.07f//how big a tile is in OpenGL units
-#define TILEPIX 16//how big a tile is in pixels
+#define TILEUNITS 0.07f//size of a tile in OpenGL units
+#define TILEPIX 16//pixel size of a tile in mfTRO.jpg
 #define TILECOUNTX 16//number of tiles in a row in mfTRO.jpg
 #define TILECOUNTY 24//number of tiles in a column in mfTRO.jpg
 
