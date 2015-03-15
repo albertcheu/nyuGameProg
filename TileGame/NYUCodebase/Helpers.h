@@ -3,6 +3,10 @@
 #include <SDL_opengl.h>
 #include <SDL_image.h>
 #include <math.h>
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <sstream>
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -14,8 +18,6 @@
 #define CLOSE_WINDOW 2
 #define OTHER 3
 
-
-
 typedef struct{
 	unsigned newState;
 	bool keepRunning;
@@ -24,3 +26,8 @@ typedef struct{
 unsigned getKey();
 float lerp(float v0, float v1, float t);
 float depenetrate(float c1, float h1, float c2, float h2);
+
+void readHeader(std::ifstream &stream, int* width, int* height, int*** level);
+void freeLevel(int height, int*** level);
+void readLayerData(std::ifstream &stream, int width, int height, int*** level);
+void loadLevel(const char* levelFile, int* width, int* height, int*** level);

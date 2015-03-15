@@ -1,28 +1,22 @@
 #include "GameClass.h"
 
-int levelOne[LEVELHEIGHT][LEVELWIDTH] = {
-	{ 98, 99, 102, 103, 102, 103, 102, 103, 102, 103 },
-	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
-	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
-	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
-	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
-	{ 100, 0, 0, 0, 0, 0, 0, 0, 0, 100 },
-	{ 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 },
-	{ 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 }
-};
-
-void tile2world(float* worldX, float* worldY, int tileCol, int tileRow){
+void tile2world(float* worldX, float* worldY, int tileCol, int tileRow,
+	float offsetX, float offsetY){
 	//Center of tile
-	*worldX = TILEUNITS*tileCol + OFFSETX + TILEUNITS / 2;
-	*worldY = -TILEUNITS*tileRow + OFFSETY - TILEUNITS / 2;
+	*worldX = TILEUNITS*tileCol + offsetX + TILEUNITS / 2;
+	*worldY = -TILEUNITS*tileRow + offsetY - TILEUNITS / 2;
 }
 
-void world2tile(float worldX, float worldY, int*tileCol , int*tileRow){
-	*tileCol = (int)floor((worldX - OFFSETX) / TILEUNITS);
-	*tileRow = (int)floor((worldY - OFFSETY) / -TILEUNITS);
+void world2tile(float worldX, float worldY, int*tileCol , int*tileRow,
+	float offsetX, float offsetY){
+	*tileCol = (int)floor((worldX - offsetX) / TILEUNITS);
+	*tileRow = (int)floor((worldY - offsetY) / -TILEUNITS);
 }
 
-GameClass::~GameClass(){ SDL_Quit(); }
+GameClass::~GameClass(){
+	freeLevel(height, &level);
+	SDL_Quit();
+}
 GameClass::GameClass()
 	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0) {
 	//Boilerplate
@@ -48,12 +42,17 @@ GameClass::GameClass()
 }
 
 void GameClass::fillLevel(){
-	for (int y = 0; y < LEVELHEIGHT; y++) {
-		for (int x = 0; x < LEVELWIDTH; x++) {
-			if (!levelOne[y][x]) { continue; }
+	loadLevel("levelOne.txt", &width, &height, &level);
+	OutputDebugString("Loaded level one");
+	offsetX = -TILEUNITS * width / 2; offsetY = TILEUNITS * height / 2;
+	OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
+	
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			if (!level[y][x]) { continue; }
 
-			float u = (float)(((int)levelOne[y][x]) % TILECOUNTX) / (float)TILECOUNTX;
-			float v = (float)(((int)levelOne[y][x]) / TILECOUNTX) / (float) TILECOUNTY;
+			float u = (float)(((int)level[y][x]) % TILECOUNTX) / (float)TILECOUNTX;
+			float v = (float)(((int)level[y][x]) / TILECOUNTX) / (float) TILECOUNTY;
 			tileVerts.insert(tileVerts.end(), {
 				TILEUNITS * x, -TILEUNITS * y,
 				TILEUNITS * x, (-TILEUNITS * y) - TILEUNITS,
@@ -87,7 +86,7 @@ void GameClass::fillEntities(){
 	//float playerWidth = 0.07f;
 	float playerHeight = 0.12f;
 	float playerWidth = playerHeight*26.0f/46.0f;
-	dynamics.push_back(Dynamic(TILEUNITS/2, 0, playerWidth, playerHeight, p));
+	dynamics.push_back(Dynamic(0, 0, playerWidth, playerHeight, p));
 
 	player = &dynamics[PLAYER];//do last: the vector's location in memory changes after pushes
 
@@ -140,14 +139,15 @@ StateAndRun GameClass::updateGame(float elapsed){
 	return ans;
 }
 
-float tileCollide(float x, float y, float v, float h, bool isY){
+float tileCollide(float x, float y, float v, float h, bool isY,
+	float offsetX, float offsetY, int** level){
 	int tileCol, tileRow;
-	world2tile(x, y, &tileCol, &tileRow);
+	world2tile(x, y, &tileCol, &tileRow, offsetX, offsetY);
 
 	float tileX, tileY;
-	if (tileCol > -1 && tileRow > -1 && tileCol < LEVELWIDTH && tileRow < LEVELHEIGHT &&
-		levelOne[tileRow][tileCol] > 97) {
-		tile2world(&tileX, &tileY, tileCol, tileRow);
+	if (//tileCol > -1 && tileRow > -1 && tileCol < width && tileRow < height &&
+		level[tileRow][tileCol] > 97) {
+		tile2world(&tileX, &tileY, tileCol, tileRow, offsetX, offsetY);
 		return depenetrate(v, h, isY ? tileY : tileX, TILEUNITS / 2);
 	}
 	return v;
@@ -157,7 +157,7 @@ void GameClass::physics(){
 	//For every dynamic object...
 	for (size_t i = 0; i < dynamics.size(); i++){
 		dynamics[i].noTouch();
-		int tileCol, tileRow;
+		
 		//Move in y
 		dynamics[i].setVy(lerp(dynamics[i].getVy(), 0, TIMESTEP*FRIC_Y));
 		dynamics[i].bumpVy(dynamics[i].getAy() * TIMESTEP + GRAVITY * TIMESTEP);
@@ -168,10 +168,10 @@ void GameClass::physics(){
 		//resolve collisions
 		float hh = dynamics[i].getHalfHeight();
 
-		float newY = tileCollide(x, y - hh, y, hh, true);
+		float newY = tileCollide(x, y - hh, y, hh, true, offsetX, offsetY, level);
 		if (newY != y){ dynamics[i].stickBottom(newY); }
 
-		newY = tileCollide(x, y + hh, y, hh, true);
+		newY = tileCollide(x, y + hh, y, hh, true, offsetX, offsetY, level);
 		if (newY != y){ dynamics[i].stickTop(newY); }
 
 		//Move in x and resolve collisions
@@ -180,10 +180,10 @@ void GameClass::physics(){
 		dynamics[i].bumpX(dynamics[i].getVx() * TIMESTEP);
 		float hw = dynamics[i].getHalfWidth(); float quart = dynamics[i].getHeight() / 4.0f;
 		for (int j = 1; j < 4; j++){
-			float newX = tileCollide(x - hw, y - hh + quart*j, x, hw, false);
+			float newX = tileCollide(x - hw, y - hh + quart*j, x, hw, false, offsetX, offsetY, level);
 			if (newX != x) { dynamics[i].stickLeft(newX); }
 
-			newX = tileCollide(x + hw, y - hh + quart*j, x, hw, false);
+			newX = tileCollide(x + hw, y - hh + quart*j, x, hw, false, offsetX, offsetY, level);
 			if (newX != x) { dynamics[i].stickRight(newX); }
 		}
 		
@@ -214,7 +214,7 @@ bool GameClass::run(){
 
 void GameClass::drawLevel(){
 	glLoadIdentity();
-	glTranslatef(OFFSETX, OFFSETY, 0.0f);
+	glTranslatef(offsetX, offsetY, 0.0f);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, tileMap.id);
 	glVertexPointer(2, GL_FLOAT, 0, tileVerts.data());

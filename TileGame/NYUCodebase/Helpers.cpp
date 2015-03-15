@@ -24,3 +24,72 @@ unsigned getKey(){
 	}
 	return OTHER;
 }
+
+void readHeader(std::ifstream &stream, int* width, int* height, int*** level){
+	std::string line;
+	
+	while (getline(stream, line)) {
+		if (line == "") { break; }
+		std::istringstream sStream(line);
+		std::string key, value;
+		getline(sStream, key, '=');
+		getline(sStream, value);
+		if (key == "width") { *width = atoi(value.c_str()); }
+		else if (key == "height"){ *height = atoi(value.c_str()); }
+	}
+
+	OutputDebugString("Read header");
+
+	// allocate our map data
+	*level = new int*[*height];
+	for (int i = 0; i < *height; ++i) { (*level)[i] = new int[*width]; }	
+
+	OutputDebugString("Allocated level");
+}
+
+void freeLevel(int height, int*** level){
+	for (int i = 0; i < height; i++) { delete[] (*level)[i]; }
+	delete[] (*level);
+}
+
+void readLayerData(std::ifstream &stream, int width, int height, int*** level){
+	std::string line;
+	while (getline(stream, line)) {
+		if (line == "") { break; }
+		std::istringstream sStream(line);
+		std::string key, value;
+		getline(sStream, key, '=');
+		getline(sStream, value);
+		if (key == "data") {
+			for (int y = 0; y < height; y++) {
+				getline(stream, line);
+				std::istringstream lineStream(line);
+				std::string tile;
+				for (int x = 0; x < width; x++) {
+					getline(lineStream, tile, ',');
+					int val = atoi(tile.c_str());
+					
+					// be careful, the tiles in this format are indexed from 1 not 0
+					if (val > 0) { (*level)[y][x] = val - 1; }
+					else {	(*level)[y][x] = 0; }
+					
+				}
+			}
+		}
+	}
+}
+
+void loadLevel(const char* levelFile, int* width, int* height, int*** level){
+	std::ifstream infile(levelFile);
+	OutputDebugString("Loaded file");
+	std::string line;
+	while (getline(infile, line)) {
+		if (line == "[header]") { readHeader(infile, width, height, level); }
+		else if (line == "[layer]") { readLayerData(infile, *width, *height, level); }
+		else if (line == "[ObjectsLayer]") {
+			//To do
+			//readEntityData(infile);
+		}
+	}
+	infile.close();
+}

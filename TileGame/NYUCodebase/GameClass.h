@@ -1,7 +1,7 @@
 #pragma once
 #include "Entity.h"
 #include <vector>
-#include <string>
+
 #define TIMESTEP 0.0166f
 #define MAX_STEPS 6
 
@@ -17,17 +17,15 @@
 #define TILECOUNTX 16//number of tiles in a row in mfTRO.jpg
 #define TILECOUNTY 24//number of tiles in a column in mfTRO.jpg
 
-#define LEVELWIDTH 10//number of tiles in a row in the level
-#define LEVELHEIGHT 8//number of tiles in a column in the level
-
 #define PLAYER 0
 enum SamusCycles {STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT};
 
-const float OFFSETX = -TILEUNITS * LEVELWIDTH / 2;
-const float OFFSETY = TILEUNITS * LEVELHEIGHT / 2;
-void tile2world(float* worldX, float* worldY, int tileCol, int tileRow);
-void world2tile(float worldX, float worldY, int* tileCol, int* tileRow);
-float tileCollide(float x, float y, float v, float h, bool isY);
+void tile2world(float* worldX, float* worldY, int tileCol, int tileRow,
+	float offsetX, float offsetY);
+void world2tile(float worldX, float worldY, int* tileCol, int* tileRow,
+	float offsetX, float offsetY);
+float tileCollide(float x, float y, float v, float h, bool isY,
+	float offsetX, float offsetY, int** level);
 
 class GameClass{
 public:
@@ -47,6 +45,8 @@ private:
 
 	float lastTickCount, leftover, frameChange;
 	
+	int** level; int width, height; float offsetX, offsetY;
+
 	void fillLevel();
 	void fillEntities();
 

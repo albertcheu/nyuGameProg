@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="40" height="20" tilewidth="16" tileheight="16" nextobjectid="1">
+ <tileset firstgid="1" name="mfTRO" tilewidth="16" tileheight="16">
+  <image source="../../../../../Downloads/mfTRO.png" trans="000000" width="257" height="384"/>
+ </tileset>
+ <layer name="Tile Layer 1" width="40" height="20">
+  <data encoding="base64" compression="zlib">
+   eJxrZmBgaBmkuBWIE4GYEQuWZoRgbHL0wofwuC+GEYIHq/tyGCF4sLqPCYiZB9BthNwnBMTCg9h9SkCsPIjdZwTExiSY5QgknIDYGYg9GInX4wbE7jj0gNy3GIiX4MFbBzj8moG4hAFSHpYCcRkQFzMgyseJaP4NgoYTLj9T232FeOSn4ol/eoUfPvuTqOQ+WLiTGt4g9y3EIz+JgDw9wu8gHvlNQLxxgN13EY/8JSrFLyXuwxd/xNZxsLLPBYhdGamXrw8RiL+BruMI5d+BruNA7puMR57UOo4W7sNXvy1Fkk8F4gwoG0Sno6lNR5JD5qdiUYOsDpmfiqYHZD8Ap7ZcKw==
+  </data>
+ </layer>
+</map>
