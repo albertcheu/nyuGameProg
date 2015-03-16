@@ -25,66 +25,22 @@ unsigned getKey(){
 	return OTHER;
 }
 
-void readHeader(std::ifstream &stream, int* width, int* height, int*** level){
-	std::string line;
-	
-	while (getline(stream, line)) {
-		if (line == "") { break; }
-		std::istringstream sStream(line);
-		std::string key, value;
-		getline(sStream, key, '=');
-		getline(sStream, value);
-		if (key == "width") { *width = atoi(value.c_str()); }
-		else if (key == "height"){ *height = atoi(value.c_str()); }
-	}
-
-	// allocate our map data
-	*level = new int*[*height];
-	for (int i = 0; i < *height; ++i) { (*level)[i] = new int[*width]; }
-}
-
-void freeLevel(int height, int*** level){
-	for (int i = 0; i < height; i++) { delete[] (*level)[i]; }
-	delete[] (*level);
-}
-
-void readLayerData(std::ifstream &stream, int width, int height, int*** level){
-	std::string line;
-	while (getline(stream, line)) {
-		if (line == "") { break; }
-		std::istringstream sStream(line);
-		std::string key, value;
-		getline(sStream, key, '=');
-		getline(sStream, value);
-		if (key == "data") {
-			for (int y = 0; y < height; y++) {
-				getline(stream, line);
-				std::istringstream lineStream(line);
-				std::string tile;
-				for (int x = 0; x < width; x++) {
-					getline(lineStream, tile, ',');
-					int val = atoi(tile.c_str());
-					
-					// be careful, the tiles in this format are indexed from 1 not 0
-					if (val > 0) { (*level)[y][x] = val - 1; }
-					else {	(*level)[y][x] = 0; }
-					
-				}
-			}
+bool isSolid(int t, const char* mapName){
+	if (mapName == "mfTRO.jpg"){
+		
+		for (int i = 144; i <= 208; i += 16){
+			if (t >= i && t <= i + 4){ return true; }
 		}
-	}
-}
+		for (int i = 267; i <= 379; i += 16){ if (t == i){ return true; } }
 
-void loadLevel(const char* levelFile, int* width, int* height, int*** level){
-	std::ifstream infile(levelFile);
-	std::string line;
-	while (getline(infile, line)) {
-		if (line == "[header]") { readHeader(infile, width, height, level); }
-		else if (line == "[layer]") { readLayerData(infile, *width, *height, level); }
-		else if (line == "[StartLocations]") {
-			//To do
-			//readEntityData(infile);
+		if ((t >= 96 && t <= 103) || (t >= 112 && t <= 119) || (t >= 128 && t <= 134) ||
+			(t >= 320 && t <= 328) || (t >= 336 && t <= 338) ||
+			t == 368 || t == 266 || t == 282 || t == 298) {
+			return true;
 		}
+
+		return false;
 	}
-	infile.close();
+
+	return false;
 }

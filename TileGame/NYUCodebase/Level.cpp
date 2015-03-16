@@ -1,0 +1,146 @@
+#include "Level.h"
+
+Level::Level(){}
+
+Level::Level(const char* flareName, const char* mapName,
+	int tilePix, int tileCountX, int tileCountY)
+	: tilePix(tilePix), tileCountX(tileCountX), tileCountY(tileCountY), td(LoadTextureRGB(mapName))
+{
+	std::ifstream infile(flareName);
+	std::string line;
+	while (getline(infile, line)) {
+		if (line == "[header]") { readHeader(infile); }
+		else if (line == "[layer]") {
+			readLevel(infile);
+			fillVectors();
+		}
+		else if (line == "[StartLocations]") {
+			//To do
+			//readEntityData(infile);
+		}
+	}
+	infile.close();
+
+	offsetX = -TILEUNITS * width / 2;
+	offsetY = TILEUNITS * height / 2;
+	
+	OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
+}
+
+void Level::readHeader(std::ifstream& infile){
+	std::string line;
+
+	while (getline(infile, line)) {
+		if (line == "") { break; }
+		std::istringstream sStream(line);
+		std::string key, value;
+		getline(sStream, key, '=');
+		getline(sStream, value);
+		if (key == "width") { width = atoi(value.c_str()); }
+		else if (key == "height"){ height = atoi(value.c_str()); }
+	}
+	OutputDebugString((std::to_string(width) + ' ' + std::to_string(height)).c_str());
+	// allocate our map data
+	for (int i = 0; i < height; ++i) { data.push_back(std::vector<int>()); }
+}
+
+void Level::readLevel(std::ifstream& infile){
+	
+	std::string line;
+	while (getline(infile, line)) {
+		if (line == "") { break; }
+		std::istringstream sStream(line);
+		std::string key, value;
+		getline(sStream, key, '=');
+		getline(sStream, value);
+		if (key == "data") {
+			OutputDebugString("About to read level data");
+			for (int row = 0; row < height; row++) {
+				getline(infile, line);
+				std::istringstream lineStream(line);
+				std::string tile;
+				for (int col = 0; col < width; col++) {
+					getline(lineStream, tile, ',');
+					int val = atoi(tile.c_str());
+					// be careful, the tiles in this format are indexed from 1 not 0
+					data[row].push_back(val - 1);					
+				}
+			}
+		}
+	}
+	OutputDebugString("Read level data");
+}
+
+void Level::fillVectors(){
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			if (!data[y][x]) { continue; }
+
+			float u = (float)(data[y][x] % tileCountX) / (float)tileCountX;
+			float v = (float)(data[y][x] / tileCountX) / (float)tileCountY;
+
+			tileVerts.insert(tileVerts.end(), {
+				TILEUNITS * x, -TILEUNITS * y,
+				TILEUNITS * x, (-TILEUNITS * y) - TILEUNITS,
+				(TILEUNITS * x) + TILEUNITS, (-TILEUNITS * y) - TILEUNITS,
+				(TILEUNITS * x) + TILEUNITS, -TILEUNITS * y
+			});
+
+			//OutputDebugString(std::to_string(tileVerts.back()).c_str());
+			float spriteWidth = 1.0f / (float)tileCountX;
+			float spriteHeight = 1.0f / (float)tileCountY;
+			tileTexts.insert(tileTexts.end(), { u, v,
+				u, v + (spriteHeight),
+				u + spriteWidth, v + (spriteHeight),
+				u + spriteWidth, v
+			});
+		}
+	}
+	OutputDebugString("Filled vectors");
+}
+
+float Level::tileCollide(float x, float y, float v, float h, bool isY){
+	int tileCol, tileRow;
+	world2tile(x, y, &tileCol, &tileRow);
+	
+	int t = (data[tileRow])[tileCol];
+	
+
+	if (isSolid(t, "mfTRO.jpg")) {
+		float tileX, tileY;
+		tile2world(&tileX, &tileY, tileCol, tileRow);
+		return depenetrate(v, h, isY ? tileY : tileX, TILEUNITS / 2);
+	}
+	return v;
+}
+
+void Level::tile2world(float* worldX, float* worldY, int tileCol, int tileRow){
+	//Center of tile
+	*worldX = TILEUNITS*tileCol + offsetX + TILEUNITS / 2;
+	*worldY = -TILEUNITS*tileRow + offsetY - TILEUNITS / 2;
+}
+void Level::world2tile(float worldX, float worldY, int* tileCol, int* tileRow){
+	*tileCol = (int) ((worldX - offsetX) / TILEUNITS);
+	*tileRow = (int)((worldY - offsetY) / -TILEUNITS);
+}
+
+void Level::draw(float px, float py){
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glTranslatef(px, py, 0.0f);
+
+	glTranslatef(offsetX, offsetY, 0.0f);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, td.id);
+	glVertexPointer(2, GL_FLOAT, 0, tileVerts.data());
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glTexCoordPointer(2, GL_FLOAT, 0, tileTexts.data());
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+	glDrawArrays(GL_QUADS, 0, tileVerts.size()*4);
+	glDisable(GL_TEXTURE_2D);
+
+	glPopMatrix();
+}

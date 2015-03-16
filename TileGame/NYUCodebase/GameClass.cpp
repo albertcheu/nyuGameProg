@@ -1,29 +1,13 @@
 #include "GameClass.h"
 
-void tile2world(float* worldX, float* worldY, int tileCol, int tileRow,
-	float offsetX, float offsetY){
-	//Center of tile
-	*worldX = TILEUNITS*tileCol + offsetX + TILEUNITS / 2;
-	*worldY = -TILEUNITS*tileRow + offsetY - TILEUNITS / 2;
-}
-
-void world2tile(float worldX, float worldY, int*tileCol , int*tileRow,
-	float offsetX, float offsetY){
-	*tileCol = (int)floor((worldX - offsetX) / TILEUNITS);
-	*tileRow = (int)floor((worldY - offsetY) / -TILEUNITS);
-}
-
 GameClass::~GameClass(){
-	freeLevel(height, &level);
 	SDL_Quit();
 }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
-	level(NULL), width(0), height(0), offsetX(0), offsetY(0)
-	{
+	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0){
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
-	displayWindow = SDL_CreateWindow("Dope Platformer",
+	displayWindow = SDL_CreateWindow("Totally not Metroid",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
 	SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
@@ -36,42 +20,11 @@ GameClass::GameClass()
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
-	tileMap = LoadTextureRGB("mfTRO.jpg");
 	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
-	
-	fillLevel("levelOne.txt");
+	theLevel = Level("levelOne.txt", "mfTRO.jpg", TILEPIX, TILECOUNTX, TILECOUNTY);
+	OutputDebugString("Created level");
 	fillEntities();
-}
-
-void GameClass::fillLevel(const char* fname){
-	if (level){ freeLevel(height, &level); }
-	loadLevel(fname, &width, &height, &level);
-	offsetX = -TILEUNITS * width / 2; offsetY = TILEUNITS * height / 2;
-	
-	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++) {
-			if (!level[y][x]) { continue; }
-
-			float u = (float)(level[y][x] % TILECOUNTX) / (float) TILECOUNTX;
-			float v = (float)(level[y][x] / TILECOUNTX) / (float) TILECOUNTY;
-			
-			tileVerts.insert(tileVerts.end(), {
-				TILEUNITS * x, -TILEUNITS * y,
-				TILEUNITS * x, (-TILEUNITS * y) - TILEUNITS,
-				(TILEUNITS * x) + TILEUNITS, (-TILEUNITS * y) - TILEUNITS,
-				(TILEUNITS * x) + TILEUNITS, -TILEUNITS * y
-			});
-			
-			OutputDebugString(std::to_string(tileVerts.back()).c_str());
-			float spriteWidth = 1.0f / (float)TILECOUNTX;
-			float spriteHeight = 1.0f / (float)TILECOUNTY;
-			tileTexts.insert(tileTexts.end(), { u, v,
-				u, v + (spriteHeight),
-				u + spriteWidth, v + (spriteHeight),
-				u + spriteWidth, v
-			});
-		}
-	}
+	OutputDebugString("Made entities");
 }
 
 void GameClass::fillEntities(){
@@ -91,7 +44,6 @@ void GameClass::fillEntities(){
 	dynamics.push_back(Dynamic(0, 0, playerWidth, playerHeight, p));
 
 	player = &dynamics[PLAYER];//do last: the vector's location in memory changes after pushes
-
 }
 
 void GameClass::movePlayer(float elapsed){
@@ -141,30 +93,6 @@ StateAndRun GameClass::updateGame(float elapsed){
 	return ans;
 }
 
-float tileCollide(float x, float y, float v, float h, bool isY,
-	float offsetX, float offsetY, int** level){
-	int tileCol, tileRow;
-	world2tile(x, y, &tileCol, &tileRow, offsetX, offsetY);
-
-	float tileX, tileY;
-	float t = level[tileRow][tileCol];
-
-	bool solid = false;
-	for (int i = 144; i <= 208; i += 16){
-		if (t >= i && t <= i + 4){ solid = true; break; }
-	}
-	for (int i = 267; i <= 379; i += 16){ if (t == i){ solid = true; break; } }
-	
-	if (solid || (t >= 96 && t <= 103) || (t >= 112 && t <= 119) || (t >= 128 && t <= 134) ||
-		(t >= 320 && t <= 328) || (t >= 336 && t <= 338) ||
-		t == 368 || t == 266 || t == 282 || t == 298
-		) {
-		tile2world(&tileX, &tileY, tileCol, tileRow, offsetX, offsetY);
-		return depenetrate(v, h, isY ? tileY : tileX, TILEUNITS / 2);
-	}
-	return v;
-}
-
 void GameClass::physics(){
 	//For every dynamic object...
 	for (size_t i = 0; i < dynamics.size(); i++){
@@ -180,22 +108,22 @@ void GameClass::physics(){
 		//resolve collisions
 		float hh = dynamics[i].getHalfHeight();
 
-		float newY = tileCollide(x, y - hh, y, hh, true, offsetX, offsetY, level);
+		float newY = theLevel.tileCollide(x, y - hh, y, hh, true);
 		if (newY != y){ dynamics[i].stickBottom(newY); }
 
-		newY = tileCollide(x, y + hh, y, hh, true, offsetX, offsetY, level);
+		newY = theLevel.tileCollide(x, y + hh, y, hh, true);
 		if (newY != y){ dynamics[i].stickTop(newY); }
-
+		
 		//Move in x and resolve collisions
 		dynamics[i].setVx(lerp(dynamics[i].getVx(), 0, TIMESTEP*FRIC_X));
 		dynamics[i].bumpVx(dynamics[i].getAx() * TIMESTEP);
 		dynamics[i].bumpX(dynamics[i].getVx() * TIMESTEP);
 		float hw = dynamics[i].getHalfWidth(); float quart = dynamics[i].getHeight() / 4.0f;
 		for (int j = 1; j < 4; j++){
-			float newX = tileCollide(x - hw, y - hh + quart*j, x, hw, false, offsetX, offsetY, level);
+			float newX = theLevel.tileCollide(x - hw, y - hh + quart*j, x, hw, false);
 			if (newX != x) { dynamics[i].stickLeft(newX); }
 
-			newX = tileCollide(x + hw, y - hh + quart*j, x, hw, false, offsetX, offsetY, level);
+			newX = theLevel.tileCollide(x + hw, y - hh + quart*j, x, hw, false);
 			if (newX != x) { dynamics[i].stickRight(newX); }
 		}
 		
@@ -214,41 +142,22 @@ bool GameClass::run(){
 		physics();
 	}
 	leftover = fixedElapsed;
-	
+	//OutputDebugString("Physicked");
+
 	StateAndRun sar = updateGame(elapsed);
-	
+	//OutputDebugString("Animated");
 	renderGame();
 	
 	return sar.keepRunning;
 }
 
-void GameClass::drawLevel(){
-	glPushMatrix();
-	glTranslatef(-player->getX(), -player->getY(), 0.0f);
-
-	glTranslatef(offsetX, offsetY, 0.0f);
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, tileMap.id);
-	glVertexPointer(2, GL_FLOAT, 0, tileVerts.data());
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glTexCoordPointer(2, GL_FLOAT, 0, tileTexts.data());
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDrawArrays(GL_QUADS, 0, tileVerts.size() * 4);
-	glDisable(GL_TEXTURE_2D);
-
-	glPopMatrix();
-}
-
 void GameClass::renderGame(){
 	glClear(GL_COLOR_BUFFER_BIT);
-
-	glMatrixMode(GL_MODELVIEW);
 
 	for (size_t i = 0; i < dynamics.size(); i++){
 		dynamics[i].draw(-player->getX(), -player->getY());
 	}
-	
-	drawLevel();
+	theLevel.draw(-player->getX(), -player->getY());
 
 	SDL_GL_SwapWindow(displayWindow);
 }

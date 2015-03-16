@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -17,6 +18,7 @@
 #define KEY_SPACE 1
 #define CLOSE_WINDOW 2
 #define OTHER 3
+#define TILEUNITS 0.07f//size of a tile in OpenGL units
 
 typedef struct{
 	unsigned newState;
@@ -27,7 +29,4 @@ unsigned getKey();
 float lerp(float v0, float v1, float t);
 float depenetrate(float c1, float h1, float c2, float h2);
 
-void readHeader(std::ifstream &stream, int* width, int* height, int*** level);
-void freeLevel(int height, int*** level);
-void readLayerData(std::ifstream &stream, int width, int height, int*** level);
-void loadLevel(const char* levelFile, int* width, int* height, int*** level);
+bool isSolid(int t, const char* mapName);

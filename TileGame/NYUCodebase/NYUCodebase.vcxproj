@@ -76,6 +76,7 @@
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="GameClass.cpp" />
     <ClCompile Include="Helpers.cpp" />
+    <ClCompile Include="Level.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
@@ -83,6 +84,7 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="GameClass.h" />
     <ClInclude Include="Helpers.h" />
+    <ClInclude Include="Level.h" />
     <ClInclude Include="Sprite.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
