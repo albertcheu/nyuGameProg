@@ -4,30 +4,20 @@ Level::Level(){}
 
 Level::Level(const char* flareName, const char* mapName,
 	int tilePix, int tileCountX, int tileCountY)
-	: tilePix(tilePix), tileCountX(tileCountX), tileCountY(tileCountY), td(LoadTextureRGB(mapName))
+	: tilePix(tilePix), tileCountX(tileCountX), tileCountY(tileCountY), td(LoadTextureRGB(mapName)),
+	whichEntity(0)
 {
 	std::ifstream infile(flareName);
 	std::string line;
 	while (getline(infile, line)) {
-		if (line == "[header]") { readHeader(infile); }
-		else if (line == "[layer]") {
-			readLevel(infile);
-			fillVectors();
-		}
-		else if (line == "[StartLocations]") {
-			//To do
-			//readEntityData(infile);
-		}
+		if (line == "[header]") { loadHeader(infile); }
+		else if (line == "[layer]") { loadLevel(infile); }
+		else if (line == "[StartLocations]") { loadStarts(infile); }
 	}
 	infile.close();
-
-	offsetX = -TILEUNITS * width / 2;
-	offsetY = TILEUNITS * height / 2;
-	
-	OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
 }
 
-void Level::readHeader(std::ifstream& infile){
+void Level::loadHeader(std::ifstream& infile){
 	std::string line;
 
 	while (getline(infile, line)) {
@@ -39,13 +29,17 @@ void Level::readHeader(std::ifstream& infile){
 		if (key == "width") { width = atoi(value.c_str()); }
 		else if (key == "height"){ height = atoi(value.c_str()); }
 	}
-	OutputDebugString((std::to_string(width) + ' ' + std::to_string(height)).c_str());
+	//OutputDebugString((std::to_string(width) + ' ' + std::to_string(height)).c_str());
+	
+	offsetX = -TILEUNITS * width / 2;
+	offsetY = TILEUNITS * height / 2;
+	//OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
+
 	// allocate our map data
 	for (int i = 0; i < height; ++i) { data.push_back(std::vector<int>()); }
 }
 
-void Level::readLevel(std::ifstream& infile){
-	
+void Level::loadLevel(std::ifstream& infile){
 	std::string line;
 	while (getline(infile, line)) {
 		if (line == "") { break; }
@@ -54,7 +48,7 @@ void Level::readLevel(std::ifstream& infile){
 		getline(sStream, key, '=');
 		getline(sStream, value);
 		if (key == "data") {
-			OutputDebugString("About to read level data");
+			//OutputDebugString("About to read level data");
 			for (int row = 0; row < height; row++) {
 				getline(infile, line);
 				std::istringstream lineStream(line);
@@ -68,10 +62,11 @@ void Level::readLevel(std::ifstream& infile){
 			}
 		}
 	}
-	OutputDebugString("Read level data");
+	//OutputDebugString("Read level data");
+	fillRenderVectors();
 }
 
-void Level::fillVectors(){
+void Level::fillRenderVectors(){
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			if (!data[y][x]) { continue; }
@@ -96,7 +91,7 @@ void Level::fillVectors(){
 			});
 		}
 	}
-	OutputDebugString("Filled vectors");
+	//OutputDebugString("Filled vectors");
 }
 
 float Level::tileCollide(float x, float y, float v, float h, bool isY){
@@ -104,7 +99,6 @@ float Level::tileCollide(float x, float y, float v, float h, bool isY){
 	world2tile(x, y, &tileCol, &tileRow);
 	
 	int t = (data[tileRow])[tileCol];
-	
 
 	if (isSolid(t, "mfTRO.jpg")) {
 		float tileX, tileY;
@@ -143,4 +137,33 @@ void Level::draw(float px, float py){
 	glDisable(GL_TEXTURE_2D);
 
 	glPopMatrix();
+}
+
+void Level::loadStarts(std::ifstream& infile){
+	std::string line, typeName;
+	while (getline(infile, line)) {
+		if (line == "") { break; }
+		if (line[0] == '#') { continue; }
+		std::istringstream sStream(line);
+		std::string key, value, buf;
+		getline(sStream, key, '=');
+		getline(sStream, value);
+		if (key == "type") { typeName = value; }
+		else if (key == "location"){
+			WhereToStart wts; wts.typeName = typeName;
+
+			std::istringstream lineStream(value);
+			getline(lineStream, buf, ',');		int col = atoi(buf.c_str());
+			getline(lineStream, buf, ',');		int row = atoi(buf.c_str());
+			tile2world(&(wts.x), &(wts.y), col, row);
+
+			startLocs.push_back(wts);
+		}
+	}
+}
+
+const WhereToStart* Level::getNext(){
+	if (whichEntity < startLocs.size()){ return &(startLocs[whichEntity++]); }
+	whichEntity = 0;
+	return NULL;
 }

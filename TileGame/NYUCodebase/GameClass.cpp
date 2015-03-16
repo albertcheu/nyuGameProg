@@ -22,9 +22,9 @@ GameClass::GameClass()
 	
 	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
 	theLevel = Level("levelOne.txt", "mfTRO.jpg", TILEPIX, TILECOUNTX, TILECOUNTY);
-	OutputDebugString("Created level");
+	//OutputDebugString("Created level");
 	fillEntities();
-	OutputDebugString("Made entities");
+	//OutputDebugString("Made entities");
 }
 
 void GameClass::fillEntities(){
@@ -43,7 +43,15 @@ void GameClass::fillEntities(){
 	float playerWidth = playerHeight*26.0f/46.0f;
 	dynamics.push_back(Dynamic(0, 0, playerWidth, playerHeight, p));
 
-	player = &dynamics[PLAYER];//do last: the vector's location in memory changes after pushes
+	const WhereToStart* wts;
+	while (wts = theLevel.getNext()){
+		if (wts->typeName == "PlayerStart") {
+			dynamics[PLAYER].setX(wts->x);
+			dynamics[PLAYER].setY(wts->y);
+		}
+	}
+
+	player = &dynamics[PLAYER];//do last! the vector's location in memory changes after pushes
 }
 
 void GameClass::movePlayer(float elapsed){
