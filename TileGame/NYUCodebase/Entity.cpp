@@ -5,14 +5,13 @@ void Entity::calcHalves(){
 }
 
 Entity::Entity()
-	:x(0), y(0), width(0), height(0), angle(0),
+	:x(0), y(0), width(0.01f), height(0.01f), angle(0),
 	halfWidth(0), halfHeight(0), s(),
 	visible(true)
 {}
 
 Entity::Entity(float x, float y, float width, float height, Sprite s, bool visible)
-	:x(x), y(y), width(width), height(height), s(s),
-	angle(0), visible(visible)
+	:x(x), y(y), width(width), height(height), s(s), angle(0), visible(visible)
 { calcHalves(); }
 
 void Entity::setVisibility(bool v){ visible = v; }
@@ -68,6 +67,15 @@ bool Entity::collide(const Entity& other){
 		);
 }
 
+Beam::Beam() :Entity(){ visible = false; }
+Beam::Beam(float width, float height, Sprite s)
+	:Entity(0,0,width,height,s,false)
+{}
+
+void Beam::fire(float xcoor, float ycoor, float dir){
+	visible = true; x = xcoor; y = ycoor; angle = dir;
+}
+
 Dynamic::Dynamic()
 	: Entity(), vx(0), vy(0), ax(0), ay(0),
 	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)
@@ -78,16 +86,12 @@ Dynamic::Dynamic(float x, float y, float width, float height, Sprite s, bool vis
 	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)
 {}
 
-void Dynamic::bumpX(float val){ x += val; } void Dynamic::bumpY(float val){ y += val; }
 void Dynamic::setSpeed(float v, float dir) {
 	vx = v*cos(dir * M_PI / 180.0f);
 	vy = v*sin(dir * M_PI / 180.0f);
 }
-void Dynamic::bumpVx(float val){ vx += val; } void Dynamic::bumpVy(float val){ vy += val; }
 void Dynamic::setVx(float val){ vx = val; } void Dynamic::setVy(float val){ vy = val; }
 void Dynamic::setAx(float val){ ax = val; } void Dynamic::setAy(float val){ ay = val; }
-void Dynamic::setLeft(){ touchLeft = true; } void Dynamic::setRight(){ touchRight = true; }
-void Dynamic::setTop(){ touchTop = true; } void Dynamic::setBottom(){ touchBottom = true; }
 void Dynamic::noTouch(){ touchBottom = touchTop = touchRight = touchLeft = false; }
 
 void Dynamic::reset(){
@@ -100,11 +104,22 @@ float Dynamic::getAx(){ return ax; } float Dynamic::getAy(){ return ay; }
 bool Dynamic::getLeft(){ return touchLeft; } bool Dynamic::getRight(){ return touchRight; }
 bool Dynamic::getTop(){ return touchTop; } bool Dynamic::getBottom(){ return touchBottom; }
 
-void Dynamic::stickLeft(float val){ setLeft(); setVx(0); setX(val); }
-void Dynamic::stickRight(float val){ setRight(); setVx(0); setX(val); }
-void Dynamic::stickTop(float val){ setTop(); setVy(0); setY(val); }
-void Dynamic::stickBottom(float val){ setBottom(); setVy(0); setY(val); }
+void Dynamic::stickLeft(float val){ touchLeft = true; vx = 0; x = val; }
+void Dynamic::stickRight(float val){ touchRight = true; vx = 0; x = val; }
+void Dynamic::stickTop(float val){ touchTop = true; vy = 0; y = val; }
+void Dynamic::stickBottom(float val){ touchBottom = true; vy = 0; y = val; }
 
+void Dynamic::moveY(float timestep, float friction, float gravity){
+	vy = lerp(vy, 0, timestep*friction);
+	vy += ay * timestep + gravity*timestep;
+	y += vy*timestep;
+}
+
+void Dynamic::moveX(float timestep, float friction){
+	vx = lerp(vx, 0, timestep*friction);
+	vx += ax * timestep;
+	x += vx*timestep;
+}
 
 void Dynamic::setFrame(SpriteFrame sf){
 	s.setUV(sf.u, sf.v); s.setSize(sf.w, sf.h);

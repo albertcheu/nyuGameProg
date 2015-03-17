@@ -1,6 +1,8 @@
 #include "Level.h"
 
-Level::Level(){}
+Level::Level()
+	:tilePix(0), tileCountX(0), tileCountY(0), td(), whichEntity(0)
+{}
 
 Level::Level(const char* flareName, const char* mapName,
 	int tilePix, int tileCountX, int tileCountY)
@@ -15,6 +17,7 @@ Level::Level(const char* flareName, const char* mapName,
 		else if (line == "[StartLocations]") { loadStarts(infile); }
 	}
 	infile.close();
+	//OutputDebugString(std::to_string(tileTexts.size()).c_str());
 }
 
 void Level::loadHeader(std::ifstream& infile){
@@ -35,7 +38,6 @@ void Level::loadHeader(std::ifstream& infile){
 	offsetY = TILEUNITS * height / 2;
 	//OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
 
-	// allocate our map data
 	for (int i = 0; i < height; ++i) { data.push_back(std::vector<int>()); }
 }
 
@@ -133,7 +135,7 @@ void Level::draw(float px, float py){
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
-	glDrawArrays(GL_QUADS, 0, tileVerts.size()*4);
+	glDrawArrays(GL_QUADS, 0, tileVerts.size() / 2);
 	glDisable(GL_TEXTURE_2D);
 
 	glPopMatrix();

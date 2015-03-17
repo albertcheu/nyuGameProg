@@ -13,13 +13,10 @@ float depenetrate(float c1, float h1, float c2, float h2){
 
 unsigned getKey(){
 	SDL_Event event;
-	//Enable closing of window
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) { return CLOSE_WINDOW; }
 		else if (event.type == SDL_KEYDOWN){
-			//If we press escape, pause
-			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){ return KEY_ESCAPE; }
-			else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){ return KEY_SPACE; }
+			return event.key.keysym.scancode;
 		}
 	}
 	return OTHER;

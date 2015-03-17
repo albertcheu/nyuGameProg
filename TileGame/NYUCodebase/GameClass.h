@@ -5,6 +5,8 @@
 #define TIMESTEP 0.0166f
 #define MAX_STEPS 6
 
+#define BEAMSPEED 4.0f
+
 #define GRAVITY -7.8f
 #define FRIC_Y 5.6f
 #define JUMP 4.0f
@@ -32,6 +34,7 @@ private:
 
 	TextureData spriteSheet;
 	
+	std::vector<Beam> beams; size_t whichBeam;
 	std::vector<Dynamic> dynamics;
 
 	Dynamic* player; bool lookLeft;

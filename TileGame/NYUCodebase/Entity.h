@@ -34,6 +34,13 @@ public:
 	bool collide(const Entity& other);
 };
 
+class Beam: public Entity{
+public:
+	Beam();
+	Beam(float width, float height, Sprite s);
+	void fire(float x, float y, float dir);
+};
+
 class Dynamic: public Entity{
 private:
 	float vx, vy, ax, ay;
@@ -46,11 +53,14 @@ public:
 	float getVx();	float getVy();
 	
 	void reset();
-	void setLeft(); void setRight(); void setTop(); void setBottom();
+	
 	bool getLeft(); bool getRight(); bool getTop(); bool getBottom();
+
 	void setSpeed(float v, float dir);	void setVx(float val);	void setVy(float val);
-	void bumpX(float val); void bumpY(float val); void bumpVx(float val); void bumpVy(float val);
+	
 	void setAx(float val); void setAy(float val);
+	void moveY(float timestep, float friction, float gravity);
+	void moveX(float timestep, float friction);
 	void noTouch();
 
 	void stickLeft(float val); void stickRight(float val);

@@ -13,12 +13,10 @@
 #define WINDOW_HEIGHT 600
 #define UNIT_WIDTH 1.33f
 #define UNIT_HEIGHT 1.0f
-
-#define KEY_ESCAPE 0
-#define KEY_SPACE 1
-#define CLOSE_WINDOW 2
-#define OTHER 3
 #define TILEUNITS 0.07f//size of a tile in OpenGL units
+
+#define OTHER 1
+#define CLOSE_WINDOW 0
 
 typedef struct{
 	unsigned newState;

@@ -1,10 +1,9 @@
 #include "GameClass.h"
 
-GameClass::~GameClass(){
-	SDL_Quit();
-}
+GameClass::~GameClass(){ SDL_Quit(); }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0){
+	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0), whichBeam(0)
+	{
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("Totally not Metroid",
@@ -20,8 +19,8 @@ GameClass::GameClass()
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
-	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
 	theLevel = Level("levelOne.txt", "mfTRO.jpg", TILEPIX, TILECOUNTX, TILECOUNTY);
+	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
 	//OutputDebugString("Created level");
 	fillEntities();
 	//OutputDebugString("Made entities");
@@ -45,13 +44,15 @@ void GameClass::fillEntities(){
 
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
-		if (wts->typeName == "PlayerStart") {
-			dynamics[PLAYER].setX(wts->x);
-			dynamics[PLAYER].setY(wts->y);
-		}
+		if (wts->typeName == "PlayerStart") { dynamics[PLAYER].setPos(wts->x, wts->y); }
+		//Doors
+		//Pickups
+		//Enemies
 	}
 
 	player = &dynamics[PLAYER];//do last! the vector's location in memory changes after pushes
+
+	for (int i = 0; i < 10; i++){ beams.push_back(Beam()); }
 }
 
 void GameClass::movePlayer(float elapsed){
@@ -84,14 +85,26 @@ StateAndRun GameClass::updateGame(float elapsed){
 
 	//Keyboard (and close-window) events
 	switch (getKey()){
-	case KEY_SPACE:
+	case SDL_SCANCODE_SPACE:
 		if (player->getBottom()) { player->setVy(JUMP); }
 		break;
-	case KEY_ESCAPE:
+	case SDL_SCANCODE_ESCAPE:
 		ans = { 0, false };
 		break;
 	case CLOSE_WINDOW:
 		ans = { 0, false };
+		break;
+	case SDL_SCANCODE_Q:
+		//OutputDebugString("Pressed q");
+		beams[whichBeam].fire(player->getX(), player->getY(), lookLeft?180.0f:0);
+		whichBeam++;
+		if (whichBeam == beams.size()) { whichBeam = 0; }
+		break;
+	case SDL_SCANCODE_W:
+		OutputDebugString("Pressed w");
+		break;
+	case SDL_SCANCODE_E:
+		OutputDebugString("Pressed e");
 		break;
 	case OTHER: break;
 	}
@@ -106,14 +119,10 @@ void GameClass::physics(){
 	for (size_t i = 0; i < dynamics.size(); i++){
 		dynamics[i].noTouch();
 		
-		//Move in y
-		dynamics[i].setVy(lerp(dynamics[i].getVy(), 0, TIMESTEP*FRIC_Y));
-		dynamics[i].bumpVy(dynamics[i].getAy() * TIMESTEP + GRAVITY * TIMESTEP);
-		dynamics[i].bumpY(dynamics[i].getVy()*TIMESTEP);
-
+		//Move in y and resolve collisions
+		dynamics[i].moveY(TIMESTEP, FRIC_Y, GRAVITY);
+		
 		float x = dynamics[i].getX(); float y = dynamics[i].getY();
-
-		//resolve collisions
 		float hh = dynamics[i].getHalfHeight();
 
 		float newY = theLevel.tileCollide(x, y - hh, y, hh, true);
@@ -123,10 +132,9 @@ void GameClass::physics(){
 		if (newY != y){ dynamics[i].stickTop(newY); }
 		
 		//Move in x and resolve collisions
-		dynamics[i].setVx(lerp(dynamics[i].getVx(), 0, TIMESTEP*FRIC_X));
-		dynamics[i].bumpVx(dynamics[i].getAx() * TIMESTEP);
-		dynamics[i].bumpX(dynamics[i].getVx() * TIMESTEP);
+		dynamics[i].moveX(TIMESTEP, FRIC_X);
 		float hw = dynamics[i].getHalfWidth(); float quart = dynamics[i].getHeight() / 4.0f;
+		y = dynamics[i].getY();
 		for (int j = 1; j < 4; j++){
 			float newX = theLevel.tileCollide(x - hw, y - hh + quart*j, x, hw, false);
 			if (newX != x) { dynamics[i].stickLeft(newX); }
@@ -135,6 +143,17 @@ void GameClass::physics(){
 			if (newX != x) { dynamics[i].stickRight(newX); }
 		}
 		
+	}
+	//Move beams
+	for (size_t i = 0; i < beams.size(); i++){
+		if (!beams[i].getVisibility()){ continue; }
+		int dir = beams[i].getAngle() == 180.0f ? -1 : 1;
+		float newX = beams[i].getX() + TIMESTEP*BEAMSPEED*dir;
+		beams[i].setX(newX);
+
+		if (newX != theLevel.tileCollide(newX,beams[i].getY(),newX,0,false)){
+			beams[i].setVisibility(false);
+		}
 	}
 }
 
@@ -164,6 +183,9 @@ void GameClass::renderGame(){
 
 	for (size_t i = 0; i < dynamics.size(); i++){
 		dynamics[i].draw(-player->getX(), -player->getY());
+	}
+	for (size_t i = 0; i < beams.size(); i++){
+		beams[i].draw(-player->getX(), -player->getY());
 	}
 	theLevel.draw(-player->getX(), -player->getY());
 
