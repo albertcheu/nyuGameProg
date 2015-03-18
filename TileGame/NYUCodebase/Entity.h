@@ -42,6 +42,7 @@ public:
 	Beam();
 	Beam(float width, float height, Sprite s, int color);
 	void fire(float x, float y, float dir);
+	int getColor();
 };
 
 class Door :public Entity{
@@ -58,12 +59,12 @@ public:
 	void setComplement(Door* d);
 
 	//Open only for matching beam
-	void hit(int beamColor);
+	bool hit(int beamColor);
 
 	//This function makes the door and its complement stay still and become invisible if colliding
 	void disappear();
 
-	bool moving();
+	bool moving(); int getDir();
 };
 
 class Dynamic: public Entity{

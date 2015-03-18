@@ -69,6 +69,10 @@ void GameClass::fillEntities(){
 			doors.back().setAngle(180.0f);
 		}
 	}
+	for (size_t i = 0; i < doors.size(); i += 2){
+		doors[i].setComplement(&doors[i + 1]);
+		doors[i + 1].setComplement(&doors[i]);
+	}
 
 	TextureData btd = LoadTextureRGB("beams.png");
 	Sprite b(btd.id, 0, 0, 1.0f, 0.27f);
@@ -144,25 +148,32 @@ void GameClass::physics(){
 		
 		float x = dynamics[i].getX(); float y = dynamics[i].getY();
 		float hh = dynamics[i].getHalfHeight();
-
 		float newY = theLevel.tileCollide(x, y - hh, y, hh, true);
 		if (newY != y){ dynamics[i].stickBottom(newY); }
-
 		newY = theLevel.tileCollide(x, y + hh, y, hh, true);
 		if (newY != y){ dynamics[i].stickTop(newY); }
 		
 		//Move in x and resolve collisions
 		dynamics[i].moveX(TIMESTEP, FRIC_X);
-		float hw = dynamics[i].getHalfWidth(); float quart = dynamics[i].getHeight() / 4.0f;
-		y = dynamics[i].getY();
+		float hw = dynamics[i].getHalfWidth(); float quart = hh / 2.0f;
+		float newX = 0;
 		for (int j = 1; j < 4; j++){
-			float newX = theLevel.tileCollide(x - hw, y - hh + quart*j, x, hw, false);
+			newX = theLevel.tileCollide(x - hw, newY - hh + quart*j, x, hw, false);
 			if (newX != x) { dynamics[i].stickLeft(newX); }
-
-			newX = theLevel.tileCollide(x + hw, y - hh + quart*j, x, hw, false);
+			newX = theLevel.tileCollide(x + hw, newY - hh + quart*j, x, hw, false);
 			if (newX != x) { dynamics[i].stickRight(newX); }
 		}
-		
+
+		//Can't walk thru doors either
+		for (size_t j = 0; j < doors.size(); j++){
+			if (!(doors[j].getVisibility() && doors[j].collide(dynamics[i]))) { continue; }
+			//Assume we cannot jump on a door; only collisions are horizontal
+			newX = depenetrate(newX, hw, doors[j].getX(), doors[j].getHalfWidth());
+			if (newX < dynamics[i].getX()) { dynamics[i].stickRight(newX); }
+			else if (newX > dynamics[i].getX()) { dynamics[i].stickLeft(newX); }
+			
+		}
+
 	}
 	//Move beams
 	for (size_t i = 0; i < beams.size(); i++){
@@ -174,9 +185,20 @@ void GameClass::physics(){
 		if (newX != theLevel.tileCollide(newX,beams[i].getY(),newX,0,false)){
 			beams[i].setVisibility(false);
 		}
+		for (size_t j = 0; j < doors.size(); j++){
+			//Hit a door?
+			if (beams[i].collide(doors[j])){
+				doors[j].hit(beams[i].getColor());
+				beams[i].setVisibility(false);
+			}
+		}
 	}
 	//Move doors
-
+	for (size_t i = 0; i < doors.size(); i++){
+		if (!(doors[i].getVisibility() && doors[i].moving())){ continue; }
+		doors[i].setX(doors[i].getX() + doors[i].getDir()*TIMESTEP*BEAMSPEED/4.0f);
+		doors[i].disappear();
+	}
 }
 
 bool GameClass::run(){

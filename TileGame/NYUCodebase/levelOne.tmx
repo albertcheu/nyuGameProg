@@ -5,12 +5,12 @@
  </tileset>
  <layer name="Tile Layer 1" width="40" height="20">
   <data encoding="base64" compression="zlib">
-   eJxrZmBgaBmkuBWIE4GYEQuWZoRgbHL0wofwuC+GEYIHq/tyGCF4sLqPCYiZB9BthNwnBMTCg9h9SkCsTAU7HIFEEBB7MFLXfUZAbDwIwm8xEC/Bg7cOsPuagbiEAVIelgJxGRAXMyDKx4lY4soJiN2xxBmxcUmsOpD7CvHIT8UT//QKP3z2Jw0C9y3EIz+JgDwxmJI4B7nvIB49m4B44wCH30U88pcGefwSW8eB4gaUp12A2JWIuCTFffjij1513AsgfgnEr7C4D1/8EVvHPcUnT2RY/sQRfpPx6CG2jvuKR06QSPdxYlFHqH5biiSfCsQZUDaITkdTm44kh8xPxaIGWR0yPxVND8h+AMltYxY=
+   eJxrZmBgaBmkuBWIE4GYEQtuRlOHTQ2t8SE87psMxMpAhgoQTx2E7lsMxEugeOkgdB8IMwEx8wC5jRj3CQGx8CB2nxIQK1NohyOQCAJiD0bqu88IiI0HOPyQ8wEuvHUA3Qcq50oYIOVcKRCXAXExA6TMUwQqUmKElDXIceUExO5Y4ozYuCRWHch9hTjkkMu8iQMYfok45C4hsRcOoPtw2Y0cfhspsIOSOAe57+Agj9+LOOQuM0DyzBUgvjoI4xeEia3fQHEDytMuQOxKRFyS4j58aYte9dsLIH4JxK+wuC8Rjz5i67en+OSJDMufOMJvMh49xNZvX/HICRLpPk4s6gjVb0uR5FOBOAPKBtHpaGrTkeSQ+alY1CCrQ+anoukB2Q8A8UpqOw==
   </data>
  </layer>
  <objectgroup name="StartLocations">
   <object id="2" name="ps" type="PlayerStart" x="48" y="266"/>
   <object id="4" name="door1" type="red" x="105.5" y="264"/>
-  <object id="10" name="door3" type="yellow" x="89.5" y="87.5"/>
+  <object id="10" name="door3" type="yellow" x="102.833" y="87.5"/>
  </objectgroup>
 </map>

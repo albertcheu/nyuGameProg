@@ -75,6 +75,7 @@ Beam::Beam(float width, float height, Sprite s, int color)
 void Beam::fire(float xcoor, float ycoor, float dir){
 	visible = true; x = xcoor; y = ycoor; angle = dir;
 }
+int Beam::getColor(){ return color; }
 
 Door::Door() : Entity(), color(RED), dir(0), move(false), complement(NULL){}
 Door::Door(float x, float y, Sprite s, int color, int dir)
@@ -82,8 +83,9 @@ Door::Door(float x, float y, Sprite s, int color, int dir)
 	color(color), dir(dir), complement(NULL), move(false)
 {}
 void Door::setComplement(Door* d){ complement = d; }
-void Door::hit(int beamColor){
+bool Door::hit(int beamColor){
 	if (beamColor == color){ move = true; complement->move = true; }
+	return move;
 }
 void Door::disappear(){
 	if (this->collide(*complement)){
@@ -91,7 +93,7 @@ void Door::disappear(){
 		move = false; complement->move = false;
 	}
 }
-bool Door::moving(){ return move; }
+bool Door::moving(){ return move; } int Door::getDir(){ return dir; }
 
 Dynamic::Dynamic()
 	: Entity(), vx(0), vy(0), ax(0), ay(0),
