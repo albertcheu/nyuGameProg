@@ -11,7 +11,9 @@ public:
 	Level();
 	Level(const char* flareName, const char* mapName,
 		int tilePix, int tileCountX, int tileCountY);
-	
+	Level(const char* flareName, TextureData td,
+		int tilePix, int tileCountX, int tileCountY);
+
 	//Resolve collisions: returns new x/y coordinate 
 	float tileCollide(float x, float y, float v, float h, bool isY);
 
@@ -21,6 +23,8 @@ public:
 	const WhereToStart* getNext();
 	
 private:
+	void load(const char* flareName);
+
 	size_t whichEntity;
 
 	//Hold the texture id of the tilemap

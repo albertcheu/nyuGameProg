@@ -19,7 +19,17 @@ GameClass::GameClass()
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
-	theLevel = Level("levelOne.txt", "mfTRO.jpg", TILEPIX, TILECOUNTX, TILECOUNTY);
+	pool = LoadTextureRGB("mfTRO.jpg");
+	redDoor = Sprite(pool.id, TILEPIX * 14.0f / pool.width, 0,
+		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
+	yellowDoor = Sprite(pool.id, TILEPIX * 12.0f / pool.width, 0,
+		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
+	greenDoor = Sprite(pool.id, TILEPIX * 10.0f / pool.width, 0,
+		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
+	blueDoor = Sprite(pool.id, TILEPIX * 8.0f / pool.width, 0,
+		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
+
+	theLevel = Level("levelOne.txt", pool, TILEPIX, TILECOUNTX, TILECOUNTY);
 	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
 	//OutputDebugString("Created level");
 	fillEntities();
@@ -35,24 +45,34 @@ void GameClass::fillEntities(){
 
 	//play as Samus
 	//26x46, 11th row
-	//Sprite p(sheet.id, 17.0f / swidth, 21.0f / sheight, 25.0f / swidth, 42.0f / sheight);
 	float y = 64.0f * 11 - 46; float x = (64.0f - 26.0f) / 2;
 	Sprite p(spriteSheet.id, x / swidth, y / sheight, 26.0f / swidth, 46.0f / sheight);
 	float playerHeight = 0.17f;
 	float playerWidth = playerHeight*26.0f/46.0f;
 	dynamics.push_back(Dynamic(0, 0, playerWidth, playerHeight, p));
 
+	player = &dynamics[PLAYER];//do last! the vector's location in memory changes after pushes
+	
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
 		if (wts->typeName == "PlayerStart") { dynamics[PLAYER].setPos(wts->x, wts->y); }
-		//Doors
 		//Pickups
 		//Enemies
+		else{
+			Sprite s = redDoor; BeamColor color = RED;
+			if (wts->typeName == "yellow") { s = yellowDoor; color = YELLOW; }
+			else if (wts->typeName == "green") { s = greenDoor; color = GREEN; }
+			else if (wts->typeName == "blue") { s = blueDoor; color = BLUE; }
+			y = wts->y - TILEUNITS / 2;
+			doors.push_back(Door(wts->x, y, s, color, 1));
+			doors.push_back(Door(wts->x+TILEUNITS*3, y, s, color, -1));
+			doors.back().setAngle(180.0f);
+		}
 	}
 
-	player = &dynamics[PLAYER];//do last! the vector's location in memory changes after pushes
-
-	for (int i = 0; i < 10; i++){ beams.push_back(Beam()); }
+	TextureData btd = LoadTextureRGB("beams.png");
+	Sprite b(btd.id, 0, 0, 1.0f, 0.27f);
+	for (int i = 0; i < 10; i++){ beams.push_back(Beam(0.03f, 0.01f, b, RED)); }
 }
 
 void GameClass::movePlayer(float elapsed){
@@ -115,7 +135,7 @@ StateAndRun GameClass::updateGame(float elapsed){
 }
 
 void GameClass::physics(){
-	//For every dynamic object...
+	//Move dynamic objects
 	for (size_t i = 0; i < dynamics.size(); i++){
 		dynamics[i].noTouch();
 		
@@ -155,6 +175,8 @@ void GameClass::physics(){
 			beams[i].setVisibility(false);
 		}
 	}
+	//Move doors
+
 }
 
 bool GameClass::run(){
@@ -186,6 +208,9 @@ void GameClass::renderGame(){
 	}
 	for (size_t i = 0; i < beams.size(); i++){
 		beams[i].draw(-player->getX(), -player->getY());
+	}
+	for (size_t i = 0; i < doors.size(); i++){
+		doors[i].draw(-player->getX(), -player->getY());
 	}
 	theLevel.draw(-player->getX(), -player->getY());
 

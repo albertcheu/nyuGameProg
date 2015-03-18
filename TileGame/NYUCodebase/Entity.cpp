@@ -67,14 +67,31 @@ bool Entity::collide(const Entity& other){
 		);
 }
 
-Beam::Beam() :Entity(){ visible = false; }
-Beam::Beam(float width, float height, Sprite s)
-	:Entity(0,0,width,height,s,false)
+Beam::Beam() :Entity(), color(RED) { visible = false; }
+Beam::Beam(float width, float height, Sprite s, int color)
+	: Entity(0, 0, width, height, s, false), color(color)
 {}
 
 void Beam::fire(float xcoor, float ycoor, float dir){
 	visible = true; x = xcoor; y = ycoor; angle = dir;
 }
+
+Door::Door() : Entity(), color(RED), dir(0), move(false), complement(NULL){}
+Door::Door(float x, float y, Sprite s, int color, int dir)
+	: Entity(x, y, TILEUNITS, TILEUNITS * 4, s),
+	color(color), dir(dir), complement(NULL), move(false)
+{}
+void Door::setComplement(Door* d){ complement = d; }
+void Door::hit(int beamColor){
+	if (beamColor == color){ move = true; complement->move = true; }
+}
+void Door::disappear(){
+	if (this->collide(*complement)){
+		visible = false; complement->visible = false;
+		move = false; complement->move = false;
+	}
+}
+bool Door::moving(){ return move; }
 
 Dynamic::Dynamic()
 	: Entity(), vx(0), vy(0), ax(0), ay(0),

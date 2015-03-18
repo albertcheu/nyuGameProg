@@ -2,7 +2,7 @@
 #include "Helpers.h"
 
 typedef struct{
-	//Bundle that holds id, pixel width, pixel height
+	std::string fname;
 	GLuint id;
 	int width;
 	int height;

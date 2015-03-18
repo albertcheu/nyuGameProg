@@ -34,11 +34,36 @@ public:
 	bool collide(const Entity& other);
 };
 
+enum BeamColor{RED,YELLOW,GREEN,BLUE};
 class Beam: public Entity{
+private:
+	int color;
 public:
 	Beam();
-	Beam(float width, float height, Sprite s);
+	Beam(float width, float height, Sprite s, int color);
 	void fire(float x, float y, float dir);
+};
+
+class Door :public Entity{
+private:
+	int color, dir;
+	bool move;
+	Door* complement;
+public:
+	Door();
+	
+	//Doors are always one tile wide and four tiles tall, so no need to specify
+	Door(float x, float y, Sprite s, int color, int dir);
+
+	void setComplement(Door* d);
+
+	//Open only for matching beam
+	void hit(int beamColor);
+
+	//This function makes the door and its complement stay still and become invisible if colliding
+	void disappear();
+
+	bool moving();
 };
 
 class Dynamic: public Entity{

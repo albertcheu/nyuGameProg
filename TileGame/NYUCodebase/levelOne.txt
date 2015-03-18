@@ -37,3 +37,13 @@ data=
 type=PlayerStart
 location=3,16,0,0
 
+[StartLocations]
+# door1
+type=red
+location=6,16,0,0
+
+[StartLocations]
+# door3
+type=yellow
+location=5,5,0,0
+

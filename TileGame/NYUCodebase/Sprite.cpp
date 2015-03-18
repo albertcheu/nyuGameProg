@@ -15,7 +15,7 @@ TextureData LoadTexture(const char *image_path, int internalFormat, GLenum forma
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	TextureData ret = { textureID, surface->w, surface->h };
+	TextureData ret = { image_path, textureID, surface->w, surface->h };
 	SDL_FreeSurface(surface);
 	
 	return ret;

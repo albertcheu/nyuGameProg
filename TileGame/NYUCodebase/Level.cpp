@@ -7,8 +7,14 @@ Level::Level()
 Level::Level(const char* flareName, const char* mapName,
 	int tilePix, int tileCountX, int tileCountY)
 	: tilePix(tilePix), tileCountX(tileCountX), tileCountY(tileCountY), td(LoadTextureRGB(mapName)),
-	whichEntity(0)
-{
+	whichEntity(0) { load(flareName); }
+
+Level::Level(const char* flareName, TextureData td,
+	int tilePix, int tileCountX, int tileCountY)
+	: tilePix(tilePix), tileCountX(tileCountX), tileCountY(tileCountY), td(td),
+	whichEntity(0) { load(flareName); }
+
+void Level::load(const char* flareName){
 	std::ifstream infile(flareName);
 	std::string line;
 	while (getline(infile, line)) {
@@ -17,7 +23,6 @@ Level::Level(const char* flareName, const char* mapName,
 		else if (line == "[StartLocations]") { loadStarts(infile); }
 	}
 	infile.close();
-	//OutputDebugString(std::to_string(tileTexts.size()).c_str());
 }
 
 void Level::loadHeader(std::ifstream& infile){
@@ -83,7 +88,6 @@ void Level::fillRenderVectors(){
 				(TILEUNITS * x) + TILEUNITS, -TILEUNITS * y
 			});
 
-			//OutputDebugString(std::to_string(tileVerts.back()).c_str());
 			float spriteWidth = 1.0f / (float)tileCountX;
 			float spriteHeight = 1.0f / (float)tileCountY;
 			tileTexts.insert(tileTexts.end(), { u, v,
@@ -93,7 +97,6 @@ void Level::fillRenderVectors(){
 			});
 		}
 	}
-	//OutputDebugString("Filled vectors");
 }
 
 float Level::tileCollide(float x, float y, float v, float h, bool isY){
@@ -102,7 +105,7 @@ float Level::tileCollide(float x, float y, float v, float h, bool isY){
 	
 	int t = (data[tileRow])[tileCol];
 
-	if (isSolid(t, "mfTRO.jpg")) {
+	if (isSolid(t, (td.fname).c_str())) {
 		float tileX, tileY;
 		tile2world(&tileX, &tileY, tileCol, tileRow);
 		return depenetrate(v, h, isY ? tileY : tileX, TILEUNITS / 2);
