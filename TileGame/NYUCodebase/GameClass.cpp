@@ -1,11 +1,7 @@
 #include "GameClass.h"
 
 GameClass::~GameClass(){ SDL_Quit(); }
-GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
-	whichRed(0), whichYellow(NUMBEAMS), whichGreen(2*NUMBEAMS), whichBlue(3*NUMBEAMS),
-	haveYellow(false), haveGreen(false), haveBlue(false)
-	{
+TextureData GameClass::loadOpenGL(){
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
 	displayWindow = SDL_CreateWindow("Totally not Metroid",
@@ -20,17 +16,39 @@ GameClass::GameClass()
 	glOrtho(-UNIT_WIDTH, UNIT_WIDTH, -UNIT_HEIGHT, UNIT_HEIGHT, -1, 1);
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	return LoadTextureRGBA("mfTRO.png");
+}
+GameClass::GameClass()
+	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
+	whichRed(0), whichYellow(NUMBEAMS), whichGreen(2*NUMBEAMS), whichBlue(3*NUMBEAMS),
+	haveYellow(false), haveGreen(false), haveBlue(false), pool(loadOpenGL()){
 	
-	pool = LoadTextureRGB("mfTRO.jpg");
-	redDoor = Sprite(pool.id, TILEPIX * 14.0f / pool.width, 0,
-		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
-	yellowDoor = Sprite(pool.id, TILEPIX * 12.0f / pool.width, 0,
-		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
-	greenDoor = Sprite(pool.id, TILEPIX * 10.0f / pool.width, 0,
-		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
-	blueDoor = Sprite(pool.id, TILEPIX * 8.0f / pool.width, 0,
-		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
+	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
+	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
 	
+	createPlayer();
+	
+	createPickups(yellowPickup, 10.0f); createPickups(greenPickup, 11.0f);
+	createPickups(bluePickup, 12.0f);
+
+	TextureData btd = LoadTextureRGB("beams.png");
+	for (int i = 0; i < 4; i++){
+		Sprite b(btd.id, 0, i*0.25f, 1.0f, 0.25f);
+		for (int j = 0; j < NUMBEAMS; j++){
+			beams.push_back(Beam(0.03f, 0.01f, b, (BeamColor)(RED + i)));
+		}
+	}	
+
+	loadLevel();
+}
+
+void GameClass::createDoorSprite(Sprite& d, float u_offset){
+	d = Sprite(pool.id, TILEPIX * u_offset / pool.width, 0,
+		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
+}
+
+void GameClass::createPlayer(){
 	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
 
 	int swidth = spriteSheet.width; int sheight = spriteSheet.height;
@@ -46,15 +64,12 @@ GameClass::GameClass()
 	float playerHeight = 0.17f;
 	float playerWidth = playerHeight*26.0f / 46.0f;
 	dynamics.push_back(Dynamic(0, 0, playerWidth, playerHeight, p));
-	
-	TextureData btd = LoadTextureRGB("beams.png");
-	for (int i = 0; i < 4; i++){
-		Sprite b(btd.id, 0, i*0.25f, 1.0f, 0.25f);
-		for (int j = 0; j < NUMBEAMS; j++){
-			beams.push_back(Beam(0.03f, 0.01f, b, (BeamColor)(RED + i)));
-		}
-	}
-	loadLevel();
+}
+
+void GameClass::createPickups(Entity& p, float u_offset){
+	Sprite s(pool.id, u_offset*TILEPIX / pool.width, 4.0f*TILEPIX / pool.height,
+		1.0f*TILEPIX / pool.width, 1.0f*TILEPIX / pool.height);
+	p = Entity(0, 0, TILEUNITS, TILEUNITS, s, false);
 }
 
 void GameClass::loadLevel(){
@@ -63,7 +78,14 @@ void GameClass::loadLevel(){
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
 		if (wts->typeName == "PlayerStart") { dynamics[PLAYER].setPos(wts->x, wts->y); }
-		//Pickups
+		else if (wts->typeName == "pickup") {
+			Entity* p;
+			if (wts->name == "yellow") { p = &yellowPickup; }
+			else if (wts->name == "green"){ p = &greenPickup; }
+			else { p = &bluePickup; }
+			p->setPos(wts->x, wts->y);
+			p->setVisibility(true);
+		}
 		//Enemies
 		else{
 			Sprite s = redDoor; BeamColor color = RED;
@@ -86,8 +108,7 @@ void GameClass::loadLevel(){
 	}
 }
 
-void GameClass::movePlayer(float elapsed){
-	//Poll for arrow key
+void GameClass::pollForPlayer(float elapsed){
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
 	SpriteFrame sf;
 	if (keys[SDL_SCANCODE_LEFT]) {
@@ -118,7 +139,7 @@ void GameClass::playerShoot(size_t& which, size_t cap){
 	if (which == cap) { whichRed = cap-NUMBEAMS; }
 }
 
-StateAndRun GameClass::updateGame(float elapsed){
+StateAndRun GameClass::userInput(float elapsed){
 	StateAndRun ans = { 0, true };
 
 	//Keyboard (and close-window) events
@@ -147,7 +168,7 @@ StateAndRun GameClass::updateGame(float elapsed){
 	case OTHER: break;
 	}
 
-	movePlayer(elapsed);
+	pollForPlayer(elapsed);
 
 	return ans;
 }
@@ -213,6 +234,16 @@ void GameClass::physics(){
 		doors[i].setX(doors[i].getX() + doors[i].getDir()*TIMESTEP*BEAMSPEED/4.0f);
 		doors[i].disappear();
 	}
+
+	//Check if we got any of the pickups
+	acquire(yellowPickup,haveYellow); acquire(greenPickup,haveGreen); acquire(bluePickup,haveBlue);
+}
+
+void GameClass::acquire(Entity& p, bool& have){
+	if (p.getVisibility() && player->collide(p)){
+		p.setVisibility(false);
+		have = true;
+	}
 }
 
 bool GameClass::run(){
@@ -229,7 +260,7 @@ bool GameClass::run(){
 	leftover = fixedElapsed;
 	//OutputDebugString("Physicked");
 
-	StateAndRun sar = updateGame(elapsed);
+	StateAndRun sar = userInput(elapsed);
 	//OutputDebugString("Animated");
 	renderGame();
 	
@@ -248,6 +279,10 @@ void GameClass::renderGame(){
 	for (size_t i = 0; i < doors.size(); i++){
 		doors[i].draw(-player->getX(), -player->getY());
 	}
+	yellowPickup.draw(-player->getX(), -player->getY());
+	greenPickup.draw(-player->getX(), -player->getY());
+	bluePickup.draw(-player->getX(), -player->getY());
+
 	theLevel.draw(-player->getX(), -player->getY());
 
 	SDL_GL_SwapWindow(displayWindow);

@@ -23,7 +23,7 @@ unsigned getKey(){
 }
 
 bool isSolid(int t, const char* mapName){
-	if (strcmp(mapName,"mfTRO.jpg")==0){
+	if (strcmp(mapName,"mfTRO.png")==0){
 		
 		for (int i = 144; i <= 208; i += 16){
 			if (t >= i && t <= i + 4){ return true; }

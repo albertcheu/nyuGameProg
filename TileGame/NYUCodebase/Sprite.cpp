@@ -7,17 +7,21 @@ TextureData LoadTexture(const char *image_path, int internalFormat, GLenum forma
 	GLuint textureID;
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
+	//OutputDebugString(std::to_string(textureID).c_str());
 
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat,
 		surface->w, surface->h, 0, format,
 		GL_UNSIGNED_BYTE, surface->pixels);
+	//OutputDebugString("Loaded surface");
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//OutputDebugString("Texparemteri");
 
 	TextureData ret = { image_path, textureID, surface->w, surface->h };
 	SDL_FreeSurface(surface);
-	
+	//OutputDebugString("Freed surface");
+
 	return ret;
 }
 

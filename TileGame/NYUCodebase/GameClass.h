@@ -15,9 +15,9 @@
 #define FRIC_X 7.7f
 #define MOVE 3.8f
 
-#define TILEPIX 16//pixel size of a tile in mfTRO.jpg
-#define TILECOUNTX 16//number of tiles in a row in mfTRO.jpg
-#define TILECOUNTY 24//number of tiles in a column in mfTRO.jpg
+#define TILEPIX 16//pixel size of a tile in mfTRO
+#define TILECOUNTX 16//number of tiles in a row in mfTRO
+#define TILECOUNTY 24//number of tiles in a column in mfTRO
 
 #define PLAYER 0
 enum SamusCycles {STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT};
@@ -29,24 +29,31 @@ public:
 	bool run();
 
 private:
+	TextureData loadOpenGL();
 	SDL_Window* displayWindow;
 
-	//Contains level data
+	//Contains level data and handles collisions with platforms
 	Level theLevel;
 
 	//Player
 	TextureData spriteSheet;
-	//Doors and pickups are from one file (mfTRO.jpg)
+	void createPlayer();
+
+	//Doors and pickups are from one file (mfTRO.png)
 	TextureData pool;
 	
-	//What we shoot
-	std::vector<Beam> beams; size_t whichRed, whichYellow, whichGreen, whichBlue;
+	//What we can shoot is determined by pickups
+	void createPickups(Entity& p, float u_offset);
+	Entity yellowPickup, greenPickup, bluePickup;
+	void acquire(Entity& p, bool& have);
 	bool haveYellow, haveGreen, haveBlue;
+	std::vector<Beam> beams; size_t whichRed, whichYellow, whichGreen, whichBlue;
 	void playerShoot(size_t& which, size_t cap);
 
-	//Doors open to weapon fire
+	//Doors that open to weapon fire
 	std::vector<Door> doors;
 	Sprite redDoor, yellowDoor, greenDoor, blueDoor;
+	void createDoorSprite(Sprite& d, float u_offset);
 
 	//Player and enemies
 	std::vector<Dynamic> dynamics; Dynamic* player;
@@ -61,8 +68,8 @@ private:
 
 	void physics();
 
-	void movePlayer(float elapsed);
-	StateAndRun updateGame(float elapsed);
+	void pollForPlayer(float elapsed);
+	StateAndRun userInput(float elapsed);
 	
 	void renderGame();
 };

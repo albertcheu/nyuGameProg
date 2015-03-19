@@ -145,17 +145,18 @@ void Level::draw(float px, float py){
 }
 
 void Level::loadStarts(std::ifstream& infile){
-	std::string line, typeName;
+	std::string line, name, typeName;
+	WhereToStart wts;
 	while (getline(infile, line)) {
 		if (line == "") { break; }
-		if (line[0] == '#') { continue; }
+		if (line[0] == '#') { name = line.substr(2, line.size());  continue; }
 		std::istringstream sStream(line);
 		std::string key, value, buf;
 		getline(sStream, key, '=');
 		getline(sStream, value);
 		if (key == "type") { typeName = value; }
 		else if (key == "location"){
-			WhereToStart wts; wts.typeName = typeName;
+			wts.name = name; wts.typeName = typeName;
 
 			std::istringstream lineStream(value);
 			getline(lineStream, buf, ',');		int col = atoi(buf.c_str());

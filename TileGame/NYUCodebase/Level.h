@@ -2,7 +2,7 @@
 #include "Sprite.h"
 
 typedef struct{
-	std::string typeName;
+	std::string name, typeName;
 	float x, y;
 } WhereToStart;
 
