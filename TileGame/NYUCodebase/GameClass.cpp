@@ -64,8 +64,9 @@ void GameClass::fillEntities(){
 			else if (wts->typeName == "green") { s = greenDoor; color = GREEN; }
 			else if (wts->typeName == "blue") { s = blueDoor; color = BLUE; }
 			y = wts->y - TILEUNITS / 2;
-			doors.push_back(Door(wts->x, y, s, color, 1));
-			doors.push_back(Door(wts->x+TILEUNITS*3, y, s, color, -1));
+			//left door goes right, right door goes left
+			doors.push_back(Door(wts->x, y, s, color, BEAMDIR_RIGHT));
+			doors.push_back(Door(wts->x+TILEUNITS*3, y, s, color, BEAMDIR_LEFT));
 			doors.back().setAngle(180.0f);
 		}
 	}
@@ -120,7 +121,7 @@ StateAndRun GameClass::updateGame(float elapsed){
 		break;
 	case SDL_SCANCODE_Q:
 		//OutputDebugString("Pressed q");
-		beams[whichBeam].fire(player->getX(), player->getY(), lookLeft?180.0f:0);
+		beams[whichBeam].fire(player->getX(), player->getY(), lookLeft?BEAMDIR_LEFT:BEAMDIR_RIGHT);
 		whichBeam++;
 		if (whichBeam == beams.size()) { whichBeam = 0; }
 		break;
@@ -178,7 +179,7 @@ void GameClass::physics(){
 	//Move beams
 	for (size_t i = 0; i < beams.size(); i++){
 		if (!beams[i].getVisibility()){ continue; }
-		int dir = beams[i].getAngle() == 180.0f ? -1 : 1;
+		int dir = beams[i].getDir();
 		float newX = beams[i].getX() + TIMESTEP*BEAMSPEED*dir;
 		beams[i].setX(newX);
 

@@ -1,6 +1,9 @@
 #pragma once
 #include "Sprite.h"
 
+#define BEAMDIR_LEFT -1
+#define BEAMDIR_RIGHT 1
+
 class Entity{
 protected:
 	Sprite s;
@@ -35,36 +38,46 @@ public:
 };
 
 enum BeamColor{RED,YELLOW,GREEN,BLUE};
-class Beam: public Entity{
-private:
-	int color;
+
+//This derivative of Entity contains color and direction(-1 or 1) info
+//Beam and Door are derived in turn
+class ColoredDir:public Entity{
+protected:
+	BeamColor color;
+	int dir;
 public:
-	Beam();
-	Beam(float width, float height, Sprite s, int color);
-	void fire(float x, float y, float dir);
-	int getColor();
+	ColoredDir();
+	ColoredDir(float x, float y, float width, float height, Sprite s, BeamColor color, int dir);
+	BeamColor getColor();
+	int getDir();
 };
 
-class Door :public Entity{
+class Beam: public ColoredDir{
+public:
+	Beam();
+	Beam(float width, float height, Sprite s, BeamColor color);
+	void fire(float x, float y, int newDir);
+};
+
+class Door :public ColoredDir{
 private:
-	int color, dir;
 	bool move;
 	Door* complement;
 public:
 	Door();
 	
 	//Doors are always one tile wide and four tiles tall, so no need to specify
-	Door(float x, float y, Sprite s, int color, int dir);
+	Door(float x, float y, Sprite s, BeamColor color, int dir);
 
 	void setComplement(Door* d);
 
 	//Open only for matching beam
-	bool hit(int beamColor);
+	bool hit(BeamColor beamColor);
 
 	//This function makes the door and its complement stay still and become invisible if colliding
 	void disappear();
 
-	bool moving(); int getDir();
+	bool moving();
 };
 
 class Dynamic: public Entity{

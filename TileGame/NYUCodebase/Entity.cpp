@@ -67,23 +67,27 @@ bool Entity::collide(const Entity& other){
 		);
 }
 
-Beam::Beam() :Entity(), color(RED) { visible = false; }
-Beam::Beam(float width, float height, Sprite s, int color)
-	: Entity(0, 0, width, height, s, false), color(color)
-{}
+ColoredDir::ColoredDir():Entity(),color(RED),dir(BEAMDIR_LEFT){}
+ColoredDir::ColoredDir(float x, float y, float width, float height,
+	Sprite s, BeamColor color, int dir): Entity(x, y, width, height, s), color(color), dir(dir){}
+BeamColor ColoredDir::getColor(){ return color; }
+int ColoredDir::getDir(){ return dir; }
 
-void Beam::fire(float xcoor, float ycoor, float dir){
-	visible = true; x = xcoor; y = ycoor; angle = dir;
+Beam::Beam() : ColoredDir() { visible = false; }
+Beam::Beam(float width, float height, Sprite s, BeamColor color)
+	: ColoredDir(0, 0, width, height, s, color, dir) { visible = false; }
+
+void Beam::fire(float xcoor, float ycoor, int newDir){
+	visible = true; x = xcoor; y = ycoor; dir = newDir;
+	angle = (dir == BEAMDIR_LEFT ? 180.0f: 0);
 }
-int Beam::getColor(){ return color; }
 
-Door::Door() : Entity(), color(RED), dir(0), move(false), complement(NULL){}
-Door::Door(float x, float y, Sprite s, int color, int dir)
-	: Entity(x, y, TILEUNITS, TILEUNITS * 4, s),
-	color(color), dir(dir), complement(NULL), move(false)
-{}
+Door::Door() : ColoredDir(), move(false), complement(NULL){}
+Door::Door(float x, float y, Sprite s, BeamColor color, int dir)
+	: ColoredDir(x, y, TILEUNITS, TILEUNITS * 4, s, color, dir),
+	complement(NULL), move(false){}
 void Door::setComplement(Door* d){ complement = d; }
-bool Door::hit(int beamColor){
+bool Door::hit(BeamColor beamColor){
 	if (beamColor == color){ move = true; complement->move = true; }
 	return move;
 }
@@ -93,7 +97,7 @@ void Door::disappear(){
 		move = false; complement->move = false;
 	}
 }
-bool Door::moving(){ return move; } int Door::getDir(){ return dir; }
+bool Door::moving(){ return move; }
 
 Dynamic::Dynamic()
 	: Entity(), vx(0), vy(0), ax(0), ay(0),
