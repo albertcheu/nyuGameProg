@@ -6,6 +6,7 @@
 #define MAX_STEPS 6
 
 #define BEAMSPEED 3.5f
+#define NUMBEAMS 10
 
 #define GRAVITY -7.8f
 #define FRIC_Y 5.6f
@@ -35,20 +36,28 @@ private:
 
 	//Player
 	TextureData spriteSheet;
-	//Doors and pickups
+	//Doors and pickups are from one file (mfTRO.jpg)
 	TextureData pool;
 	
-	std::vector<Beam> beams; size_t whichBeam;
+	//What we shoot
+	std::vector<Beam> beams; size_t whichRed, whichYellow, whichGreen, whichBlue;
+	bool haveYellow, haveGreen, haveBlue;
+	void playerShoot(size_t& which, size_t cap);
+
+	//Doors open to weapon fire
 	std::vector<Door> doors;
 	Sprite redDoor, yellowDoor, greenDoor, blueDoor;
-	std::vector<Dynamic> dynamics;
 
-	Dynamic* player; bool lookLeft;
-	std::vector<AnimCycle> cycles;
+	//Player and enemies
+	std::vector<Dynamic> dynamics; Dynamic* player;
+		
+	//Player's animation cycles; are we looking left or right
+	std::vector<AnimCycle> cycles; bool lookLeft;
 
+	//Time variables for physics and animation
 	float lastTickCount, leftover, frameChange;
 	
-	void fillEntities();
+	void loadLevel();
 
 	void physics();
 

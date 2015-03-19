@@ -87,9 +87,8 @@ Door::Door(float x, float y, Sprite s, BeamColor color, int dir)
 	: ColoredDir(x, y, TILEUNITS, TILEUNITS * 4, s, color, dir),
 	complement(NULL), move(false){}
 void Door::setComplement(Door* d){ complement = d; }
-bool Door::hit(BeamColor beamColor){
+void Door::hit(BeamColor beamColor){
 	if (beamColor == color){ move = true; complement->move = true; }
-	return move;
 }
 void Door::disappear(){
 	if (this->collide(*complement)){

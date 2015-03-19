@@ -72,7 +72,7 @@ public:
 	void setComplement(Door* d);
 
 	//Open only for matching beam
-	bool hit(BeamColor beamColor);
+	void hit(BeamColor beamColor);
 
 	//This function makes the door and its complement stay still and become invisible if colliding
 	void disappear();

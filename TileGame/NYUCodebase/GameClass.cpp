@@ -2,7 +2,9 @@
 
 GameClass::~GameClass(){ SDL_Quit(); }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0), whichBeam(0)
+	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
+	whichRed(0), whichYellow(NUMBEAMS), whichGreen(2*NUMBEAMS), whichBlue(3*NUMBEAMS),
+	haveYellow(false), haveGreen(false), haveBlue(false)
 	{
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
@@ -28,15 +30,9 @@ GameClass::GameClass()
 		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
 	blueDoor = Sprite(pool.id, TILEPIX * 8.0f / pool.width, 0,
 		1.0f * TILEPIX / pool.width, TILEPIX * 4.0f / pool.height);
-
-	theLevel = Level("levelOne.txt", pool, TILEPIX, TILECOUNTX, TILECOUNTY);
+	
 	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
-	//OutputDebugString("Created level");
-	fillEntities();
-	//OutputDebugString("Made entities");
-}
 
-void GameClass::fillEntities(){
 	int swidth = spriteSheet.width; int sheight = spriteSheet.height;
 	cycles.push_back(AnimCycle(swidth, sheight, 25, 42, 3, 1));
 	cycles.push_back(AnimCycle(swidth, sheight, 25, 42, 3, 1, 3));
@@ -48,11 +44,22 @@ void GameClass::fillEntities(){
 	float y = 64.0f * 11 - 46; float x = (64.0f - 26.0f) / 2;
 	Sprite p(spriteSheet.id, x / swidth, y / sheight, 26.0f / swidth, 46.0f / sheight);
 	float playerHeight = 0.17f;
-	float playerWidth = playerHeight*26.0f/46.0f;
+	float playerWidth = playerHeight*26.0f / 46.0f;
 	dynamics.push_back(Dynamic(0, 0, playerWidth, playerHeight, p));
-
-	player = &dynamics[PLAYER];//do last! the vector's location in memory changes after pushes
 	
+	TextureData btd = LoadTextureRGB("beams.png");
+	for (int i = 0; i < 4; i++){
+		Sprite b(btd.id, 0, i*0.25f, 1.0f, 0.25f);
+		for (int j = 0; j < NUMBEAMS; j++){
+			beams.push_back(Beam(0.03f, 0.01f, b, (BeamColor)(RED + i)));
+		}
+	}
+	loadLevel();
+}
+
+void GameClass::loadLevel(){
+	theLevel = Level("levelOne.txt", pool, TILEPIX, TILECOUNTX, TILECOUNTY);
+
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
 		if (wts->typeName == "PlayerStart") { dynamics[PLAYER].setPos(wts->x, wts->y); }
@@ -63,21 +70,20 @@ void GameClass::fillEntities(){
 			if (wts->typeName == "yellow") { s = yellowDoor; color = YELLOW; }
 			else if (wts->typeName == "green") { s = greenDoor; color = GREEN; }
 			else if (wts->typeName == "blue") { s = blueDoor; color = BLUE; }
-			y = wts->y - TILEUNITS / 2;
+			float y = wts->y - TILEUNITS / 2;
 			//left door goes right, right door goes left
 			doors.push_back(Door(wts->x, y, s, color, BEAMDIR_RIGHT));
 			doors.push_back(Door(wts->x+TILEUNITS*3, y, s, color, BEAMDIR_LEFT));
 			doors.back().setAngle(180.0f);
 		}
 	}
+
+	//a vector's location in memory changes; any pointers to contents must be defined after pushes
+	player = &dynamics[PLAYER];
 	for (size_t i = 0; i < doors.size(); i += 2){
 		doors[i].setComplement(&doors[i + 1]);
 		doors[i + 1].setComplement(&doors[i]);
 	}
-
-	TextureData btd = LoadTextureRGB("beams.png");
-	Sprite b(btd.id, 0, 0, 1.0f, 0.27f);
-	for (int i = 0; i < 10; i++){ beams.push_back(Beam(0.03f, 0.01f, b, RED)); }
 }
 
 void GameClass::movePlayer(float elapsed){
@@ -105,6 +111,13 @@ void GameClass::movePlayer(float elapsed){
 	}	
 }
 
+void GameClass::playerShoot(size_t& which, size_t cap){
+	beams[which].fire(player->getX(), player->getY(),
+		lookLeft ? BEAMDIR_LEFT : BEAMDIR_RIGHT);
+	which++;
+	if (which == cap) { whichRed = cap-NUMBEAMS; }
+}
+
 StateAndRun GameClass::updateGame(float elapsed){
 	StateAndRun ans = { 0, true };
 
@@ -120,16 +133,16 @@ StateAndRun GameClass::updateGame(float elapsed){
 		ans = { 0, false };
 		break;
 	case SDL_SCANCODE_Q:
-		//OutputDebugString("Pressed q");
-		beams[whichBeam].fire(player->getX(), player->getY(), lookLeft?BEAMDIR_LEFT:BEAMDIR_RIGHT);
-		whichBeam++;
-		if (whichBeam == beams.size()) { whichBeam = 0; }
+		playerShoot(whichRed, NUMBEAMS);
 		break;
 	case SDL_SCANCODE_W:
-		OutputDebugString("Pressed w");
+		if (haveYellow){ playerShoot(whichYellow, 2 * NUMBEAMS); }
 		break;
 	case SDL_SCANCODE_E:
-		OutputDebugString("Pressed e");
+		if (haveGreen){ playerShoot(whichGreen, 3 * NUMBEAMS); }
+		break;
+	case SDL_SCANCODE_R:
+		if (haveBlue){ playerShoot(whichBlue, 4 * NUMBEAMS); }
 		break;
 	case OTHER: break;
 	}
@@ -168,15 +181,14 @@ void GameClass::physics(){
 		//Can't walk thru doors either
 		for (size_t j = 0; j < doors.size(); j++){
 			if (!(doors[j].getVisibility() && doors[j].collide(dynamics[i]))) { continue; }
-			//Assume we cannot jump on a door; only collisions are horizontal
+			//Assuming we cannot jump on a door, only collisions are horizontal
 			newX = depenetrate(newX, hw, doors[j].getX(), doors[j].getHalfWidth());
 			if (newX < dynamics[i].getX()) { dynamics[i].stickRight(newX); }
 			else if (newX > dynamics[i].getX()) { dynamics[i].stickLeft(newX); }
-			
 		}
-
 	}
-	//Move beams
+
+	//Move beams (only go horizontally)
 	for (size_t i = 0; i < beams.size(); i++){
 		if (!beams[i].getVisibility()){ continue; }
 		int dir = beams[i].getDir();
@@ -188,13 +200,14 @@ void GameClass::physics(){
 		}
 		for (size_t j = 0; j < doors.size(); j++){
 			//Hit a door?
-			if (beams[i].collide(doors[j])){
+			if (beams[i].collide(doors[j]) && doors[j].getVisibility()){
 				doors[j].hit(beams[i].getColor());
 				beams[i].setVisibility(false);
 			}
 		}
 	}
-	//Move doors
+	
+	//Move doors (also limited to x-axis)
 	for (size_t i = 0; i < doors.size(); i++){
 		if (!(doors[i].getVisibility() && doors[i].moving())){ continue; }
 		doors[i].setX(doors[i].getX() + doors[i].getDir()*TIMESTEP*BEAMSPEED/4.0f);
