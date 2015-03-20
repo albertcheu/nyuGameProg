@@ -63,16 +63,32 @@ void Sprite::setUV(float newU, float newV){
 }
 void Sprite::setSize(float newWidth, float newHeight){ width = newWidth; height = newHeight; }
 
-AnimCycle::AnimCycle(int swidth, int sheight, int width, int height,
-	int numFrames, int row, int col)
-	:swidth(swidth), sheight(sheight), width(width), height(height),
-	numFrames(numFrames), row(row), col(col), i(col)
-{}
+AnimCycle::AnimCycle(int numFrames, float cu, float cv, int dir, float width, float height) :i(0){
+	for (int j = 0; j < numFrames; j++){
+		sfs.push_back(SpriteFrame());
+		int offset = (dir < 0) ? (numFrames - j) : (numFrames - j - 1);
+		sfs.back().u = cu + dir*offset*width; sfs.back().v = cv;
+		sfs.back().w = width; sfs.back().h = height;
+	}	
+}
+void AnimCycle::setFrame(size_t index, float u, float width){
+	sfs[index].u = u;
+	sfs[index].w = width;
+}
+void AnimCycle::merge(AnimCycle& other){
+	for (size_t j = 0; j < other.sfs.size(); j++){
+		sfs.push_back(other.sfs[j]);
+	}
+}
+
+void AnimCycle::reorder(size_t s, const size_t* newOrder){
+	std::vector<SpriteFrame> newSfs;
+	for (size_t j = 0; j < s; j++){ newSfs.push_back(sfs[newOrder[j]]);	}
+	sfs = newSfs;
+}
+
 SpriteFrame AnimCycle::getNext(){
-	float u = (64 * i + ((64.0f - width) / 2)) / swidth;
-	float v = ((64.0f * row) - height) / sheight;
-	SpriteFrame ans = { u, v, 1.0f*width/swidth, 1.0f*height/sheight };
-	i++;
-	if (i - col == numFrames){ i = col; }
-	return ans;
+	size_t index = i++;
+	if (i == sfs.size()) { i = 0; }
+	return sfs[index];
 }

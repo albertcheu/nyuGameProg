@@ -34,14 +34,16 @@ public:
 };
 
 typedef struct{
-	float u, v, w, h;
+	float u, v, w, h;//normalized
 } SpriteFrame;
 
 class AnimCycle{
 private:
-	int swidth, sheight, width, height, numFrames, row, col, i;
+	std::vector<SpriteFrame> sfs; size_t i;
 public:
-	AnimCycle(int swidth, int sheight, int width, int height,
-		int numFrames, int row, int col=0);
+	AnimCycle(int numFrames, float cu, float cv, int dir, float width, float height);
+	void setFrame(size_t index, float u, float width);
 	SpriteFrame getNext();
+	void merge(AnimCycle& other);
+	void reorder(size_t s, const size_t* newOrder);
 };

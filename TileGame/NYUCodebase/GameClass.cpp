@@ -49,21 +49,30 @@ void GameClass::createDoorSprite(Sprite& d, float u_offset){
 }
 
 void GameClass::createPlayer(){
-	spriteSheet = LoadTextureRGBA("superPowerSuit.png");
-
+	spriteSheet = LoadTextureRGBA("MetroidZeroMissionSheet1.png");
 	int swidth = spriteSheet.width; int sheight = spriteSheet.height;
-	cycles.push_back(AnimCycle(swidth, sheight, 25, 42, 3, 1));
-	cycles.push_back(AnimCycle(swidth, sheight, 25, 42, 3, 1, 3));
-	cycles.push_back(AnimCycle(swidth, sheight, 35, 41, 10, 3));
-	cycles.push_back(AnimCycle(swidth, sheight, 35, 41, 10, 7));
 
-	//play as Samus
-	//26x46, 11th row
-	float y = 64.0f * 11 - 46; float x = (64.0f - 26.0f) / 2;
-	Sprite p(spriteSheet.id, x / swidth, y / sheight, 26.0f / swidth, 46.0f / sheight);
+	//Standing
+	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, -1, 31.02f / swidth, 36.0f / sheight));
+	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, 1, 31.02f / swidth, 36.0f / sheight));
+	
+	//Running, left
+	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, -1, 37.5f / swidth, 36.0f / sheight));
+	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, -1, 37.0f / swidth, 36.0f / sheight));
+	cycles.back().setFrame(8, 81.0f / swidth, 35.0f / swidth);
+	size_t arr[10] = { 0, 9, 1, 2, 7, 8, 4, 11, 5, 6 };
+	cycles[RUNLEFT].reorder(10, arr);
+	//right
+	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, 1, 37.5f / swidth, 36.0f / sheight));
+	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, 1, 37.0f / swidth, 36.0f / sheight));
+	cycles.back().setFrame(8, (swidth - 46.0f) / swidth, 35.0f / swidth);
+	cycles[RUNRIGHT].reorder(10, arr);
+	
 	float playerHeight = 0.17f;
-	float playerWidth = playerHeight*26.0f / 46.0f;
-	dynamics.push_back(Dynamic(0, 0, playerWidth, playerHeight, p));
+	Sprite p(spriteSheet.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
+	dynamics.push_back(Dynamic(0, 0, playerHeight, playerHeight, p));
+	
+	
 }
 
 void GameClass::createPickups(Entity& p, float u_offset){
@@ -126,14 +135,14 @@ void GameClass::pollForPlayer(float elapsed){
 		if (lookLeft) { sf = cycles[STANDLEFT].getNext(); }
 		else { sf = cycles[STANDRIGHT].getNext(); }
 	}
-	if (lastTickCount - frameChange >= 0.06f){
+	if (lastTickCount - frameChange >= 0.1f){
 		frameChange = lastTickCount;
 		player->setFrame(sf);
 	}	
 }
 
 void GameClass::playerShoot(size_t& which, size_t cap){
-	beams[which].fire(player->getX(), player->getY(),
+	beams[which].fire(player->getX(), player->getY()+0.034f,
 		lookLeft ? BEAMDIR_LEFT : BEAMDIR_RIGHT);
 	which++;
 	if (which == cap) { whichRed = cap-NUMBEAMS; }
@@ -270,12 +279,14 @@ bool GameClass::run(){
 void GameClass::renderGame(){
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	for (size_t i = 0; i < dynamics.size(); i++){
-		dynamics[i].draw(-player->getX(), -player->getY());
-	}
 	for (size_t i = 0; i < beams.size(); i++){
 		beams[i].draw(-player->getX(), -player->getY());
 	}
+
+	for (size_t i = 0; i < dynamics.size(); i++){
+		dynamics[i].draw(-player->getX(), -player->getY());
+	}
+	
 	for (size_t i = 0; i < doors.size(); i++){
 		doors[i].draw(-player->getX(), -player->getY());
 	}
