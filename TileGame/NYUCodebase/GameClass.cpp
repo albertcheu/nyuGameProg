@@ -22,16 +22,12 @@ TextureData GameClass::loadOpenGL(){
 GameClass::GameClass()
 	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
 	whichRed(0), whichYellow(NUMBEAMS), whichGreen(2*NUMBEAMS), whichBlue(3*NUMBEAMS),
-	haveYellow(false), haveGreen(false), haveBlue(false), pool(loadOpenGL()){
+	pool(loadOpenGL()){
 	
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
 	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
 	
-	createPlayer();
-	
-	createPickups(yellowPickup, 10.0f); createPickups(greenPickup, 11.0f);
-	createPickups(bluePickup, 12.0f);
-
+	createPlayer(); createPickups();
 	TextureData btd = LoadTextureRGB("beams.png");
 	for (int i = 0; i < 4; i++){
 		Sprite b(btd.id, 0, i*0.25f, 1.0f, 0.25f);
@@ -75,10 +71,11 @@ void GameClass::createPlayer(){
 	
 }
 
-void GameClass::createPickups(Entity& p, float u_offset){
-	Sprite s(pool.id, u_offset*TILEPIX / pool.width, 4.0f*TILEPIX / pool.height,
-		1.0f*TILEPIX / pool.width, 1.0f*TILEPIX / pool.height);
-	p = Entity(0, 0, TILEUNITS, TILEUNITS, s, false);
+void GameClass::createPickups(){
+	for (size_t i = RED; i <= BLUE; i++){
+		if (i > RED){ pickups.push_back(Pickup(pool, 10.0f + i - 1)); }
+		else { pickups.push_back(Pickup()); }//placeholder for easy array access
+	}
 }
 
 void GameClass::loadLevel(){
@@ -89,9 +86,10 @@ void GameClass::loadLevel(){
 		if (wts->typeName == "PlayerStart") { dynamics[PLAYER].setPos(wts->x, wts->y); }
 		else if (wts->typeName == "pickup") {
 			Entity* p;
-			if (wts->name == "yellow") { p = &yellowPickup; }
-			else if (wts->name == "green"){ p = &greenPickup; }
-			else { p = &bluePickup; }
+			OutputDebugString((wts->typeName + ' ' + wts->name).c_str());
+			if (wts->name == "yellow") { p = &pickups[YELLOW]; }
+			else if (wts->name == "green"){ p = &pickups[GREEN]; }
+			else { p = &pickups[BLUE]; }
 			p->setPos(wts->x, wts->y);
 			p->setVisibility(true);
 		}
@@ -145,7 +143,7 @@ void GameClass::playerShoot(size_t& which, size_t cap){
 	beams[which].fire(player->getX(), player->getY()+0.034f,
 		lookLeft ? BEAMDIR_LEFT : BEAMDIR_RIGHT);
 	which++;
-	if (which == cap) { whichRed = cap-NUMBEAMS; }
+	if (which == cap) { which = cap-NUMBEAMS; }
 }
 
 StateAndRun GameClass::userInput(float elapsed){
@@ -166,13 +164,13 @@ StateAndRun GameClass::userInput(float elapsed){
 		playerShoot(whichRed, NUMBEAMS);
 		break;
 	case SDL_SCANCODE_W:
-		if (haveYellow){ playerShoot(whichYellow, 2 * NUMBEAMS); }
+		if (pickups[YELLOW].have()){ playerShoot(whichYellow, 2 * NUMBEAMS); }
 		break;
 	case SDL_SCANCODE_E:
-		if (haveGreen){ playerShoot(whichGreen, 3 * NUMBEAMS); }
+		if (pickups[GREEN].have()){ playerShoot(whichGreen, 3 * NUMBEAMS); }
 		break;
 	case SDL_SCANCODE_R:
-		if (haveBlue){ playerShoot(whichBlue, 4 * NUMBEAMS); }
+		if (pickups[BLUE].have()){ playerShoot(whichBlue, 4 * NUMBEAMS); }
 		break;
 	case OTHER: break;
 	}
@@ -245,14 +243,7 @@ void GameClass::physics(){
 	}
 
 	//Check if we got any of the pickups
-	acquire(yellowPickup,haveYellow); acquire(greenPickup,haveGreen); acquire(bluePickup,haveBlue);
-}
-
-void GameClass::acquire(Entity& p, bool& have){
-	if (p.getVisibility() && player->collide(p)){
-		p.setVisibility(false);
-		have = true;
-	}
+	for (size_t i = 0; i < pickups.size(); i++){ pickups[i].hit(player); }
 }
 
 bool GameClass::run(){
@@ -290,9 +281,10 @@ void GameClass::renderGame(){
 	for (size_t i = 0; i < doors.size(); i++){
 		doors[i].draw(-player->getX(), -player->getY());
 	}
-	yellowPickup.draw(-player->getX(), -player->getY());
-	greenPickup.draw(-player->getX(), -player->getY());
-	bluePickup.draw(-player->getX(), -player->getY());
+	
+	for (size_t i = 0; i < pickups.size(); i++){
+		pickups[i].draw(-player->getX(), -player->getY());
+	}
 
 	theLevel.draw(-player->getX(), -player->getY());
 

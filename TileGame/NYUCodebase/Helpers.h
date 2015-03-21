@@ -14,6 +14,9 @@
 #define UNIT_WIDTH 1.33f
 #define UNIT_HEIGHT 1.0f
 #define TILEUNITS 0.07f//size of a tile in OpenGL units
+#define TILEPIX 16//pixel size of a tile in mfTRO
+#define TILECOUNTX 16//number of tiles in a row in mfTRO
+#define TILECOUNTY 24//number of tiles in a column in mfTRO
 
 #define OTHER 1
 #define CLOSE_WINDOW 0

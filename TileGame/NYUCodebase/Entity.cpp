@@ -98,6 +98,20 @@ void Door::disappear(){
 }
 bool Door::moving(){ return move; }
 
+Pickup::Pickup() :Entity(){ visible = false; }
+Pickup::Pickup(TextureData td, float u_offset)
+	: Entity(0, 0, TILEUNITS, TILEUNITS,
+				Sprite(td.id, u_offset*TILEPIX / td.width,
+				4.0f*TILEPIX / td.height,
+				1.0f*TILEPIX / td.width,
+				1.0f*TILEPIX / td.height),
+			false), acquired(false){}
+
+void Pickup::hit(Entity* player){
+	if (this->collide(*player)){	acquired = true; visible = false; }
+}
+bool Pickup::have(){ return acquired; }
+
 Dynamic::Dynamic()
 	: Entity(), vx(0), vy(0), ax(0), ay(0),
 	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)

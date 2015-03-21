@@ -15,10 +15,6 @@
 #define FRIC_X 7.7f
 #define MOVE 3.8f
 
-#define TILEPIX 16//pixel size of a tile in mfTRO
-#define TILECOUNTX 16//number of tiles in a row in mfTRO
-#define TILECOUNTY 24//number of tiles in a column in mfTRO
-
 #define PLAYER 0
 enum SamusCycles {STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT};
 
@@ -43,10 +39,9 @@ private:
 	TextureData pool;
 	
 	//What we can shoot is determined by pickups
-	void createPickups(Entity& p, float u_offset);
-	Entity yellowPickup, greenPickup, bluePickup;
-	void acquire(Entity& p, bool& have);
-	bool haveYellow, haveGreen, haveBlue;
+	std::vector<Pickup> pickups;
+	void createPickups();
+
 	std::vector<Beam> beams; size_t whichRed, whichYellow, whichGreen, whichBlue;
 	void playerShoot(size_t& which, size_t cap);
 

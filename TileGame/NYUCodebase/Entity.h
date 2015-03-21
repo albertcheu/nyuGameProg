@@ -80,6 +80,20 @@ public:
 	bool moving();
 };
 
+class Pickup:public Entity{
+private:
+	//Have we acquired this pickup
+	bool acquired;
+public:
+	//Pickups start out at the origin and have dimensions TILEUNITS*TILEUNITS
+	Pickup();
+
+	Pickup(TextureData td, float u_offset);
+
+	void hit(Entity* player);
+	bool have();
+};
+
 class Dynamic: public Entity{
 private:
 	float vx, vy, ax, ay;
