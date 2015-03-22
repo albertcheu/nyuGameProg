@@ -43,6 +43,7 @@ private:
 	void createPickups();
 
 	std::vector<Beam> beams; size_t whichRed, whichYellow, whichGreen, whichBlue;
+	void createBeams();
 	void playerShoot(size_t& which, size_t cap);
 
 	//Doors that open to weapon fire

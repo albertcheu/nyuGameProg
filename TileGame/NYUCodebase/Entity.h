@@ -53,10 +53,13 @@ public:
 };
 
 class Beam: public ColoredDir{
+private:
+	Mix_Chunk* sound_ptr;
 public:
 	Beam();
-	Beam(float width, float height, Sprite s, BeamColor color);
+	Beam(float width, float height, Sprite s, BeamColor color, Mix_Chunk* sp);
 	void fire(float x, float y, int newDir);
+	void freeSound();
 };
 
 class Door :public ColoredDir{

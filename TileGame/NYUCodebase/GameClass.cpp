@@ -1,6 +1,9 @@
 #include "GameClass.h"
 
-GameClass::~GameClass(){ SDL_Quit(); }
+GameClass::~GameClass(){
+	for (size_t i = 0; i < beams.size(); i++) { beams[i].freeSound(); }
+	SDL_Quit();
+}
 TextureData GameClass::loadOpenGL(){
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
@@ -17,6 +20,8 @@ TextureData GameClass::loadOpenGL(){
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
+	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
+
 	return LoadTextureRGBA("mfTRO.png");
 }
 GameClass::GameClass()
@@ -27,14 +32,7 @@ GameClass::GameClass()
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
 	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
 	
-	createPlayer(); createPickups();
-	TextureData btd = LoadTextureRGB("beams.png");
-	for (int i = 0; i < 4; i++){
-		Sprite b(btd.id, 0, i*0.25f, 1.0f, 0.25f);
-		for (int j = 0; j < NUMBEAMS; j++){
-			beams.push_back(Beam(0.03f, 0.01f, b, (BeamColor)(RED + i)));
-		}
-	}	
+	createPlayer(); createPickups(); createBeams();
 
 	loadLevel();
 }
@@ -75,6 +73,18 @@ void GameClass::createPickups(){
 	for (size_t i = RED; i <= BLUE; i++){
 		if (i > RED){ pickups.push_back(Pickup(pool, 10.0f + i - 1)); }
 		else { pickups.push_back(Pickup()); }//placeholder for easy array access
+	}
+}
+
+void GameClass::createBeams(){
+	TextureData btd = LoadTextureRGB("beams.png");
+	for (int i = 0; i < 4; i++){
+		Sprite b(btd.id, 0, i*0.25f, 1.0f, 0.25f);
+		char buf[11]; sprintf_s(buf, 11, "Beam_%d.wav", (i + 1));
+		Mix_Chunk* sound_ptr = Mix_LoadWAV(buf);
+		for (int j = 0; j < NUMBEAMS; j++){
+			beams.push_back(Beam(0.03f, 0.01f, b, (BeamColor)(RED + i), sound_ptr));
+		}
 	}
 }
 
