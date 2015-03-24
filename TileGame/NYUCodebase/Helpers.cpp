@@ -11,17 +11,6 @@ float depenetrate(float c1, float h1, float c2, float h2){
 	return c1 + d;
 }
 
-unsigned getKey(){
-	SDL_Event event;
-	while (SDL_PollEvent(&event)) {
-		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) { return CLOSE_WINDOW; }
-		else if (event.type == SDL_KEYDOWN){
-			return event.key.keysym.scancode;
-		}
-	}
-	return OTHER;
-}
-
 bool isSolid(int t, const char* mapName){
 	if (strcmp(mapName,"mfTRO.png")==0){
 		

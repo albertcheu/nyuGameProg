@@ -39,7 +39,7 @@ public:
 
 enum BeamColor{RED,YELLOW,GREEN,BLUE};
 
-//This derivative of Entity contains color and direction(-1 or 1) info
+//This derivative of Entity contains color and direction info
 //Beam and Door are derived in turn
 class ColoredDir:public Entity{
 protected:
@@ -54,7 +54,7 @@ public:
 
 class Beam: public ColoredDir{
 private:
-	Mix_Chunk* sound_ptr;
+	Mix_Chunk* soundPtr;
 public:
 	Beam();
 	Beam(float width, float height, Sprite s, BeamColor color, Mix_Chunk* sp);
@@ -90,10 +90,12 @@ private:
 public:
 	//Pickups start out at the origin and have dimensions TILEUNITS*TILEUNITS
 	Pickup();
-
 	Pickup(TextureData td, float u_offset);
-
-	void hit(Entity* player);
+	//Make the pickup availble for pickup at the specified location
+	void activate(float newX, float newY);
+	//If the player collided with this pickup, turn invisible and make a sound
+	void hit(Entity* player, Mix_Chunk* soundPtr);
+	//Did the player collect this?
 	bool have();
 };
 

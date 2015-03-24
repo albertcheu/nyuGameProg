@@ -19,15 +19,11 @@
 #define TILECOUNTX 16//number of tiles in a row in mfTRO
 #define TILECOUNTY 24//number of tiles in a column in mfTRO
 
-#define OTHER 1
-#define CLOSE_WINDOW 0
-
 typedef struct{
 	unsigned newState;
 	bool keepRunning;
 } StateAndRun;
 
-unsigned getKey();
 float lerp(float v0, float v1, float t);
 float depenetrate(float c1, float h1, float c2, float h2);
 

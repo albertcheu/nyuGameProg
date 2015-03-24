@@ -73,16 +73,16 @@ ColoredDir::ColoredDir(float x, float y, float width, float height,
 BeamColor ColoredDir::getColor(){ return color; }
 int ColoredDir::getDir(){ return dir; }
 
-Beam::Beam() : ColoredDir(), sound_ptr(NULL) { visible = false; }
+Beam::Beam() : ColoredDir(), soundPtr(NULL) { visible = false; }
 Beam::Beam(float width, float height, Sprite s, BeamColor color, Mix_Chunk* sp)
-	: ColoredDir(0, 0, width, height, s, color, dir), sound_ptr(sp) { visible = false; }
+	: ColoredDir(0, 0, width, height, s, color, dir), soundPtr(sp) { visible = false; }
 
 void Beam::fire(float xcoor, float ycoor, int newDir){
 	visible = true; x = xcoor; y = ycoor; dir = newDir;
 	angle = (dir == BEAMDIR_LEFT ? 180.0f: 0);
-	Mix_PlayChannel(-1, sound_ptr, 0);
+	Mix_PlayChannel(-1, soundPtr, 0);
 }
-void Beam::freeSound(){ Mix_FreeChunk(sound_ptr); }
+void Beam::freeSound(){ Mix_FreeChunk(soundPtr); }
 
 Door::Door() : ColoredDir(), move(false), complement(NULL){}
 Door::Door(float x, float y, Sprite s, BeamColor color, int dir)
@@ -108,9 +108,12 @@ Pickup::Pickup(TextureData td, float u_offset)
 				1.0f*TILEPIX / td.width,
 				1.0f*TILEPIX / td.height),
 			false), acquired(false){}
-
-void Pickup::hit(Entity* player){
-	if (this->collide(*player)){	acquired = true; visible = false; }
+void Pickup::activate(float newX, float newY){ x = newX; y = newY; visible = true; }
+void Pickup::hit(Entity* player, Mix_Chunk* soundPtr){
+	if (visible && this->collide(*player)){
+		Mix_PlayChannel(-1, soundPtr, 0);
+		acquired = true; visible = false;		
+	}
 }
 bool Pickup::have(){ return acquired; }
 

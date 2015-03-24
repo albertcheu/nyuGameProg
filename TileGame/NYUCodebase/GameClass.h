@@ -25,23 +25,25 @@ public:
 	bool run();
 
 private:
-	TextureData loadOpenGL();
 	SDL_Window* displayWindow;
+	
+	//Doors and pickups are from one file (mfTRO.png)
+	TextureData pool;
+	Mix_Chunk* pickupSound;
+	std::vector<Pickup> pickups; void createPickups();
+
+	//Load in the sdl and opengl functions, and get the pool
+	TextureData loadOpenGL();
 
 	//Contains level data and handles collisions with platforms
 	Level theLevel;
+	void loadLevel(const char* fname, TextureData texSource);
 
 	//Player
 	TextureData spriteSheet;
 	void createPlayer();
-
-	//Doors and pickups are from one file (mfTRO.png)
-	TextureData pool;
 	
-	//What we can shoot is determined by pickups
-	std::vector<Pickup> pickups;
-	void createPickups();
-
+	//Samus can fire four kinds of beams (color-coded)
 	std::vector<Beam> beams; size_t whichRed, whichYellow, whichGreen, whichBlue;
 	void createBeams();
 	void playerShoot(size_t& which, size_t cap);
@@ -58,14 +60,13 @@ private:
 	std::vector<AnimCycle> cycles; bool lookLeft;
 
 	//Time variables for physics and animation
-	float lastTickCount, leftover, frameChange;
-	
-	void loadLevel();
+	float lastTickCount, leftover, elapsed, frameChange;
 
 	void physics();
 
-	void pollForPlayer(float elapsed);
-	StateAndRun userInput(float elapsed);
+	StateAndRun handleEvents();
+	void pollForPlayer();
+	void animatePlayer();
 	
 	void renderGame();
 };

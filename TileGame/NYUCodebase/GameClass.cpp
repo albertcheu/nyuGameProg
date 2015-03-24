@@ -2,6 +2,7 @@
 
 GameClass::~GameClass(){
 	for (size_t i = 0; i < beams.size(); i++) { beams[i].freeSound(); }
+	Mix_FreeChunk(pickupSound);
 	SDL_Quit();
 }
 TextureData GameClass::loadOpenGL(){
@@ -25,7 +26,7 @@ TextureData GameClass::loadOpenGL(){
 	return LoadTextureRGBA("mfTRO.png");
 }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
+	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0), elapsed(0),
 	whichRed(0), whichYellow(NUMBEAMS), whichGreen(2*NUMBEAMS), whichBlue(3*NUMBEAMS),
 	pool(loadOpenGL()){
 	
@@ -34,7 +35,7 @@ GameClass::GameClass()
 	
 	createPlayer(); createPickups(); createBeams();
 
-	loadLevel();
+	loadLevel("levelOne.txt", pool);
 }
 
 void GameClass::createDoorSprite(Sprite& d, float u_offset){
@@ -70,6 +71,7 @@ void GameClass::createPlayer(){
 }
 
 void GameClass::createPickups(){
+	pickupSound = Mix_LoadWAV("Powerup.wav");
 	for (size_t i = RED; i <= BLUE; i++){
 		if (i > RED){ pickups.push_back(Pickup(pool, 10.0f + i - 1)); }
 		else { pickups.push_back(Pickup()); }//placeholder for easy array access
@@ -88,20 +90,16 @@ void GameClass::createBeams(){
 	}
 }
 
-void GameClass::loadLevel(){
-	theLevel = Level("levelOne.txt", pool, TILEPIX, TILECOUNTX, TILECOUNTY);
+void GameClass::loadLevel(const char* fname, TextureData texSource){
+	theLevel = Level(fname, texSource, TILEPIX, TILECOUNTX, TILECOUNTY);
 
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
 		if (wts->typeName == "PlayerStart") { dynamics[PLAYER].setPos(wts->x, wts->y); }
 		else if (wts->typeName == "pickup") {
-			Entity* p;
-			OutputDebugString((wts->typeName + ' ' + wts->name).c_str());
-			if (wts->name == "yellow") { p = &pickups[YELLOW]; }
-			else if (wts->name == "green"){ p = &pickups[GREEN]; }
-			else { p = &pickups[BLUE]; }
-			p->setPos(wts->x, wts->y);
-			p->setVisibility(true);
+			if (wts->name == "yellow") { pickups[YELLOW].activate(wts->x,wts->y); }
+			else if (wts->name == "green"){ pickups[GREEN].activate(wts->x, wts->y); }
+			else if (wts->name == "blue") { pickups[BLUE].activate(wts->x, wts->y); }
 		}
 		//Enemies
 		else{
@@ -125,28 +123,17 @@ void GameClass::loadLevel(){
 	}
 }
 
-void GameClass::pollForPlayer(float elapsed){
+void GameClass::pollForPlayer(){
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
-	SpriteFrame sf;
 	if (keys[SDL_SCANCODE_LEFT]) {
 		lookLeft = true;
 		player->setAx(-MOVE);
-		sf = cycles[RUNLEFT].getNext();
 	}
 	else if (keys[SDL_SCANCODE_RIGHT]) {
 		lookLeft = false;
 		player->setAx(MOVE);
-		sf = cycles[RUNRIGHT].getNext();
 	}
-	else {
-		player->setAx(0);
-		if (lookLeft) { sf = cycles[STANDLEFT].getNext(); }
-		else { sf = cycles[STANDRIGHT].getNext(); }
-	}
-	if (lastTickCount - frameChange >= 0.1f){
-		frameChange = lastTickCount;
-		player->setFrame(sf);
-	}	
+	else { player->setAx(0); }
 }
 
 void GameClass::playerShoot(size_t& which, size_t cap){
@@ -156,36 +143,38 @@ void GameClass::playerShoot(size_t& which, size_t cap){
 	if (which == cap) { which = cap-NUMBEAMS; }
 }
 
-StateAndRun GameClass::userInput(float elapsed){
+StateAndRun GameClass::handleEvents(){
 	StateAndRun ans = { 0, true };
 
 	//Keyboard (and close-window) events
-	switch (getKey()){
-	case SDL_SCANCODE_SPACE:
-		if (player->getBottom()) { player->setVy(JUMP); }
-		break;
-	case SDL_SCANCODE_ESCAPE:
-		ans = { 0, false };
-		break;
-	case CLOSE_WINDOW:
-		ans = { 0, false };
-		break;
-	case SDL_SCANCODE_Q:
-		playerShoot(whichRed, NUMBEAMS);
-		break;
-	case SDL_SCANCODE_W:
-		if (pickups[YELLOW].have()){ playerShoot(whichYellow, 2 * NUMBEAMS); }
-		break;
-	case SDL_SCANCODE_E:
-		if (pickups[GREEN].have()){ playerShoot(whichGreen, 3 * NUMBEAMS); }
-		break;
-	case SDL_SCANCODE_R:
-		if (pickups[BLUE].have()){ playerShoot(whichBlue, 4 * NUMBEAMS); }
-		break;
-	case OTHER: break;
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
+			ans = { 0, false };
+		}
+		else if (event.type == SDL_KEYDOWN){
+			switch (event.key.keysym.scancode){
+			case SDL_SCANCODE_SPACE:
+				if (player->getBottom()) { player->setVy(JUMP); }
+				break;
+			case SDL_SCANCODE_ESCAPE:
+				ans = { 0, false };
+				break;
+			case SDL_SCANCODE_Q:
+				playerShoot(whichRed, NUMBEAMS);
+				break;
+			case SDL_SCANCODE_W:
+				if (pickups[YELLOW].have()){ playerShoot(whichYellow, 2 * NUMBEAMS); }
+				break;
+			case SDL_SCANCODE_E:
+				if (pickups[GREEN].have()){ playerShoot(whichGreen, 3 * NUMBEAMS); }
+				break;
+			case SDL_SCANCODE_R:
+				if (pickups[BLUE].have()){ playerShoot(whichBlue, 4 * NUMBEAMS); }
+				break;
+			}
+		}
 	}
-
-	pollForPlayer(elapsed);
 
 	return ans;
 }
@@ -193,23 +182,29 @@ StateAndRun GameClass::userInput(float elapsed){
 void GameClass::physics(){
 	//Move dynamic objects
 	for (size_t i = 0; i < dynamics.size(); i++){
+		if (!dynamics[i].getVisibility()){ continue; }
+		//Assume we are not in contact w/ anything
 		dynamics[i].noTouch();
-		
-		//Move in y and resolve collisions
-		dynamics[i].moveY(TIMESTEP, FRIC_Y, GRAVITY);
-		
-		float x = dynamics[i].getX(); float y = dynamics[i].getY();
+
+		//Useful info
 		float hh = dynamics[i].getHalfHeight();
-		float newY = theLevel.tileCollide(x, y - hh, y, hh, true);
-		if (newY != y){ dynamics[i].stickBottom(newY); }
-		newY = theLevel.tileCollide(x, y + hh, y, hh, true);
-		if (newY != y){ dynamics[i].stickTop(newY); }
+		float hw = dynamics[i].getHalfWidth(); float quart = hh / 2.0f;
+
+		//Move in y and resolve collisions
+		float newY = 0;
+		dynamics[i].moveY(TIMESTEP, FRIC_Y, GRAVITY);
+		float x = dynamics[i].getX(); float y = dynamics[i].getY();
+		for (int j = -1; j <= 1; j++){//Test top-right, top-mid, top-left (same for bottom)
+			newY = theLevel.tileCollide(x+0.9f*hw*j, y - hh, y, hh, true);
+			if (newY != y){ dynamics[i].stickBottom(newY); }
+			newY = theLevel.tileCollide(x+0.9f*hw*j, y + hh, y, hh, true);
+			if (newY != y){ dynamics[i].stickTop(newY); }
+		}		
 		
 		//Move in x and resolve collisions
 		dynamics[i].moveX(TIMESTEP, FRIC_X);
-		float hw = dynamics[i].getHalfWidth(); float quart = hh / 2.0f;
 		float newX = 0;
-		for (int j = 1; j < 4; j++){
+		for (int j = 1; j < 4; j++){//Test three points on each side
 			newX = theLevel.tileCollide(x - hw, newY - hh + quart*j, x, hw, false);
 			if (newX != x) { dynamics[i].stickLeft(newX); }
 			newX = theLevel.tileCollide(x + hw, newY - hh + quart*j, x, hw, false);
@@ -253,12 +248,12 @@ void GameClass::physics(){
 	}
 
 	//Check if we got any of the pickups
-	for (size_t i = 0; i < pickups.size(); i++){ pickups[i].hit(player); }
+	for (size_t i = 0; i < pickups.size(); i++){ pickups[i].hit(player, pickupSound); }
 }
 
 bool GameClass::run(){
 	float ticks = (float)SDL_GetTicks() / 1000.0f;
-	float elapsed = ticks - lastTickCount;
+	elapsed = ticks - lastTickCount;
 	lastTickCount = ticks;
 	
 	float fixedElapsed = elapsed + leftover;
@@ -268,13 +263,31 @@ bool GameClass::run(){
 		physics();
 	}
 	leftover = fixedElapsed;
-	//OutputDebugString("Physicked");
 
-	StateAndRun sar = userInput(elapsed);
-	//OutputDebugString("Animated");
+	StateAndRun sar = handleEvents();
+
+	pollForPlayer();
+	animatePlayer();
+
 	renderGame();
 	
 	return sar.keepRunning;
+}
+
+void GameClass::animatePlayer(){
+	if (lastTickCount - frameChange >= 0.1f){
+		SpriteFrame sf;
+		if (fabs(player->getVx()) < 0.02f || player->getLeft() || player->getRight()) {
+			if (lookLeft) { sf = cycles[STANDLEFT].getNext(); }
+			else { sf = cycles[STANDRIGHT].getNext(); }
+		}
+		else{
+			if (lookLeft) { sf = cycles[RUNLEFT].getNext(); }
+			else { sf = cycles[RUNRIGHT].getNext(); }
+		}
+		frameChange = lastTickCount;
+		player->setFrame(sf);
+	}
 }
 
 void GameClass::renderGame(){
