@@ -122,12 +122,12 @@ bool Pickup::have(){ return acquired; }
 
 Dynamic::Dynamic()
 	: Entity(), vx(0), vy(0), ax(0), ay(0),
-	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)
+	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false), et(NOT_ENEMY)
 {}
 
-Dynamic::Dynamic(float x, float y, float width, float height, Sprite s, bool visible)
-	: Entity(x, y, width, height, s, visible), vx(0), vy(0), ax(0), ay(0),
-	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false)
+Dynamic::Dynamic(float x, float y, float width, float height, Sprite s, EnemyType et)
+	: Entity(x, y, width, height, s), vx(0), vy(0), ax(0), ay(0),
+	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false), et(et)
 {}
 
 void Dynamic::setSpeed(float v, float dir) {
@@ -168,3 +168,5 @@ void Dynamic::moveX(float timestep, float friction){
 void Dynamic::setFrame(SpriteFrame sf){
 	s.setUV(sf.u, sf.v); s.setSize(sf.w, sf.h);
 }
+
+EnemyType Dynamic::getType(){ return et; }

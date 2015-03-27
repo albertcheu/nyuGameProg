@@ -1,5 +1,18 @@
-﻿Build started 3/26/2015 10:13:45 PM.
+﻿Build started 3/27/2015 4:52:49 PM.
+     1>Project "C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\TileGame\NYUCodebase\NYUCodebase.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /IC:\SDL2\include /IC:\SDL2_image\include /IC:\SDL2_mixer\include /IC:\SDL2_mixer\include /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt GameClass.cpp
+         GameClass.cpp
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\TileGame\Debug\AlbertHW.exe" /INCREMENTAL /NOLOGO /LIBPATH:C:\SDL2\lib\x86 /LIBPATH:C:\SDL2_image\lib\x86 /LIBPATH:C:\SDL2_mixer\lib\x86 /LIBPATH:C:\SDL_mixer\lib\x86 SDL2.lib SDL2main.lib SDL2_image.lib SDL2_mixer.lib SDL2_mixer.lib OpenGL32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\TileGame\Debug\AlbertHW.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\TileGame\Debug\AlbertHW.lib" /MACHINE:X86 Debug\Entity.obj
+         Debug\GameClass.obj
+         Debug\Helpers.obj
+         Debug\Level.obj
+         Debug\main.obj
+         Debug\Sprite.obj
+         NYUCodebase.vcxproj -> C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\TileGame\Debug\AlbertHW.exe
+     1>Done Building Project "C:\Users\Albert\Documents\sharedWithVM\nyuGameProg\TileGame\NYUCodebase\NYUCodebase.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.06
+Time Elapsed 00:00:01.78

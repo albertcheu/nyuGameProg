@@ -41,10 +41,6 @@ private:
 
 	//Music to play during the level
 	Mix_Music* music;
-
-	//Player
-	TextureData spriteSheet;
-	void createPlayer();
 	
 	//Samus can fire four kinds of beams (color-coded)
 	std::vector<Beam> beams; size_t whichRed, whichYellow, whichGreen, whichBlue;
@@ -53,12 +49,14 @@ private:
 
 	//Doors that open to weapon fire
 	std::vector<Door> doors;
-	Sprite redDoor, yellowDoor, greenDoor, blueDoor;
+	Sprite redDoor, yellowDoor, greenDoor, blueDoor;//(avoid repeated constructor calls)
 	void createDoorSprite(Sprite& d, float u_offset);
 
 	//Player and enemies
+	TextureData spriteSheet; void createPlayer();
 	std::vector<Dynamic> dynamics; Dynamic* player;
-		
+	Sprite hopperSprite, runnerSprite;	void createEnemySprites();
+
 	//Player's animation cycles; are we looking left or right
 	std::vector<AnimCycle> cycles; bool lookLeft;
 

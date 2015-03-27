@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="40" height="20" tilewidth="16" tileheight="16" nextobjectid="15">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="40" height="20" tilewidth="16" tileheight="16" nextobjectid="18">
  <tileset firstgid="1" name="mfTRO" tilewidth="16" tileheight="16">
   <image source="mfTRO.png" trans="000000" width="257" height="384"/>
  </tileset>
@@ -14,5 +14,6 @@
   <object id="10" name="door3" type="yellow" x="86.833" y="87.5"/>
   <object id="12" name="yellow" type="pickup" gid="75" x="464" y="301.333"/>
   <object id="14" name="green" type="pickup" gid="76" x="32" y="126"/>
+  <object id="17" name="hopper1" type="hopper" x="554" y="134"/>
  </objectgroup>
 </map>

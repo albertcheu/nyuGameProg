@@ -57,3 +57,8 @@ location=29,18,0,0
 type=pickup
 location=2,7,0,0
 
+[StartLocations]
+# hopper1
+type=hopper
+location=34,8,0,0
+

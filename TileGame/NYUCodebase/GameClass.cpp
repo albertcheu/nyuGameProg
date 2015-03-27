@@ -38,7 +38,7 @@ GameClass::GameClass()
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
 	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
 	
-	createPlayer(); createPickups(); createBeams();
+	createPlayer(); createPickups(); createBeams(); createEnemySprites();
 
 	loadLevel("levelOne.txt", pool);
 
@@ -73,9 +73,7 @@ void GameClass::createPlayer(){
 	
 	float playerHeight = 0.17f;
 	Sprite p(spriteSheet.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
-	dynamics.push_back(Dynamic(0, 0, playerHeight, playerHeight, p));
-	
-	
+	dynamics.push_back(Dynamic(0, 0, playerHeight, playerHeight, p, NOT_ENEMY));	
 }
 
 void GameClass::createPickups(){
@@ -105,21 +103,34 @@ void GameClass::createBeams(){
 	}
 }
 
+void GameClass::createEnemySprites(){
+	TextureData etd = LoadTextureRGB("enemies.png");
+	hopperSprite = Sprite(etd.id, 0, 0.5f, 0.25f, 0.5f);
+	runnerSprite = Sprite(etd.id, 0.5f, 0.5f, 0.25f, 0.5f);
+}
+
 void GameClass::loadLevel(const char* fname, TextureData texSource){
 	theLevel = Level(fname, texSource, TILEPIX, TILECOUNTX, TILECOUNTY);
-
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
 		if (wts->typeName == "PlayerStart") { dynamics[PLAYER].setPos(wts->x, wts->y); }
+		
+		//weapon upgrades
 		else if (wts->typeName == "pickup") {
 			if (wts->name == "yellow") { pickups[YELLOW].activate(wts->x,wts->y); }
 			else if (wts->name == "green"){ pickups[GREEN].activate(wts->x, wts->y); }
 			else if (wts->name == "blue") { pickups[BLUE].activate(wts->x, wts->y); }
 		}
-		else if (wts->typeName == "enemy"){
-			//push_back enemies to the vector of dynamics
+		
+		//push_back enemies to the vector of dynamics
+		else if (wts->typeName == "hopper"){
+			dynamics.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.07f, hopperSprite, HOPPER));
 		}
-		else{
+		else if (wts->typeName == "runner"){
+			dynamics.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.07f, runnerSprite, RUNNER));
+		}
+
+		else{//Doors
 			Sprite s = redDoor; BeamColor color = RED;
 			if (wts->typeName == "yellow") { s = yellowDoor; color = YELLOW; }
 			else if (wts->typeName == "green") { s = greenDoor; color = GREEN; }
@@ -133,7 +144,8 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 	}
 
 	//a vector's location in memory changes; any pointers must be defined after pushes
-	player = &dynamics[PLAYER];
+	player = &(dynamics[PLAYER]);
+
 	for (size_t i = 0; i < doors.size(); i += 2){
 		doors[i].setComplement(&doors[i + 1]);
 		doors[i + 1].setComplement(&doors[i]);
@@ -164,7 +176,7 @@ StateAndRun GameClass::handleEvents(){
 	StateAndRun ans = { 0, true };
 
 	//Keyboard (and close-window) events
-	SDL_Event event; bool fireQ = false;
+	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
 			ans = { 0, false };
@@ -178,10 +190,7 @@ StateAndRun GameClass::handleEvents(){
 				ans = { 0, false };
 				break;
 			case SDL_SCANCODE_Q:
-				if (!fireQ){
-					fireQ = true;
-					playerShoot(whichRed, NUMBEAMS);
-				}
+				playerShoot(whichRed, NUMBEAMS);
 				break;
 			case SDL_SCANCODE_W:
 				if (pickups[YELLOW].have()){ playerShoot(whichYellow, 2 * NUMBEAMS); }
@@ -216,7 +225,10 @@ void GameClass::physics(){
 		float x = dynamics[i].getX(); float y = dynamics[i].getY();
 		for (int j = -1; j <= 1; j++){//Test top-right, top-mid, top-left (same for bottom)
 			newY = theLevel.tileCollide(x+0.9f*hw*j, y - hh, y, hh, true);
-			if (newY != y){ dynamics[i].stickBottom(newY); }
+			if (newY != y){
+				dynamics[i].stickBottom(newY);
+				if (dynamics[i].getType() == HOPPER) { dynamics[i].setVy(JUMP); }
+			}
 			newY = theLevel.tileCollide(x+0.9f*hw*j, y + hh, y, hh, true);
 			if (newY != y){ dynamics[i].stickTop(newY); }
 		}		

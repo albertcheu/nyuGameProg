@@ -106,14 +106,16 @@ public:
 	bool have();
 };
 
+enum EnemyType{NOT_ENEMY,HOPPER,RUNNER};
 class Dynamic: public Entity{
 private:
 	float vx, vy, ax, ay;
 	bool touchTop, touchLeft, touchBottom, touchRight;
-public:
+	EnemyType et;
 
+public:
 	Dynamic();
-	Dynamic(float x, float y, float width, float height, Sprite s, bool visible=true);
+	Dynamic(float x, float y, float width, float height, Sprite s, EnemyType et);
 	float getAx();	float getAy();
 	float getVx();	float getVy();
 	
@@ -132,4 +134,6 @@ public:
 	void stickTop(float val); void stickBottom(float val);
 
 	void setFrame(SpriteFrame sf);
+
+	EnemyType getType();
 };
