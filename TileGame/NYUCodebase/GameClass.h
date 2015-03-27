@@ -39,6 +39,9 @@ private:
 	Level theLevel;
 	void loadLevel(const char* fname, TextureData texSource);
 
+	//Music to play during the level
+	Mix_Music* music;
+
 	//Player
 	TextureData spriteSheet;
 	void createPlayer();

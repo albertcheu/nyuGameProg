@@ -123,10 +123,9 @@ void Level::world2tile(float worldX, float worldY, int* tileCol, int* tileRow){
 	*tileRow = (int)((worldY - offsetY) / -TILEUNITS);
 }
 
-void Level::draw(float px, float py){
+void Level::draw(){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glTranslatef(px, py, 0.0f);
 
 	glTranslatef(offsetX, offsetY, 0.0f);
 	glEnable(GL_TEXTURE_2D);

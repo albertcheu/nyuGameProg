@@ -14,11 +14,11 @@ public:
 	Level(const char* flareName, TextureData td,
 		int tilePix, int tileCountX, int tileCountY);
 
-	//Resolve collisions: returns new x/y coordinate 
+	//Returns new x/y coordinate if collision was resolved, same coor otherwise
 	float tileCollide(float x, float y, float v, float h, bool isY);
 
-	//Render the level (center on player)
-	void draw(float px, float py);
+	//Render the level
+	void draw();
 
 	const WhereToStart* getNext();
 	

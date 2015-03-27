@@ -2,8 +2,13 @@
 
 GameClass::~GameClass(){
 	for (size_t i = 0; i < beams.size(); i++) { beams[i].freeSound(); }
+	//OutputDebugString("Freed beam sounds");
 	Mix_FreeChunk(pickupSound);
+	//OutputDebugString("Freed pickup sound");
+	Mix_FreeMusic(music);
+	//OutputDebugString("Freed ambient music");
 	SDL_Quit();
+	//OutputDebugString("Quit sdl");
 }
 TextureData GameClass::loadOpenGL(){
 	//Boilerplate
@@ -20,7 +25,7 @@ TextureData GameClass::loadOpenGL(){
 	glOrtho(-UNIT_WIDTH, UNIT_WIDTH, -UNIT_HEIGHT, UNIT_HEIGHT, -1, 1);
 	//Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
+	
 	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
 
 	return LoadTextureRGBA("mfTRO.png");
@@ -36,6 +41,9 @@ GameClass::GameClass()
 	createPlayer(); createPickups(); createBeams();
 
 	loadLevel("levelOne.txt", pool);
+
+	music = Mix_LoadMUS("Underclocked_EricSkiff.mp3");
+	Mix_PlayMusic(music, -1);
 }
 
 void GameClass::createDoorSprite(Sprite& d, float u_offset){
@@ -60,7 +68,7 @@ void GameClass::createPlayer(){
 	//right
 	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, 1, 37.5f / swidth, 36.0f / sheight));
 	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, 1, 37.0f / swidth, 36.0f / sheight));
-	cycles.back().setFrame(8, (swidth - 46.0f) / swidth, 35.0f / swidth);
+	cycles.back().setFrame(8, (swidth - 45.0f) / swidth, 35.0f / swidth);
 	cycles[RUNRIGHT].reorder(10, arr);
 	
 	float playerHeight = 0.17f;
@@ -71,7 +79,7 @@ void GameClass::createPlayer(){
 }
 
 void GameClass::createPickups(){
-	pickupSound = Mix_LoadWAV("Powerup.wav");
+	pickupSound = Mix_LoadWAV("powerup.wav");
 	for (size_t i = RED; i <= BLUE; i++){
 		if (i > RED){ pickups.push_back(Pickup(pool, 10.0f + i - 1)); }
 		else { pickups.push_back(Pickup()); }//placeholder for easy array access
@@ -80,12 +88,19 @@ void GameClass::createPickups(){
 
 void GameClass::createBeams(){
 	TextureData btd = LoadTextureRGB("beams.png");
-	for (int i = 0; i < 4; i++){
+	for (unsigned int i = RED; i <= BLUE; i++){
+		//Color
+		BeamColor bc = (BeamColor)(RED + i);
+		//Sprite
 		Sprite b(btd.id, 0, i*0.25f, 1.0f, 0.25f);
-		char buf[11]; sprintf_s(buf, 11, "Beam_%d.wav", (i + 1));
+		//Sound file
+		char buf[11]; sprintf_s(buf, 11, "beam%d.wav", (i + 1));
 		Mix_Chunk* sound_ptr = Mix_LoadWAV(buf);
+		//OutputDebugString(std::to_string((int)sound_ptr).c_str());
+
+		//Actually make the beams now
 		for (int j = 0; j < NUMBEAMS; j++){
-			beams.push_back(Beam(0.03f, 0.01f, b, (BeamColor)(RED + i), sound_ptr));
+			beams.push_back(Beam(0.03f, 0.01f, b, bc, sound_ptr));
 		}
 	}
 }
@@ -101,7 +116,9 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 			else if (wts->name == "green"){ pickups[GREEN].activate(wts->x, wts->y); }
 			else if (wts->name == "blue") { pickups[BLUE].activate(wts->x, wts->y); }
 		}
-		//Enemies
+		else if (wts->typeName == "enemy"){
+			//push_back enemies to the vector of dynamics
+		}
 		else{
 			Sprite s = redDoor; BeamColor color = RED;
 			if (wts->typeName == "yellow") { s = yellowDoor; color = YELLOW; }
@@ -115,7 +132,7 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		}
 	}
 
-	//a vector's location in memory changes; any pointers to contents must be defined after pushes
+	//a vector's location in memory changes; any pointers must be defined after pushes
 	player = &dynamics[PLAYER];
 	for (size_t i = 0; i < doors.size(); i += 2){
 		doors[i].setComplement(&doors[i + 1]);
@@ -147,7 +164,7 @@ StateAndRun GameClass::handleEvents(){
 	StateAndRun ans = { 0, true };
 
 	//Keyboard (and close-window) events
-	SDL_Event event;
+	SDL_Event event; bool fireQ = false;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
 			ans = { 0, false };
@@ -161,7 +178,10 @@ StateAndRun GameClass::handleEvents(){
 				ans = { 0, false };
 				break;
 			case SDL_SCANCODE_Q:
-				playerShoot(whichRed, NUMBEAMS);
+				if (!fireQ){
+					fireQ = true;
+					playerShoot(whichRed, NUMBEAMS);
+				}
 				break;
 			case SDL_SCANCODE_W:
 				if (pickups[YELLOW].have()){ playerShoot(whichYellow, 2 * NUMBEAMS); }
@@ -233,10 +253,7 @@ void GameClass::physics(){
 		}
 		for (size_t j = 0; j < doors.size(); j++){
 			//Hit a door?
-			if (beams[i].collide(doors[j]) && doors[j].getVisibility()){
-				doors[j].hit(beams[i].getColor());
-				beams[i].setVisibility(false);
-			}
+			if (beams[i].hit(doors[j])) { break; }
 		}
 	}
 	
@@ -292,24 +309,19 @@ void GameClass::animatePlayer(){
 
 void GameClass::renderGame(){
 	glClear(GL_COLOR_BUFFER_BIT);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslatef(-player->getX(), -player->getY(), 0);
 
-	for (size_t i = 0; i < beams.size(); i++){
-		beams[i].draw(-player->getX(), -player->getY());
-	}
+	for (size_t i = 0; i < beams.size(); i++){ beams[i].draw(); }
 
-	for (size_t i = 0; i < dynamics.size(); i++){
-		dynamics[i].draw(-player->getX(), -player->getY());
-	}
+	for (size_t i = 0; i < dynamics.size(); i++){ dynamics[i].draw(); }
 	
-	for (size_t i = 0; i < doors.size(); i++){
-		doors[i].draw(-player->getX(), -player->getY());
-	}
+	for (size_t i = 0; i < doors.size(); i++){ doors[i].draw(); }
 	
-	for (size_t i = 0; i < pickups.size(); i++){
-		pickups[i].draw(-player->getX(), -player->getY());
-	}
+	for (size_t i = 0; i < pickups.size(); i++){ pickups[i].draw(); }
 
-	theLevel.draw(-player->getX(), -player->getY());
+	theLevel.draw();
 
 	SDL_GL_SwapWindow(displayWindow);
 }

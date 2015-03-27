@@ -5,8 +5,7 @@ int main(int argc, char *argv[])
 	GameClass g;
 	
 	//Main loop
-	while (true){
-		if (!g.run()) { break; }
+	while (g.run()){
 	}
 
 	return 0;
