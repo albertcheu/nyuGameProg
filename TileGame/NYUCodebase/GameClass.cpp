@@ -106,7 +106,7 @@ void GameClass::createBeams(){
 void GameClass::createEnemySprites(){
 	TextureData etd = LoadTextureRGB("enemies.png");
 	hopperSprite = Sprite(etd.id, 0, 0.5f, 0.25f, 0.5f);
-	runnerSprite = Sprite(etd.id, 0.5f, 0.5f, 0.25f, 0.5f);
+	runnerSprite = Sprite(etd.id, 0.52f, 0.5f, 0.25f, 0.5f);
 }
 
 void GameClass::loadLevel(const char* fname, TextureData texSource){
@@ -208,6 +208,29 @@ StateAndRun GameClass::handleEvents(){
 	return ans;
 }
 
+void moveDynamicY(Dynamic& d, Level& theLevel){
+	float hh = d.getHalfHeight();	float hw = d.getHalfWidth();
+	d.moveY(TIMESTEP, FRIC_Y, GRAVITY);
+	float x = d.getX(); float y = d.getY();
+	for (int j = -1; j <= 1; j++){//Test top-right, top-mid, top-left (same for bottom)
+		float newY = theLevel.tileCollide(x + 0.9f*hw*j, y - hh, y, hh, true);
+		if (newY != y){ d.stickBottom(newY); }
+		newY = theLevel.tileCollide(x + 0.9f*hw*j, y + hh, y, hh, true);
+		if (newY != y){ d.stickTop(newY); }
+	}
+}
+void moveDynamicX(Dynamic& d, Level& theLevel){
+	float hh = d.getHalfHeight();	float hw = d.getHalfWidth();
+	d.moveX(TIMESTEP, FRIC_X);
+	float x = d.getX(); float y = d.getY(); float quart = hh / 2.0f;
+	for (int j = 1; j < 4; j++){//Test three points on each side
+		float newX = theLevel.tileCollide(x - hw, y - hh + quart*j, x, hw, false);
+		if (newX != x) { d.stickLeft(newX); }
+		newX = theLevel.tileCollide(x + hw, y - hh + quart*j, x, hw, false);
+		if (newX != x) { d.stickRight(newX); }
+	}
+}
+
 void GameClass::physics(){
 	//Move dynamic objects
 	for (size_t i = 0; i < dynamics.size(); i++){
@@ -215,42 +238,36 @@ void GameClass::physics(){
 		//Assume we are not in contact w/ anything
 		dynamics[i].noTouch();
 
-		//Useful info
-		float hh = dynamics[i].getHalfHeight();
-		float hw = dynamics[i].getHalfWidth(); float quart = hh / 2.0f;
-
 		//Move in y and resolve collisions
-		float newY = 0;
-		dynamics[i].moveY(TIMESTEP, FRIC_Y, GRAVITY);
-		float x = dynamics[i].getX(); float y = dynamics[i].getY();
-		for (int j = -1; j <= 1; j++){//Test top-right, top-mid, top-left (same for bottom)
-			newY = theLevel.tileCollide(x+0.9f*hw*j, y - hh, y, hh, true);
-			if (newY != y){
-				dynamics[i].stickBottom(newY);
-				if (dynamics[i].getType() == HOPPER) { dynamics[i].setVy(JUMP); }
-			}
-			newY = theLevel.tileCollide(x+0.9f*hw*j, y + hh, y, hh, true);
-			if (newY != y){ dynamics[i].stickTop(newY); }
-		}		
+		moveDynamicY(dynamics[i], theLevel);
 		
 		//Move in x and resolve collisions
-		dynamics[i].moveX(TIMESTEP, FRIC_X);
-		float newX = 0;
-		for (int j = 1; j < 4; j++){//Test three points on each side
-			newX = theLevel.tileCollide(x - hw, newY - hh + quart*j, x, hw, false);
-			if (newX != x) { dynamics[i].stickLeft(newX); }
-			newX = theLevel.tileCollide(x + hw, newY - hh + quart*j, x, hw, false);
-			if (newX != x) { dynamics[i].stickRight(newX); }
-		}
+		moveDynamicX(dynamics[i], theLevel);
 
 		//Can't walk thru doors either
+		float hw = dynamics[i].getHalfWidth();
+		float x = dynamics[i].getX();
 		for (size_t j = 0; j < doors.size(); j++){
 			if (!(doors[j].getVisibility() && doors[j].collide(dynamics[i]))) { continue; }
 			//Assuming we cannot jump on a door, only collisions are horizontal
-			newX = depenetrate(newX, hw, doors[j].getX(), doors[j].getHalfWidth());
-			if (newX < dynamics[i].getX()) { dynamics[i].stickRight(newX); }
-			else if (newX > dynamics[i].getX()) { dynamics[i].stickLeft(newX); }
+			float newX = depenetrate(x, hw, doors[j].getX(), doors[j].getHalfWidth());
+			if (newX < x) { dynamics[i].stickRight(newX); }
+			else if (newX > x) { dynamics[i].stickLeft(newX); }
 		}
+
+		switch (dynamics[i].getType()){
+		case HOPPER:
+			if (dynamics[i].getBottom()) { dynamics[i].setVy(JUMP); }
+			break;
+		case RUNNER:
+			if (dynamics[i].getLeft()) { dynamics[i].setAx(MOVE); }
+			else if (dynamics[i].getRight()) { dynamics[i].setAx(-MOVE); }
+			else {
+				if (dynamics[i].getVx() == 0) { dynamics[i].setAx(MOVE); }
+				else { dynamics[i].setAx(dynamics[i].getVx() > 0 ? MOVE : -MOVE); }
+			}
+			break;
+		}		
 	}
 
 	//Move beams (only go horizontally)

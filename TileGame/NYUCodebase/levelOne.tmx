@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="40" height="20" tilewidth="16" tileheight="16" nextobjectid="18">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="80" height="35" tilewidth="16" tileheight="16" nextobjectid="23">
  <tileset firstgid="1" name="mfTRO" tilewidth="16" tileheight="16">
   <image source="mfTRO.png" trans="000000" width="257" height="384"/>
  </tileset>
- <layer name="Tile Layer 1" width="40" height="20">
+ <layer name="Tile Layer 1" width="80" height="35">
   <data encoding="base64" compression="zlib">
-   eJzNllsOwUAUhjusAIl3xQLUCpDg2Q5cgleJFSgLQLoAtwUQG2ENLhtwefWfaGmamSEVnT586cnMhK/nOHOYmqYNQ8oI1AHzYIK+64x3PygsMOWs01oGQZY9z6jy2wv8FmBps1LoNwc7wV4ERBW6OX68/BFxkFDst5H46SCt2E/UH4QB8iGor7sXuq64CVp2rOqOIT+660R3YwqHdKbujiG/saT2OQSG7VfAswaqLDi/xgc/XhwkAzDz6Uf5LIPKH3M6AesQ50/2+wvDjLMkfoSfGUd1L4IS+72fZPOXUD3jXvUVvGOQM+4AjuAEzvYa/b/qIYgJ/L6dcckfauhwAVdwA3dX/qgPttq7FxxanDXv3PPC+xyHDmhL9nnfTX35AL20aDM=
+   eJztmc9OFEEQxnvkqBcl8S7qAwBXLqgoJp58A+KKe93gkQtZeIAN8QE2YAQ1KoIBxAiEGEGMQMCrevDPCwhc/crpDe2ke2Z6ane2x/ThN9PTPVvb821VdU1vVQgxnpH7jHuSPjsiGVfONkyAADwDz8ELeV1lPK+OIWlXpao834RmvAi8lOe3YBWsyeuahY1ToCNm/AwOk5p+6ruExmXwwAEtOPp9AjtgV16vW9g4BzpjxvsM+k2BaclDB7Tg6PcFfAXf5PU7Cxtd4GLM+C0c9gxjSb7rOvtCn68+W9joAb0x46OB3v+IJN8tAll9oB+HA5zvpsCkX5LvFoFW+0AtRr8k3y0CrfaBuvh3rSgr7TugJNtFrWHS+gDF6zVwAwwG6e3PCXM9SZpdwE1dgfs1TOP5B8BtyXVFj5sWmtiwLsz1JGnWjUaP1K9fzsvm98mTdtQLewn66dquknatID+4Aq42wR+GRJgDs+hH81BjpN36taNeqIgwB2bRzzXaUS+MCXP8uv4ONy/nRjXssDipF6iGeJXTHGox+hFZcnIz80scFBOPwAyYBY/BE/BU2L3jcqDYNb3/Ei6/w5F+i2AJLIPXYAW8Efo9uVZA+e+v/xl8JM+c/B38AD/BL9lHMUrxqcYmxeyCCHPKe7AJtsAHsA0+ijAv5TFn+p4KGmcN+qXNyecNn7fhNzgER+BY9m3kpENWyPem5O85HaGk6Yu+10XR2WlwT4R53jSu+24X1y0Vyn155dr/kZrXj0Xd68di0uvHYs7rx6Li9WMx5vVj4ddfHn794OH9j0fd68fC1y88fP7jUff6saD4Vf/nMO1d6fasGv87JO1flSI2aB+rrLEXtXE6iJ9Xmn00srGg3NuYM/WXmzBO+2t/ABj38R0=
   </data>
  </layer>
  <objectgroup name="StartLocations">
   <object id="2" name="ps" type="PlayerStart" x="48" y="266"/>
   <object id="4" name="door1" type="red" x="105.5" y="264"/>
-  <object id="10" name="door3" type="yellow" x="86.833" y="87.5"/>
-  <object id="12" name="yellow" type="pickup" gid="75" x="464" y="301.333"/>
-  <object id="14" name="green" type="pickup" gid="76" x="32" y="126"/>
-  <object id="17" name="hopper1" type="hopper" x="554" y="134"/>
+  <object id="10" name="door2" type="red" x="792.833" y="183.5"/>
+  <object id="12" name="yellow" type="pickup" gid="75" x="30" y="113.333"/>
+  <object id="14" name="green" type="pickup" gid="76" x="35" y="83"/>
+  <object id="17" name="hopper1" type="hopper" x="552" y="179"/>
+  <object id="18" name="runner1" type="runner" x="489" y="183"/>
+  <object id="19" name="door3" type="green" x="87" y="84"/>
+  <object id="20" name="blue" type="pickup" gid="77" x="49.5" y="125"/>
+  <object id="21" name="door4" type="blue" x="1127" y="38"/>
+  <object id="22" name="door5" type="green" x="874" y="105"/>
  </objectgroup>
 </map>

@@ -18,6 +18,9 @@
 #define PLAYER 0
 enum SamusCycles {STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT};
 
+void moveDynamicY(Dynamic& d, Level& theLevel);
+void moveDynamicX(Dynamic& d, Level& theLevel);
+
 class GameClass{
 public:
 	GameClass();
