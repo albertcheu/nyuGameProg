@@ -80,9 +80,9 @@ void Beam::fire(float xcoor, float ycoor, int newDir){
 	Mix_PlayChannel(-1, soundPtr, 0);
 }
 bool Beam::hit(Door& d){
-	if (d.getVisibility() && color == d.getColor() && this->collide(d)){
-		d.open();
+	if (this->collide(d) && d.getVisibility()){
 		visible = false;
+		if (color == d.getColor()) { d.open(); }
 		return true;
 	}
 	return false;

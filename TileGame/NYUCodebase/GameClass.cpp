@@ -231,6 +231,22 @@ void moveDynamicX(Dynamic& d, Level& theLevel){
 	}
 }
 
+void moveEnemy(Dynamic& d){
+	switch (d.getType()){
+	case HOPPER:
+		if (d.getBottom()) { d.setVy(JUMP); }
+		break;
+	case RUNNER:
+		if (d.getLeft()) { d.setAx(MOVE); }
+		else if (d.getRight()) { d.setAx(-MOVE); }
+		else {
+			if (d.getVx() == 0) { d.setAx(MOVE); }
+			else { d.setAx(d.getVx() > 0 ? MOVE : -MOVE); }
+		}
+		break;
+	}
+}
+
 void GameClass::physics(){
 	//Move dynamic objects
 	for (size_t i = 0; i < dynamics.size(); i++){
@@ -255,19 +271,8 @@ void GameClass::physics(){
 			else if (newX > x) { dynamics[i].stickLeft(newX); }
 		}
 
-		switch (dynamics[i].getType()){
-		case HOPPER:
-			if (dynamics[i].getBottom()) { dynamics[i].setVy(JUMP); }
-			break;
-		case RUNNER:
-			if (dynamics[i].getLeft()) { dynamics[i].setAx(MOVE); }
-			else if (dynamics[i].getRight()) { dynamics[i].setAx(-MOVE); }
-			else {
-				if (dynamics[i].getVx() == 0) { dynamics[i].setAx(MOVE); }
-				else { dynamics[i].setAx(dynamics[i].getVx() > 0 ? MOVE : -MOVE); }
-			}
-			break;
-		}		
+		//If it's an enemy type, run or hop
+		moveEnemy(dynamics[i]);
 	}
 
 	//Move beams (only go horizontally)
@@ -280,10 +285,8 @@ void GameClass::physics(){
 		if (newX != theLevel.tileCollide(newX,beams[i].getY(),newX,0,false)){
 			beams[i].setVisibility(false);
 		}
-		for (size_t j = 0; j < doors.size(); j++){
-			//Hit a door?
-			if (beams[i].hit(doors[j])) { break; }
-		}
+		//Hit a door?
+		for (size_t j = 0; j < doors.size(); j++){ if (beams[i].hit(doors[j])) { break; } }
 	}
 	
 	//Move doors (also limited to x-axis)
