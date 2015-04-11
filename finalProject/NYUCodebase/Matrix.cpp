@@ -131,7 +131,7 @@ float calcP(const Vector& axis, Vector* box1, Vector* box2){
 	calcExtrema(&min2, &max2, axis, box2);
 	float w1 = max1 - min1; float w2 = max2 - min2;
 	float c1 = (max1 + min1) / 2; float c2 = (max2 + min2) / 2;
-	return fabs(c1 - c2) - (w1 + w2) / 2;
+	return fabs(c1 - c2) - ((w1 + w2) / 2);
 }
 
 Vector sat(const Matrix& m1, float hw1, float hh1, const Matrix& m2, float hw2, float hh2){
@@ -158,11 +158,13 @@ Vector sat(const Matrix& m1, float hw1, float hh1, const Matrix& m2, float hw2, 
 	for (size_t i = 0; i < 2; i++){
 		calcAxis(axis, box1, i);
 		p = calcP(axis, box1, box2);
-		if (p < minP) { minAxis = axis; minP = p; }
+		if (p >= 0) { return Vector(); }
+		else if (minP == 0 || p > minP) { minAxis = axis; minP = p; }
 		
 		calcAxis(axis, box2, i);
 		p = calcP(axis, box1, box2);
-		if (p < minP) { minAxis = axis; minP = p; }
+		if (p >= 0) { return Vector(); }
+		else if (minP == 0 || p > minP) { minAxis = axis; minP = p; }
 	}
 
 	return minAxis * minP;

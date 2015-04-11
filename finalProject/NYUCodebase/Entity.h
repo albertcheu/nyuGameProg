@@ -39,7 +39,7 @@ public:
 
 	float getHalfWidth();	float getHalfHeight();	
 
-	bool collide(const Entity& other);
+	bool collide(Entity& other);
 };
 
 enum BeamColor{RED,YELLOW,GREEN,BLUE};
@@ -141,4 +141,6 @@ public:
 	void setFrame(SpriteFrame sf);
 
 	EnemyType getType();
+
+	bool collide(Entity& other);
 };

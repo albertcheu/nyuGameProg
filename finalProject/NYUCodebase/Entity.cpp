@@ -34,6 +34,8 @@ void Entity::buildTransform(){
 
 void Entity::draw(){
 	if (visible){
+		buildTransform();
+
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 
@@ -66,14 +68,29 @@ float Entity::getAngle(){ return angle; }
 float Entity::getHalfWidth() { return halfWidth; }
 float Entity::getHalfHeight() { return halfHeight; }
 
-bool Entity::collide(const Entity& other){
-	//Are our boxes overlapping?
-	return !(
-		(x + halfWidth < other.x - other.halfWidth) ||
-		(other.x + other.halfWidth < x - halfWidth) ||
-		(y + halfHeight < other.y - other.halfHeight) ||
-		(other.y + other.halfHeight < y - halfHeight)
-		);
+bool Entity::collide(Entity& other){
+	buildTransform();	other.buildTransform();
+	
+	Vector v = sat(mat, halfWidth, halfHeight,
+		other.mat, other.halfWidth, other.halfHeight);
+	
+	if (x < other.x) { x -= fabs(v.x); }
+	else if (x > other.x) { x += fabs(v.x); }
+
+	if (y < other.y) { y -= fabs(v.y); }
+	else if (y > other.y) { y += fabs(v.y); }
+
+	return !(v.x == 0 && v.y == 0);
+}
+
+bool Dynamic::collide(Entity& other){
+	float oldX = x; float oldY = y;
+	bool ans = Entity::collide(other);
+	if (oldX < x) { stickLeft(x); }
+	else if (oldX > x) { stickRight(x); }
+	if (oldY < y) { stickBottom(y); }
+	else if (oldY > y) { stickTop(y); }
+	return ans;
 }
 
 ColoredDir::ColoredDir():Entity(),color(RED),dir(BEAMDIR_LEFT){}

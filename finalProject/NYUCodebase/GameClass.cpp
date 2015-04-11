@@ -254,29 +254,23 @@ void GameClass::physics(){
 		//Assume we are not in contact w/ anything
 		dynamics[i].noTouch();
 
-		//Move in y and resolve collisions
+		//Move in y and resolve collisions with level
 		moveDynamicY(dynamics[i], theLevel);
 		
-		//Move in x and resolve collisions
+		//Move in x and resolve collisions with level
 		moveDynamicX(dynamics[i], theLevel);
-
+		
 		//Can't walk thru doors either
 		float hw = dynamics[i].getHalfWidth();
 		float x = dynamics[i].getX();
 		for (size_t j = 0; j < doors.size(); j++){
-			if (!(doors[j].getVisibility() && doors[j].collide(dynamics[i]))) { continue; }
-			//Assuming we cannot jump on a door, only collisions are horizontal
-			float newX = depenetrate(x, hw, doors[j].getX(), doors[j].getHalfWidth());
-			if (newX < x) { dynamics[i].stickRight(newX); }
-			else if (newX > x) { dynamics[i].stickLeft(newX); }
+			if (!(doors[j].getVisibility() && dynamics[i].collide(doors[j]))) { continue; }
 		}
 
 		//If it's an enemy type, run or hop
 		moveEnemy(dynamics[i]);
-
-		dynamics[i].buildTransform();
 	}
-
+	
 	//Move beams (only go horizontally)
 	for (size_t i = 0; i < beams.size(); i++){
 		if (!beams[i].getVisibility()){ continue; }
@@ -287,9 +281,10 @@ void GameClass::physics(){
 		if (newX != theLevel.tileCollide(newX,beams[i].getY(),newX,0,false)){
 			beams[i].setVisibility(false);
 		}
+		
 		//Hit a door?
 		for (size_t j = 0; j < doors.size(); j++){ if (beams[i].hit(doors[j])) { break; } }
-		beams[i].buildTransform();
+		
 	}
 	
 	//Move doors (also limited to x-axis)
@@ -297,14 +292,13 @@ void GameClass::physics(){
 		if (!(doors[i].getVisibility() && doors[i].moving())){ continue; }
 		doors[i].setX(doors[i].getX() + doors[i].getDir()*TIMESTEP*BEAMSPEED/4.0f);
 		doors[i].disappear();
-		doors[i].buildTransform();
 	}
 
 	//Check if we got any of the pickups
 	for (size_t i = 0; i < pickups.size(); i++){
 		pickups[i].hit(player, pickupSound);
-		pickups[i].buildTransform();
 	}
+	
 }
 
 bool GameClass::run(){
