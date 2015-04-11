@@ -25,8 +25,10 @@ TextureData LoadTexture(const char *image_path, int internalFormat, GLenum forma
 	return ret;
 }
 
-TextureData LoadTextureRGB(const char *image_path){ return LoadTexture(image_path, GL_RGB, GL_RGB); }
-TextureData LoadTextureRGBA(const char *image_path){ return LoadTexture(image_path, GL_RGBA, GL_RGBA); }
+TextureData LoadTextureRGB(const char *image_path)
+	{ return LoadTexture(image_path, GL_RGB, GL_RGB); }
+TextureData LoadTextureRGBA(const char *image_path)
+	{ return LoadTexture(image_path, GL_RGBA, GL_RGBA); }
 
 Sprite::Sprite()
 	:textureID(0), u(1.0f), v(1.0f), width(1.0f), height(1.0f)
@@ -35,24 +37,21 @@ Sprite::Sprite(GLuint textureID, float u, float v, float width, float height)
 	:textureID(textureID), u(u), v(v), width(width), height(height)
 {}
 
-void Sprite::draw(float w, float h) {
+void Sprite::draw(float presentationWidth, float presentationHeight) {
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, textureID);
-	w /= 2.0f;
-	h /= 2.0f;
-
-	GLfloat quad[] = { -w, h, -w, -h, w, -h, w, h};
-	glVertexPointer(2, GL_FLOAT, 0, quad);
+	float hw = presentationWidth / 2.0f;
+	float hh = presentationHeight / 2.0f;
+	
+	unsigned int indices[] = { 0, 1, 2, 0, 2, 3 };
+	GLfloat pts[] = { -hw, hh, -hw, -hh, hw, -hh, hw, hh };
+	glVertexPointer(2, GL_FLOAT, 0, pts);
 	glEnableClientState(GL_VERTEX_ARRAY);
-
-	GLfloat quadUVs[] = { u, v, u, v + height, u + width, v + height, u + width, v };
-	glTexCoordPointer(2, GL_FLOAT, 0, quadUVs);
+	GLfloat uvs[] = { u, v, u, v + height, u + width, v + height, u + width, v };
+	glTexCoordPointer(2, GL_FLOAT, 0, uvs);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
 
 	glDisable(GL_TEXTURE_2D);
 }

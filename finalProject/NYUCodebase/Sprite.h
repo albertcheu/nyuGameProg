@@ -28,8 +28,7 @@ public:
 	void setUV(float newU, float newV);
 	void setSize(float newWidth, float newHeight);
 
-	//Draw the sprite to fit w units wide and h units tall
-	void draw(float w, float h);
+	void draw(float presentationWidth, float presentationHeight);
 
 };
 

@@ -136,7 +136,16 @@ void Level::draw(){
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
+	/*
+	std::vector<unsigned int> indices;
+	unsigned int blah[] = {0, 1, 2, 0, 2, 3};
+	for (int i = 0; i < tileVerts.size(); i+=8){
+		for (int j = 0; j < 6; j++){
+			indices.push_back(i+blah[j]*2);
+		}
+	}
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, indices.data());
+	*/
 	glDrawArrays(GL_QUADS, 0, tileVerts.size() / 2);
 	glDisable(GL_TEXTURE_2D);
 
