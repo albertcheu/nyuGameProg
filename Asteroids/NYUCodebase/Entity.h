@@ -57,28 +57,6 @@ public:
 	int getDir();
 };
 
-class Door :public ColoredDir{
-private:
-	bool move;
-	Door* complement;
-public:
-	Door();
-
-	//Doors are always one tile wide and four tiles tall, so no need to specify
-	Door(float x, float y, Sprite s, BeamColor color, int dir);
-
-	//Doors come in pairs; when either is hit, they move toward one another
-	void setComplement(Door* d);
-
-	//Move this door and its complement
-	void open();
-
-	//This function makes the door and its complement stay still; also invisible if colliding
-	void disappear();
-
-	bool moving();
-};
-
 class Beam: public ColoredDir{
 private:
 	Mix_Chunk* soundPtr;
@@ -88,11 +66,6 @@ public:
 	//Set location, direction, and become visible (active)
 	void fire(float x, float y, int newDir);
 
-	//If we hit a closed door (visible) and it matches our color, open it
-	bool hit(Door& d);
-
-	//Free allocated memory upon game end
-	//void freeSound();
 };
 
 class Pickup:public Entity{

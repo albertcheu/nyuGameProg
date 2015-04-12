@@ -35,6 +35,10 @@ private:
 	void createPlayer(); void createAsteroids();
 	std::vector<Dynamic> dynamics; Dynamic* player;
 
+	//Coordinates of where to put (white) dots
+	std::vector<float> stars;
+	void createStars();
+
 	//Time variables for physics and animation
 	float lastTickCount, leftover, elapsed, frameChange;
 
@@ -44,4 +48,5 @@ private:
 	void pollForPlayer();
 	
 	void renderGame();
+	void drawStars(); void drawAiming();
 };

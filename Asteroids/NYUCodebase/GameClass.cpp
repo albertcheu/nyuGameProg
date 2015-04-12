@@ -28,15 +28,20 @@ TextureData GameClass::loadOpenGL(){
 	return LoadTextureRGBA("sheet.png");
 }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), frameChange(0), elapsed(0), which(0),
+	: lastTickCount(0), leftover(0), elapsed(0), sound_ptr(NULL),
+	player(NULL), frameChange(0), which(0),
 	spriteSheet(loadOpenGL()){
 	
 	swidth = spriteSheet.width; sheight = spriteSheet.height;
-
+	
 	createPlayer();
+	srand(SDL_GetTicks());
+
 	createAsteroids();
 	createBeams();
 	player = &(dynamics[PLAYER]);
+		
+	createStars();
 }
 
 void GameClass::createPlayer(){
@@ -49,13 +54,20 @@ void GameClass::createPlayer(){
 }
 
 void GameClass::createAsteroids(){
-	//< x = "406" y = "234" width = "28" height = "28" / >
-	Sprite ast(spriteSheet.id, 406.0f / swidth, 234.0f / sheight, 28.0f / swidth, 28.0f / sheight);
-	dynamics.push_back(Dynamic(0.5f, 0.5f, 0.15f, 0.15f, ast, NOT_ENEMY));
+	Sprite a1(spriteSheet.id, 407.0f / swidth, 234.0f / sheight, 28.0f / swidth, 28.0f / sheight);
+	Sprite a2(spriteSheet.id, 651.0f / swidth, 447.0f / sheight, 43.0f / swidth, 43.0f / sheight);
 
-	//<SubTexture name="meteorBrown_med1.png" x="651" y="447" width="43" height="43"/>
-	ast = Sprite(spriteSheet.id, 651.0f / swidth, 447.0f / sheight, 43.0f / swidth, 43.0f / sheight);
-	dynamics.push_back(Dynamic(-0.5f, -0.5f, 0.2f, 0.2f, ast, NOT_ENEMY));
+	int numAsteroids = 4 + (rand() % 3);
+	for (int i = 0; i < numAsteroids; i++){
+		float percentX = (rand() % 100) / 100.0f;
+		float percentY = (rand() % 100) / 100.0f;
+		float x = percentX*UNIT_WIDTH * 2; float y = percentY*UNIT_HEIGHT * 2;
+		x = (x > UNIT_WIDTH ? x - UNIT_WIDTH : -x);
+		y = (y > UNIT_HEIGHT ? y - UNIT_HEIGHT : -y);
+		if (rand() % 2 == 0){ dynamics.push_back(Dynamic(x, y, 0.15f, 0.15f, a1, NOT_ENEMY)); }
+		else { dynamics.push_back(Dynamic(x, y, 0.2f, 0.2f, a2, NOT_ENEMY)); }
+		dynamics.back().setAngle((float)(rand() % 360));
+	}
 }
 
 void GameClass::createBeams(){
@@ -69,6 +81,17 @@ void GameClass::createBeams(){
 	//Actually make the beams now
 	for (int j = 0; j < NUMBEAMS; j++){
 		beams.push_back(Beam(0.03f, 0.01f, b, bc, sound_ptr));
+	}
+}
+
+void GameClass::createStars(){
+	int numStars = 40 + (rand() % 10);
+	for (int i = 0; i < numStars; i++){
+		float percentX = (rand() % 100) / 100.0f;
+		float percentY = (rand() % 100) / 100.0f;
+		float x = percentX*UNIT_WIDTH * 2; float y = percentY*UNIT_HEIGHT * 2;
+		stars.push_back(x>UNIT_WIDTH ? x - UNIT_WIDTH : -x);
+		stars.push_back(y>UNIT_HEIGHT ? y - UNIT_HEIGHT : -y);
 	}
 }
 
@@ -119,7 +142,6 @@ StateAndRun GameClass::handleEvents(){
 	return ans;
 }
 
-
 void GameClass::physics(){
 	//Move dynamic objects
 	for (size_t i = 0; i < dynamics.size(); i++){
@@ -142,16 +164,21 @@ void GameClass::physics(){
 		if (!beams[i].getVisibility()){ continue; }
 		float vx = BEAMSPEED * cos(beams[i].getAngle() * M_PI / 180.0f);
 		float vy = BEAMSPEED * sin(beams[i].getAngle() * M_PI / 180.0f);
-
 		float newX = beams[i].getX() + TIMESTEP*vx;
-
 		float newY = beams[i].getY() + TIMESTEP*vy;
-
 		beams[i].setPos(newX, newY);
-		if (fabs(newX) > UNIT_WIDTH || fabs(newY) > UNIT_HEIGHT)
-			{ beams[i].setVisibility(false); }
+
+		if (newX < player->getX() - UNIT_WIDTH || newX > player->getX() + UNIT_WIDTH ||
+			newY < player->getY() - UNIT_HEIGHT || newY > player->getY() + UNIT_HEIGHT)
+		{ beams[i].setVisibility(false); }
+
+		for (size_t j = PLAYER + 1; j < dynamics.size(); j++){
+			if (dynamics[j].getVisibility() && beams[i].collide(dynamics[j])){
+				beams[i].setVisibility(false);
+				dynamics[j].setVisibility(false);
+			}
+		}
 	}
-	
 }
 
 bool GameClass::run(){
@@ -176,15 +203,62 @@ bool GameClass::run(){
 	return sar.keepRunning;
 }
 
+void GameClass::drawStars(){
+	glVertexPointer(2, GL_FLOAT, 0, stars.data());
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glPointSize(3.0);
+	glDrawArrays(GL_POINTS, 0, stars.size() / 2);
+}
+void GameClass::drawAiming(){
+	std::vector<float> aiming; std::vector<float> aimingColors;
+	for (size_t i = 0; i < dynamics.size(); i++){
+		if (!dynamics[i].getVisibility()) { continue; }
+		//Show direction of distant asteroids!
+		float px = dynamics[i].getX(); float py = dynamics[i].getY();
+		if (px > player->getX() + UNIT_WIDTH){
+			px = player->getX() + UNIT_WIDTH - 0.01f;
+		}
+		else if (px < player->getX() - UNIT_WIDTH){
+			px = player->getX() - UNIT_WIDTH + 0.01f;
+		}
+		if (py > player->getY() + UNIT_HEIGHT){
+			py = player->getY() + UNIT_HEIGHT - 0.01f;
+		}
+		else if (py < player->getY() - UNIT_HEIGHT){
+			py = player->getY() - UNIT_HEIGHT + 0.01f;
+		}
+		if (px != dynamics[i].getX() || py != dynamics[i].getY()){
+			aiming.push_back(px); aiming.push_back(py);
+			aimingColors.push_back(1.0f);
+			aimingColors.push_back(0.0f);
+			aimingColors.push_back(0.0f);
+		}
+	}
+	glVertexPointer(2, GL_FLOAT, 0, aiming.data());
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glColorPointer(3, GL_FLOAT, 0, aimingColors.data());
+	glEnableClientState(GL_COLOR_ARRAY);
+	glPointSize(5.0);
+	glDrawArrays(GL_POINTS, 0, aiming.size() / 2);
+
+	glDisableClientState(GL_COLOR_ARRAY);
+}
+
 void GameClass::renderGame(){
 	glClear(GL_COLOR_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	//glTranslatef(-player->getX(), -player->getY(), 0);
+		
+	drawStars();
+	
+	glTranslatef(-player->getX() + (0.1f * player->getVx()),
+		-player->getY() + (0.1f * player->getVy()), 0);
 
 	for (size_t i = 0; i < beams.size(); i++){ beams[i].draw(); }
 
 	for (size_t i = 0; i < dynamics.size(); i++){ dynamics[i].draw(); }
+
+	drawAiming();
 
 	SDL_GL_SwapWindow(displayWindow);
 }
