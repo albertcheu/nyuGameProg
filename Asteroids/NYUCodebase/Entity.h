@@ -66,6 +66,7 @@ public:
 	//Set location, direction, and become visible (active)
 	void fire(float x, float y, int newDir);
 
+	void moveByAngle(float speed, float timestep);
 };
 
 class Pickup:public Entity{

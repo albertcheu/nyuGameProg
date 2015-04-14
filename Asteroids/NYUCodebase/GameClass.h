@@ -26,7 +26,7 @@ private:
 	//Load in the sdl and opengl functions, and get the pool
 	TextureData loadOpenGL();
 
-	std::vector<Beam> beams; size_t which; Mix_Chunk* sound_ptr;
+	std::vector<Beam> beams; size_t which; Mix_Chunk* fire, *hitRock;
 	void createBeams();
 	void playerShoot();
 

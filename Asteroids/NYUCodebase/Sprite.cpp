@@ -50,7 +50,7 @@ void Sprite::draw(float presentationWidth, float presentationHeight) {
 	GLfloat uvs[] = { u, v, u, v + height, u + width, v + height, u + width, v };
 	glTexCoordPointer(2, GL_FLOAT, 0, uvs);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
 
 	glDisable(GL_TEXTURE_2D);

@@ -109,6 +109,14 @@ void Beam::fire(float xcoor, float ycoor, int newDir){
 	Mix_PlayChannel(-1, soundPtr, 0);
 }
 
+void Beam::moveByAngle(float speed, float timestep){
+	float vx = speed * cos(angle * M_PI / 180.0f);
+	float vy = speed * sin(angle * M_PI / 180.0f);
+	float newX = x + timestep*vx;
+	float newY = y + timestep*vy;
+	setPos(newX, newY);
+}
+
 Pickup::Pickup() :Entity(){ visible = false; }
 Pickup::Pickup(TextureData td, float u_offset)
 	: Entity(0, 0, TILEUNITS, TILEUNITS,

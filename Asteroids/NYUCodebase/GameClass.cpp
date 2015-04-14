@@ -1,7 +1,8 @@
 #include "GameClass.h"
 
 GameClass::~GameClass(){
-	Mix_FreeChunk(sound_ptr);
+	Mix_FreeChunk(fire);
+	Mix_FreeChunk(hitRock);
 	//OutputDebugString("Freed beam sounds");
 
 	SDL_Quit();
@@ -28,7 +29,7 @@ TextureData GameClass::loadOpenGL(){
 	return LoadTextureRGBA("sheet.png");
 }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), elapsed(0), sound_ptr(NULL),
+	: lastTickCount(0), leftover(0), elapsed(0), fire(NULL), hitRock(NULL),
 	player(NULL), frameChange(0), which(0),
 	spriteSheet(loadOpenGL()){
 	
@@ -54,6 +55,7 @@ void GameClass::createPlayer(){
 }
 
 void GameClass::createAsteroids(){
+	hitRock = Mix_LoadWAV("beamRock.wav");
 	Sprite a1(spriteSheet.id, 407.0f / swidth, 234.0f / sheight, 28.0f / swidth, 28.0f / sheight);
 	Sprite a2(spriteSheet.id, 651.0f / swidth, 447.0f / sheight, 43.0f / swidth, 43.0f / sheight);
 
@@ -77,10 +79,10 @@ void GameClass::createBeams(){
 	//Sprite
 	Sprite b(btd.id, 0, 0, 1.0f, 0.25f);
 	//Sound file
-	sound_ptr = Mix_LoadWAV("beam1.wav");
+	fire = Mix_LoadWAV("beam1.wav");
 	//Actually make the beams now
 	for (int j = 0; j < NUMBEAMS; j++){
-		beams.push_back(Beam(0.03f, 0.01f, b, bc, sound_ptr));
+		beams.push_back(Beam(0.03f, 0.01f, b, bc, fire));
 	}
 }
 
@@ -162,20 +164,21 @@ void GameClass::physics(){
 	//Move beams
 	for (size_t i = 0; i < beams.size(); i++){
 		if (!beams[i].getVisibility()){ continue; }
-		float vx = BEAMSPEED * cos(beams[i].getAngle() * M_PI / 180.0f);
-		float vy = BEAMSPEED * sin(beams[i].getAngle() * M_PI / 180.0f);
-		float newX = beams[i].getX() + TIMESTEP*vx;
-		float newY = beams[i].getY() + TIMESTEP*vy;
-		beams[i].setPos(newX, newY);
 
+		beams[i].moveByAngle(BEAMSPEED, TIMESTEP);
+
+		//If out of screen, disappear
+		float newX = beams[i].getX(); float newY = beams[i].getY();
 		if (newX < player->getX() - UNIT_WIDTH || newX > player->getX() + UNIT_WIDTH ||
 			newY < player->getY() - UNIT_HEIGHT || newY > player->getY() + UNIT_HEIGHT)
 		{ beams[i].setVisibility(false); }
 
+		//See if we hit an asteroid
 		for (size_t j = PLAYER + 1; j < dynamics.size(); j++){
 			if (dynamics[j].getVisibility() && beams[i].collide(dynamics[j])){
 				beams[i].setVisibility(false);
 				dynamics[j].setVisibility(false);
+				Mix_PlayChannel(-1, hitRock, 0);
 			}
 		}
 	}
@@ -248,17 +251,19 @@ void GameClass::renderGame(){
 	glClear(GL_COLOR_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-		
+
+	//stars have PARALLAX!
+	glTranslatef(-player->getX()*0.1f, -player->getY()*0.1f, 0);
 	drawStars();
-	
-	glTranslatef(-player->getX() + (0.1f * player->getVx()),
-		-player->getY() + (0.1f * player->getVy()), 0);
+	glLoadIdentity();
 
+	//Rest of objects normally shifted
+	glTranslatef(-player->getX(), -player->getY(), 0);
 	for (size_t i = 0; i < beams.size(); i++){ beams[i].draw(); }
-
-	for (size_t i = 0; i < dynamics.size(); i++){ dynamics[i].draw(); }
-
+	//Aiming = red dots on edge of screen
 	drawAiming();
+	for (size_t i = 0; i < dynamics.size(); i++){ dynamics[i].draw(); }
+	
 
 	SDL_GL_SwapWindow(displayWindow);
 }
