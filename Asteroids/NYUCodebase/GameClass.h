@@ -11,6 +11,7 @@
 #define FRIC 5.0f
 #define MOVE 3.8f
 #define TURN_SPEED 100
+#define ASTEROID_ACCEL 0.4f
 
 #define PLAYER 0
 
@@ -36,8 +37,12 @@ private:
 	std::vector<Dynamic> dynamics; Dynamic* player;
 
 	//Coordinates of where to put (white) dots
-	std::vector<float> stars;
+	std::vector<float> stars; std::vector<float> starColors;
 	void createStars();
+
+	//Text
+	Text asteroidCount;
+	void createText();
 
 	//Time variables for physics and animation
 	float lastTickCount, leftover, elapsed, frameChange;

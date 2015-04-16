@@ -87,7 +87,7 @@ public:
 
 enum EnemyType{NOT_ENEMY,HOPPER,RUNNER};
 class Dynamic: public Entity{
-private:
+protected:
 	float vx, vy, ax, ay;
 	bool touchTop, touchLeft, touchBottom, touchRight;
 	EnemyType et;
