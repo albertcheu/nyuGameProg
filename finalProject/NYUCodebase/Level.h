@@ -22,6 +22,9 @@ public:
 
 	const WhereToStart* getNext();
 	
+	const char* getLevelName();
+	bool solidTile(float x, float y);
+
 private:
 	void load(const char* flareName);
 
@@ -47,6 +50,8 @@ private:
 	//Using level data, calculate gl- and uv-coordinates for rendering
 	void fillRenderVectors();
 	std::vector<float> tileVerts, tileTexts;
+	//also store index data for triangle drawing
+	std::vector<unsigned int> indices;
 
 	//Conversion functions
 	void tile2world(float* worldX, float* worldY, int tileCol, int tileRow);

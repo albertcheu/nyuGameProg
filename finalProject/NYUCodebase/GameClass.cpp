@@ -231,14 +231,18 @@ void moveDynamicX(Dynamic& d, Level& theLevel){
 	}
 }
 
-void moveEnemy(Dynamic& d){
+void moveEnemy(Dynamic& d, Level& theLevel){
 	switch (d.getType()){
 	case HOPPER:
 		if (d.getBottom()) { d.setVy(JUMP); }
 		break;
 	case RUNNER:
-		if (d.getLeft()) { d.setAx(MOVE); }
-		else if (d.getRight()) { d.setAx(-MOVE); }
+		if (d.getLeft() || !theLevel.solidTile(d.getX()-d.getHalfWidth()-0.001f,
+											d.getY()-d.getHalfHeight()-0.001f))
+			{ d.setAx(MOVE); }
+		else if (d.getRight() || !theLevel.solidTile(d.getX() + d.getHalfWidth() + 0.001f,
+											d.getY() - d.getHalfHeight() - 0.001f))
+			{ d.setAx(-MOVE); }
 		else {
 			if (d.getVx() == 0) { d.setAx(MOVE); }
 			else { d.setAx(d.getVx() > 0 ? MOVE : -MOVE); }
@@ -268,7 +272,7 @@ void GameClass::physics(){
 		}
 
 		//If it's an enemy type, run or hop
-		moveEnemy(dynamics[i]);
+		moveEnemy(dynamics[i], theLevel);
 	}
 	
 	//Move beams (only go horizontally)

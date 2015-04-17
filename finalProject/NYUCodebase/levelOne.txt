@@ -80,7 +80,7 @@ location=47,24,0,0
 [StartLocations]
 # runner1
 type=runner
-location=43,25,0,0
+location=42,21,0,0
 
 [StartLocations]
 # door3

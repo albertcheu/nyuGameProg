@@ -15,7 +15,7 @@
   <object id="12" name="yellow" type="pickup" gid="75" x="305.333" y="540.666"/>
   <object id="14" name="green" type="pickup" gid="76" x="403.167" y="413"/>
   <object id="17" name="hopper1" type="hopper" x="758.667" y="396.333"/>
-  <object id="18" name="runner1" type="runner" x="695.667" y="400.333"/>
+  <object id="18" name="runner1" type="runner" x="687.667" y="336.333"/>
   <object id="19" name="door3" type="yellow" x="439" y="378.333"/>
   <object id="20" name="blue" type="pickup" gid="77" x="993.167" y="398"/>
   <object id="21" name="door4" type="blue" x="455.667" y="58"/>

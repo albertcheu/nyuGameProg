@@ -42,7 +42,9 @@ void Sprite::draw(float presentationWidth, float presentationHeight) {
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	float hw = presentationWidth / 2.0f;
 	float hh = presentationHeight / 2.0f;
-	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	unsigned int indices[] = { 0, 1, 2, 0, 2, 3 };
 	GLfloat pts[] = { -hw, hh, -hw, -hh, hw, -hh, hw, hh };
 	glVertexPointer(2, GL_FLOAT, 0, pts);
@@ -61,6 +63,66 @@ void Sprite::setUV(float newU, float newV){
 	v = newV;
 }
 void Sprite::setSize(float newWidth, float newHeight){ width = newWidth; height = newHeight; }
+
+Text::Text(){}
+Text::Text(GLuint textureID, float charSizeSheet, float charSize, float x, float y, std::string s)
+	:textureID(textureID), charSizeSheet(charSizeSheet), charSize(charSize), x(x), y(y)
+{
+	changeText(s);
+}
+
+void Text::changeText(std::string s){
+	points.clear(); uvs.clear(); indices.clear();
+	int numChars = s.size();
+	float vertexX = x + ((float)numChars * charSize) / -2.0f;
+	float vertexY = y + charSize / 2.0f;
+
+	for (size_t i = 0; i < s.size(); i++){
+		int val = (int)(s[i]);
+		int col = val % 16; int row = val / 16;
+		add(row, col, vertexX, vertexY);
+		vertexX += charSize;
+	}
+
+	unsigned int blah[] = { 0, 1, 2, 0, 2, 3 };
+	for (size_t i = 0; i < points.size(); i += 8){
+		for (int j = 0; j < 6; j++){
+			indices.push_back(blah[j] + i / 2);
+		}
+	}
+}
+
+void Text::add(int row, int col, float vertexX, float vertexY){
+	points.push_back(vertexX); points.push_back(vertexY);
+	points.push_back(vertexX); points.push_back(vertexY - charSize);
+	points.push_back(vertexX + charSize); points.push_back(vertexY - charSize);
+	points.push_back(vertexX + charSize); points.push_back(vertexY);
+	float v = row*charSizeSheet;	float u = col *charSizeSheet;
+	uvs.push_back(u); uvs.push_back(v);
+	uvs.push_back(u); uvs.push_back(v + charSizeSheet);
+	uvs.push_back(u + charSizeSheet); uvs.push_back(v + charSizeSheet);
+	uvs.push_back(u + charSizeSheet); uvs.push_back(v);
+}
+
+void Text::draw(){
+	glMatrixMode(GL_MODELVIEW);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	glVertexPointer(2, GL_FLOAT, 0, points.data());
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	glTexCoordPointer(2, GL_FLOAT, 0, uvs.data());
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, indices.data());
+
+	glDisable(GL_TEXTURE_2D);
+
+}
 
 AnimCycle::AnimCycle(int numFrames, float cu, float cv, int dir, float width, float height) :i(0){
 	for (int j = 0; j < numFrames; j++){

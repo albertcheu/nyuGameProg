@@ -3,6 +3,7 @@
 Level::Level()
 	:tilePix(0), tileCountX(0), tileCountY(0), td(), whichEntity(0)
 {}
+const char* Level::getLevelName(){ return (td.fname).c_str(); }
 
 Level::Level(const char* flareName, const char* mapName,
 	int tilePix, int tileCountX, int tileCountY)
@@ -47,6 +48,7 @@ void Level::loadHeader(std::ifstream& infile){
 }
 
 void Level::loadLevel(std::ifstream& infile){
+	tileVerts.clear(); tileTexts.clear(); indices.clear();
 	std::string line;
 	while (getline(infile, line)) {
 		if (line == "") { break; }
@@ -55,7 +57,6 @@ void Level::loadLevel(std::ifstream& infile){
 		getline(sStream, key, '=');
 		getline(sStream, value);
 		if (key == "data") {
-			//OutputDebugString("About to read level data");
 			for (int row = 0; row < height; row++) {
 				getline(infile, line);
 				std::istringstream lineStream(line);
@@ -69,7 +70,6 @@ void Level::loadLevel(std::ifstream& infile){
 			}
 		}
 	}
-	//OutputDebugString("Read level data");
 	fillRenderVectors();
 }
 
@@ -97,15 +97,28 @@ void Level::fillRenderVectors(){
 			});
 		}
 	}
+	unsigned int blah[] = { 0, 1, 2, 0, 2, 3 };
+	for (size_t i = 0; i < tileVerts.size(); i += 8){
+		for (int j = 0; j < 6; j++){
+			indices.push_back(blah[j] + i / 2);
+		}
+	}
+}
+
+bool Level::solidTile(float x, float y){
+	int tileCol, tileRow;
+	world2tile(x, y, &tileCol, &tileRow);
+
+	int t = (data[tileRow])[tileCol];
+
+	return isSolid(t, (td.fname).c_str());	
 }
 
 float Level::tileCollide(float x, float y, float v, float h, bool isY){
-	int tileCol, tileRow;
-	world2tile(x, y, &tileCol, &tileRow);
-	
-	int t = (data[tileRow])[tileCol];
+	if (solidTile(x,y)) {
+		int tileCol, tileRow;
+		world2tile(x, y, &tileCol, &tileRow);
 
-	if (isSolid(t, (td.fname).c_str())) {
 		float tileX, tileY;
 		tile2world(&tileX, &tileY, tileCol, tileRow);
 		return depenetrate(v, h, isY ? tileY : tileX, TILEUNITS / 2);
@@ -134,19 +147,11 @@ void Level::draw(){
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glTexCoordPointer(2, GL_FLOAT, 0, tileTexts.data());
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	/*
-	std::vector<unsigned int> indices;
-	unsigned int blah[] = {0, 1, 2, 0, 2, 3};
-	for (int i = 0; i < tileVerts.size(); i+=8){
-		for (int j = 0; j < 6; j++){
-			indices.push_back(i+blah[j]*2);
-		}
-	}
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, indices.data());
-	*/
-	glDrawArrays(GL_QUADS, 0, tileVerts.size() / 2);
+	
 	glDisable(GL_TEXTURE_2D);
 
 	glPopMatrix();

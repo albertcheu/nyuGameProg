@@ -20,7 +20,7 @@ enum SamusCycles {STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT};
 
 void moveDynamicY(Dynamic& d, Level& theLevel);
 void moveDynamicX(Dynamic& d, Level& theLevel);
-void moveEnemy(Dynamic& d);
+void moveEnemy(Dynamic& d, Level& theLevel);
 
 class GameClass{
 public:

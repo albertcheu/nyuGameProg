@@ -32,6 +32,21 @@ public:
 
 };
 
+class Text{
+private:
+	GLuint textureID;
+	float charSizeSheet, charSize, x, y;
+	std::vector<float> points, uvs;
+	std::vector<unsigned int> indices;
+	void add(int row, int col, float vertexX, float vertexY);
+
+public:
+	Text();
+	Text(GLuint textureID, float charSizeSheet, float charSize, float x, float y, std::string s);
+	void changeText(std::string s);
+	void draw();
+};
+
 typedef struct{
 	float u, v, w, h;//normalized
 } SpriteFrame;
