@@ -30,18 +30,23 @@ TextureData GameClass::loadOpenGL(){
 }
 GameClass::GameClass()
 	: lastTickCount(0), leftover(0), elapsed(0), fire(NULL), hitRock(NULL),
-	player(NULL), frameChange(0), which(0),
+	player(NULL), frameChange(0), which(0), state(START),
 	spriteSheet(loadOpenGL()){
 	
 	swidth = spriteSheet.width; sheight = spriteSheet.height;
 	
 	createPlayer();
-	srand(SDL_GetTicks());
-
-	createAsteroids();
 	createBeams();
+	
+	srand(SDL_GetTicks());
+	resetGame();
+}
+
+void GameClass::resetGame(){
+	stars.clear(); starColors.clear();
+	while (dynamics.size() > 1) { dynamics.pop_back(); }
+	createAsteroids();
 	player = &(dynamics[PLAYER]);
-		
 	createStars();
 	createText();
 }
@@ -107,8 +112,11 @@ void GameClass::createStars(){
 
 void GameClass::createText(){
 	TextureData font = LoadTextureRGBA("font.png");
-	std::string s = "# left:" + std::to_string(dynamics.size() - 1);
-	asteroidCount = Text(font.id, 1.0f / 16.0f, 0.1f, 0, UNIT_HEIGHT-0.1f, s);
+	asteroidCount = (int)dynamics.size() - 1;
+	std::string s = "# left:" + std::to_string(asteroidCount);
+	asteroidCountText = Text(font.id, 1.0f / 16.0f, 0.1f, 0, UNIT_HEIGHT-0.1f, s);
+
+	stateText = Text(font.id, 1.0f / 16.0f, 0.1f, 0, 0, "Press space!");
 }
 
 void GameClass::pollForPlayer(){
@@ -135,21 +143,26 @@ void GameClass::playerShoot(){
 }
 
 StateAndRun GameClass::handleEvents(){
-	StateAndRun ans = { 0, true };
+	StateAndRun ans = { state, true };
 
 	//Keyboard (and close-window) events
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-			ans = { 0, false };
+			ans = { QUIT, false };
 		}
 		else if (event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.scancode){
 			case SDL_SCANCODE_SPACE:
-				playerShoot();
+				OutputDebugString("Space!");
+				if (state == PLAY) { playerShoot(); }
+				else if (state != QUIT) {
+					resetGame();
+					ans.newState = PLAY;
+				}
 				break;
 			case SDL_SCANCODE_ESCAPE:
-				ans = { 0, false };
+				ans = { QUIT, false };
 				break;
 			}
 		}
@@ -171,16 +184,23 @@ void GameClass::physics(){
 		for (size_t j = 0; j < dynamics.size(); j++){
 			if (i == j || !dynamics[j].getVisibility()) { continue; }
 			if (dynamics[i].collide(dynamics[j])){
+				Mix_PlayChannel(-1, hitRock, 0);
+				dynamics[j].setVisibility(false);
 				if (i > PLAYER && j > PLAYER) {
-					dynamics[j].setVisibility(false);
-					Mix_PlayChannel(-1, hitRock, 0);
+					asteroidCount -= 2;
+					dynamics[i].setVisibility(false);
 				}
-				if (i == PLAYER && j > PLAYER){
-					//You lose
+				if (i == PLAYER || j == PLAYER){
+					asteroidCount--;
+					state = LOSE;
+					stateText.changeText("You died!");
 				}
-
+				asteroidCountText.changeText("# left:" + std::to_string(asteroidCount));
 			}
-			
+		}
+		if (state == PLAY && !asteroidCount) {
+			state = WIN;
+			stateText.changeText("You won!");
 		}
 	}
 	
@@ -202,7 +222,13 @@ void GameClass::physics(){
 				beams[i].setVisibility(false);
 				dynamics[j].setVisibility(false);
 				Mix_PlayChannel(-1, hitRock, 0);
+				asteroidCount--;
+				asteroidCountText.changeText("# left:" + std::to_string(asteroidCount));
 			}
+		}
+		if (!asteroidCount) {
+			state = WIN;
+			stateText.changeText("You won!");
 		}
 	}
 }
@@ -214,17 +240,26 @@ bool GameClass::run(){
 	
 	float fixedElapsed = elapsed + leftover;
 	if (fixedElapsed > TIMESTEP * MAX_STEPS) { fixedElapsed = TIMESTEP * MAX_STEPS;	}
-	while (fixedElapsed >= TIMESTEP) {
+	while (state == PLAY && fixedElapsed >= TIMESTEP) {
 		fixedElapsed -= TIMESTEP;
 		physics();
 	}
 	leftover = fixedElapsed;
 
 	StateAndRun sar = handleEvents();
+	state = (GameState) sar.newState;
 
-	pollForPlayer();
-
-	renderGame();
+	if (state == PLAY) {
+		pollForPlayer();
+		renderGame();
+	}
+	else if (state != QUIT){
+		glClear(GL_COLOR_BUFFER_BIT);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		stateText.draw();
+		SDL_GL_SwapWindow(displayWindow);
+	}
 	
 	return sar.keepRunning;
 }
@@ -299,7 +334,7 @@ void GameClass::renderGame(){
 	for (size_t i = 0; i < dynamics.size(); i++){ dynamics[i].draw(); }
 	
 	glLoadIdentity();
-	asteroidCount.draw();
+	asteroidCountText.draw();
 
 	SDL_GL_SwapWindow(displayWindow);
 }

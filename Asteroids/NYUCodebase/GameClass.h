@@ -15,6 +15,8 @@
 
 #define PLAYER 0
 
+enum GameState { START, PLAY, LOSE, WIN, QUIT };
+
 class GameClass{
 public:
 	GameClass();
@@ -31,6 +33,8 @@ private:
 	void createBeams();
 	void playerShoot();
 
+	void resetGame();
+
 	//Player and asteroids
 	TextureData spriteSheet; int swidth, sheight;
 	void createPlayer(); void createAsteroids();
@@ -40,8 +44,9 @@ private:
 	std::vector<float> stars; std::vector<float> starColors;
 	void createStars();
 
-	//Text
-	Text asteroidCount;
+	Text stateText; GameState state;
+	
+	Text asteroidCountText; int asteroidCount;
 	void createText();
 
 	//Time variables for physics and animation
