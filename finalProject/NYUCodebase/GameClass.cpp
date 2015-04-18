@@ -1,7 +1,7 @@
 #include "GameClass.h"
 
 GameClass::~GameClass(){
-	for (size_t i = 0; i < beams.size(); i++) { beams[i].freeSound(); }
+	for (size_t i = 0; i < beams.size(); i+=NUMBEAMS) { beams[i].freeSound(); }
 	//OutputDebugString("Freed beam sounds");
 	Mix_FreeChunk(pickupSound);
 	//OutputDebugString("Freed pickup sound");
@@ -94,8 +94,6 @@ void GameClass::createBeams(){
 		//Sound file
 		char buf[11]; sprintf_s(buf, 11, "beam%d.wav", (i + 1));
 		Mix_Chunk* sound_ptr = Mix_LoadWAV(buf);
-		//OutputDebugString(std::to_string((int)sound_ptr).c_str());
-
 		//Actually make the beams now
 		for (int j = 0; j < NUMBEAMS; j++){
 			beams.push_back(Beam(0.03f, 0.01f, b, bc, sound_ptr));
@@ -275,6 +273,12 @@ void GameClass::physics(){
 		moveEnemy(dynamics[i], theLevel);
 	}
 	
+	for (size_t i = PLAYER + 1; i < dynamics.size(); i++){
+		if (player->collideBounce(dynamics[i], MOVE)) {
+			//OutputDebugString("Hit enemy");
+		}
+	}
+
 	//Move beams (only go horizontally)
 	for (size_t i = 0; i < beams.size(); i++){
 		if (!beams[i].getVisibility()){ continue; }

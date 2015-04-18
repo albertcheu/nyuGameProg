@@ -30,15 +30,14 @@ public:
 	void setPos(float xPos, float yPos);
 	void setAngle(float theta);
 	void setSize(float scale);	void setSize(float newWidth, float newHeight);
-
 	void setVisibility(bool v); bool getVisibility();
 	
 	float getX();	float getY();
 	float getWidth();	float getHeight();
 	float getAngle();
-
 	float getHalfWidth();	float getHalfHeight();	
 
+	Vector pushOut(Entity& other);
 	bool collide(Entity& other);
 };
 
@@ -143,4 +142,5 @@ public:
 	EnemyType getType();
 
 	bool collide(Entity& other);
+	bool collideBounce(Dynamic& other, float bounceMag);
 };
