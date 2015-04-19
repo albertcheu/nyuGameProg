@@ -12,6 +12,8 @@
 #define FRIC_Y 5.6f
 #define JUMP 4.0f
 
+#define HITSPEED 2.7f
+
 #define FRIC_X 7.7f
 #define MOVE 3.8f
 
@@ -33,7 +35,7 @@ private:
 	
 	//Doors and pickups are from one file (mfTRO.png)
 	TextureData pool;
-	Mix_Chunk* pickupSound;
+	Mix_Chunk* pickupSound, *hurtSound;
 	std::vector<Pickup> pickups; void createPickups();
 
 	//Load in the sdl and opengl functions, and get the pool
@@ -58,11 +60,16 @@ private:
 
 	//Player and enemies
 	TextureData spriteSheet; void createPlayer();
-	std::vector<Dynamic> dynamics; Dynamic* player;
+	//std::vector<Dynamic> dynamics;
+	std::vector<AnimatedDynamic> dynamics;
+	Dynamic* player;
 	Sprite hopperSprite, runnerSprite;	void createEnemySprites();
 
 	//Player's animation cycles; are we looking left or right
 	std::vector<AnimCycle> cycles; bool lookLeft;
+
+	//Hopper's animation cycle
+	AnimCycle hopperAnim;
 
 	//Time variables for physics and animation
 	float lastTickCount, leftover, elapsed, frameChange;
@@ -71,7 +78,7 @@ private:
 
 	StateAndRun handleEvents();
 	void pollForPlayer();
-	void animatePlayer();
+	void animate();
 	
 	void renderGame();
 };

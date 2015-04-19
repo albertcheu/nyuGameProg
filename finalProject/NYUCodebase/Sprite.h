@@ -55,9 +55,11 @@ class AnimCycle{
 private:
 	std::vector<SpriteFrame> sfs; size_t i;
 public:
+	AnimCycle();
 	AnimCycle(int numFrames, float cu, float cv, int dir, float width, float height);
-	void setFrame(size_t index, float u, float width);
 	SpriteFrame getNext();
+
+	void setFrame(size_t index, float u, float width);
 	void merge(AnimCycle& other);
 	void reorder(size_t s, const size_t* newOrder);
 };

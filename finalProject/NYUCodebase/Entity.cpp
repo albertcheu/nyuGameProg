@@ -221,3 +221,13 @@ void Dynamic::setFrame(SpriteFrame sf){
 }
 
 EnemyType Dynamic::getType(){ return et; }
+
+AnimatedDynamic::AnimatedDynamic(){}
+AnimatedDynamic::AnimatedDynamic(float x, float y, float width, float height,
+	Sprite s, EnemyType et)
+	:Dynamic(x,y,width,height,s,et)
+{}
+void AnimatedDynamic::setCycle(AnimCycle& ac){ cycle = ac; }
+void AnimatedDynamic::nextFrame(){
+	setFrame(cycle.getNext());
+}

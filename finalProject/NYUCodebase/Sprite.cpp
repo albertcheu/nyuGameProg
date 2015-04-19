@@ -124,6 +124,7 @@ void Text::draw(){
 
 }
 
+AnimCycle::AnimCycle(){}
 AnimCycle::AnimCycle(int numFrames, float cu, float cv, int dir, float width, float height) :i(0){
 	for (int j = 0; j < numFrames; j++){
 		sfs.push_back(SpriteFrame());

@@ -112,7 +112,7 @@ public:
 
 enum EnemyType{NOT_ENEMY,HOPPER,RUNNER};
 class Dynamic: public Entity{
-private:
+protected:
 	float vx, vy, ax, ay;
 	bool touchTop, touchLeft, touchBottom, touchRight;
 	EnemyType et;
@@ -143,4 +143,15 @@ public:
 
 	bool collide(Entity& other);
 	bool collideBounce(Dynamic& other, float bounceMag);
+};
+
+class AnimatedDynamic:public Dynamic{
+public:
+	AnimatedDynamic();
+	AnimatedDynamic(float x, float y, float width, float height, Sprite s, EnemyType et);
+	void setCycle(AnimCycle& ac);
+	void nextFrame();
+
+private:
+	AnimCycle cycle;
 };

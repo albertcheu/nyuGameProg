@@ -5,6 +5,8 @@ GameClass::~GameClass(){
 	//OutputDebugString("Freed beam sounds");
 	Mix_FreeChunk(pickupSound);
 	//OutputDebugString("Freed pickup sound");
+	Mix_FreeChunk(hurtSound);
+	//OutputDebugString("Freed hurt sound");
 	Mix_FreeMusic(music);
 	//OutputDebugString("Freed ambient music");
 	SDL_Quit();
@@ -71,9 +73,10 @@ void GameClass::createPlayer(){
 	cycles.back().setFrame(8, (swidth - 45.0f) / swidth, 35.0f / swidth);
 	cycles[RUNRIGHT].reorder(10, arr);
 	
-	float playerHeight = 0.17f;
 	Sprite p(spriteSheet.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
-	dynamics.push_back(Dynamic(0, 0, playerHeight, playerHeight, p, NOT_ENEMY));	
+	dynamics.push_back(AnimatedDynamic(0, 0, 0.17f, 0.17f, p, NOT_ENEMY));	
+
+	hurtSound = Mix_LoadWAV("hurt.wav");
 }
 
 void GameClass::createPickups(){
@@ -102,9 +105,16 @@ void GameClass::createBeams(){
 }
 
 void GameClass::createEnemySprites(){
-	TextureData etd = LoadTextureRGB("enemies.png");
-	hopperSprite = Sprite(etd.id, 0, 0.5f, 0.25f, 0.5f);
-	runnerSprite = Sprite(etd.id, 0.52f, 0.5f, 0.25f, 0.5f);
+	//TextureData etd = LoadTextureRGB("enemies.png");
+	//hopperSprite = Sprite(etd.id, 0, 0.5f, 0.25f, 0.5f);
+	
+	TextureData etd = LoadTextureRGBA("hopper.png");
+	hopperSprite = Sprite(etd.id, 0, 128.0f / 293.0f, 43.0f / 352.0f, 21.0f / 293.0f);
+	hopperAnim = AnimCycle(3, 0, 128.0f / 293.0f, 1, 43.0f / 352.0f, 21.0f / 293.0f);
+	hopperAnim.merge(AnimCycle(3, 0, 171.0f / 293.0f, 1, 43.0f / 352.0f, 56.0f / 293.0f));
+
+	etd = LoadTextureRGBA("runner.png");
+	runnerSprite = Sprite(etd.id, 2.0f/84.0f, 2.0f/232.0f, 15.0f/84.0f, 15.0f/232.0f);
 }
 
 void GameClass::loadLevel(const char* fname, TextureData texSource){
@@ -122,10 +132,12 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		
 		//push_back enemies to the vector of dynamics
 		else if (wts->typeName == "hopper"){
-			dynamics.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.07f, hopperSprite, HOPPER));
+			AnimatedDynamic ad = AnimatedDynamic(wts->x, wts->y, 0.07f, 0.07f, hopperSprite, HOPPER);
+			ad.setCycle(hopperAnim);
+			dynamics.push_back(ad);			
 		}
 		else if (wts->typeName == "runner"){
-			dynamics.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.07f, runnerSprite, RUNNER));
+			dynamics.push_back(AnimatedDynamic(wts->x, wts->y, 0.07f, 0.07f, runnerSprite, RUNNER));
 		}
 
 		else{//Doors
@@ -274,8 +286,8 @@ void GameClass::physics(){
 	}
 	
 	for (size_t i = PLAYER + 1; i < dynamics.size(); i++){
-		if (player->collideBounce(dynamics[i], MOVE)) {
-			//OutputDebugString("Hit enemy");
+		if (player->collideBounce(dynamics[i], HITSPEED)) {
+			Mix_PlayChannel(-1, hurtSound, 0);
 		}
 	}
 
@@ -325,15 +337,18 @@ bool GameClass::run(){
 	StateAndRun sar = handleEvents();
 
 	pollForPlayer();
-	animatePlayer();
 
+	animate();
+	
 	renderGame();
 	
 	return sar.keepRunning;
 }
 
-void GameClass::animatePlayer(){
+void GameClass::animate(){
 	if (lastTickCount - frameChange >= 0.1f){
+		
+		//Player
 		SpriteFrame sf;
 		if (fabs(player->getVx()) < 0.02f || player->getLeft() || player->getRight()) {
 			if (lookLeft) { sf = cycles[STANDLEFT].getNext(); }
@@ -343,8 +358,17 @@ void GameClass::animatePlayer(){
 			if (lookLeft) { sf = cycles[RUNLEFT].getNext(); }
 			else { sf = cycles[RUNRIGHT].getNext(); }
 		}
-		frameChange = lastTickCount;
 		player->setFrame(sf);
+
+		//Hoppers
+		for (size_t i = PLAYER + 1; i < dynamics.size(); i++){
+			if (dynamics[i].getType() == HOPPER){
+				AnimatedDynamic& h = dynamics[i];
+				if (h.getVy() > 0){ h.nextFrame(); }
+			}
+		}
+
+		frameChange = lastTickCount;
 	}
 }
 
