@@ -60,16 +60,16 @@ private:
 
 	//Player and enemies
 	TextureData spriteSheet; void createPlayer();
-	//std::vector<Dynamic> dynamics;
-	std::vector<AnimatedDynamic> dynamics;
-	Dynamic* player;
+	std::vector<Dynamic> dynamics;
+	//std::vector<AnimatedDynamic> dynamics;
+	Dynamic* player; Entity hurtFlash; float hurtTime;
 	Sprite hopperSprite, runnerSprite;	void createEnemySprites();
 
 	//Player's animation cycles; are we looking left or right
 	std::vector<AnimCycle> cycles; bool lookLeft;
 
 	//Hopper's animation cycle
-	AnimCycle hopperAnim;
+	//AnimCycle hopperAnim;
 
 	//Time variables for physics and animation
 	float lastTickCount, leftover, elapsed, frameChange;

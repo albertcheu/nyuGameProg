@@ -138,6 +138,15 @@ bool Beam::hit(Door& d){
 	}
 	return false;
 }
+bool Beam::hit(Dynamic& enemy){
+	if (this->collide(enemy) && enemy.getVisibility()){
+		visible = false;
+		enemy.reset();
+		return true;
+	}
+	return false;
+}
+
 void Beam::freeSound(){ Mix_FreeChunk(soundPtr); }
 
 Door::Door() : ColoredDir(), move(false), complement(NULL){}

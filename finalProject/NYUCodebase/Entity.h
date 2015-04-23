@@ -43,6 +43,52 @@ public:
 
 enum BeamColor{RED,YELLOW,GREEN,BLUE};
 
+enum EnemyType{ NOT_ENEMY, HOPPER, RUNNER };
+class Dynamic : public Entity{
+protected:
+	float vx, vy, ax, ay;
+	bool touchTop, touchLeft, touchBottom, touchRight;
+	EnemyType et;
+
+public:
+	Dynamic();
+	Dynamic(float x, float y, float width, float height, Sprite s, EnemyType et);
+	float getAx();	float getAy();
+	float getVx();	float getVy();
+
+	void reset();
+
+	bool getLeft(); bool getRight(); bool getTop(); bool getBottom();
+
+	void setSpeed(float v, float dir);	void setVx(float val);	void setVy(float val);
+
+	void setAx(float val); void setAy(float val);
+	void moveY(float timestep, float friction, float gravity);
+	void moveX(float timestep, float friction);
+	void noTouch();
+
+	void stickLeft(float val); void stickRight(float val);
+	void stickTop(float val); void stickBottom(float val);
+
+	void setFrame(SpriteFrame sf);
+
+	EnemyType getType();
+
+	bool collide(Entity& other);
+	bool collideBounce(Dynamic& other, float bounceMag);
+};
+
+class AnimatedDynamic :public Dynamic{
+public:
+	AnimatedDynamic();
+	AnimatedDynamic(float x, float y, float width, float height, Sprite s, EnemyType et);
+	void setCycle(AnimCycle& ac);
+	void nextFrame();
+
+private:
+	AnimCycle cycle;
+};
+
 //This derivative of Entity contains color and direction info
 //Beam and Door are derived in turn
 class ColoredDir:public Entity{
@@ -89,6 +135,8 @@ public:
 
 	//If we hit a closed door (visible) and it matches our color, open it
 	bool hit(Door& d);
+	//If we hit an enemy, kill it
+	bool hit(Dynamic& enemy);
 
 	//Free allocated memory upon game end
 	void freeSound();
@@ -108,50 +156,4 @@ public:
 	void hit(Entity* player, Mix_Chunk* soundPtr);
 	//Did the player collect this?
 	bool have();
-};
-
-enum EnemyType{NOT_ENEMY,HOPPER,RUNNER};
-class Dynamic: public Entity{
-protected:
-	float vx, vy, ax, ay;
-	bool touchTop, touchLeft, touchBottom, touchRight;
-	EnemyType et;
-
-public:
-	Dynamic();
-	Dynamic(float x, float y, float width, float height, Sprite s, EnemyType et);
-	float getAx();	float getAy();
-	float getVx();	float getVy();
-	
-	void reset();
-	
-	bool getLeft(); bool getRight(); bool getTop(); bool getBottom();
-
-	void setSpeed(float v, float dir);	void setVx(float val);	void setVy(float val);
-	
-	void setAx(float val); void setAy(float val);
-	void moveY(float timestep, float friction, float gravity);
-	void moveX(float timestep, float friction);
-	void noTouch();
-
-	void stickLeft(float val); void stickRight(float val);
-	void stickTop(float val); void stickBottom(float val);
-
-	void setFrame(SpriteFrame sf);
-
-	EnemyType getType();
-
-	bool collide(Entity& other);
-	bool collideBounce(Dynamic& other, float bounceMag);
-};
-
-class AnimatedDynamic:public Dynamic{
-public:
-	AnimatedDynamic();
-	AnimatedDynamic(float x, float y, float width, float height, Sprite s, EnemyType et);
-	void setCycle(AnimCycle& ac);
-	void nextFrame();
-
-private:
-	AnimCycle cycle;
 };

@@ -33,9 +33,9 @@ TextureData GameClass::loadOpenGL(){
 	return LoadTextureRGBA("mfTRO.png");
 }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0), elapsed(0),
-	whichRed(0), whichYellow(NUMBEAMS), whichGreen(2*NUMBEAMS), whichBlue(3*NUMBEAMS),
-	pool(loadOpenGL()){
+	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
+	elapsed(0), whichRed(0), whichYellow(NUMBEAMS), whichGreen(2 * NUMBEAMS),
+	whichBlue(3 * NUMBEAMS), hurtTime(0), pool(loadOpenGL()){
 	
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
 	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
@@ -74,9 +74,11 @@ void GameClass::createPlayer(){
 	cycles[RUNRIGHT].reorder(10, arr);
 	
 	Sprite p(spriteSheet.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
-	dynamics.push_back(AnimatedDynamic(0, 0, 0.17f, 0.17f, p, NOT_ENEMY));	
+	dynamics.push_back(Dynamic(0, 0, 0.17f, 0.17f, p, NOT_ENEMY));	
 
 	hurtSound = Mix_LoadWAV("hurt.wav");
+	Sprite s = Sprite(LoadTextureRGBA("hitCircle.png").id, 0, 0, 1, 1);
+	hurtFlash = Entity(0, 0, 0.17f, 0.17f, s);
 }
 
 void GameClass::createPickups(){
@@ -110,8 +112,8 @@ void GameClass::createEnemySprites(){
 	
 	TextureData etd = LoadTextureRGBA("hopper.png");
 	hopperSprite = Sprite(etd.id, 0, 128.0f / 293.0f, 43.0f / 352.0f, 21.0f / 293.0f);
-	hopperAnim = AnimCycle(3, 0, 128.0f / 293.0f, 1, 43.0f / 352.0f, 21.0f / 293.0f);
-	hopperAnim.merge(AnimCycle(3, 0, 171.0f / 293.0f, 1, 43.0f / 352.0f, 56.0f / 293.0f));
+	//hopperAnim = AnimCycle(3, 0, 128.0f / 293.0f, 1, 43.0f / 352.0f, 21.0f / 293.0f);
+	//hopperAnim.merge(AnimCycle(3, 0, 171.0f / 293.0f, 1, 43.0f / 352.0f, 56.0f / 293.0f));
 
 	etd = LoadTextureRGBA("runner.png");
 	runnerSprite = Sprite(etd.id, 2.0f/84.0f, 2.0f/232.0f, 15.0f/84.0f, 15.0f/232.0f);
@@ -132,12 +134,10 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		
 		//push_back enemies to the vector of dynamics
 		else if (wts->typeName == "hopper"){
-			AnimatedDynamic ad = AnimatedDynamic(wts->x, wts->y, 0.07f, 0.07f, hopperSprite, HOPPER);
-			ad.setCycle(hopperAnim);
-			dynamics.push_back(ad);			
+			dynamics.push_back(Dynamic(wts->x, wts->y, 0.09f*43.0f/21.0f, 0.09f, hopperSprite, HOPPER));
 		}
 		else if (wts->typeName == "runner"){
-			dynamics.push_back(AnimatedDynamic(wts->x, wts->y, 0.07f, 0.07f, runnerSprite, RUNNER));
+			dynamics.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.07f, runnerSprite, RUNNER));
 		}
 
 		else{//Doors
@@ -267,10 +267,8 @@ void GameClass::physics(){
 		if (!dynamics[i].getVisibility()){ continue; }
 		//Assume we are not in contact w/ anything
 		dynamics[i].noTouch();
-
 		//Move in y and resolve collisions with level
-		moveDynamicY(dynamics[i], theLevel);
-		
+		moveDynamicY(dynamics[i], theLevel);		
 		//Move in x and resolve collisions with level
 		moveDynamicX(dynamics[i], theLevel);
 		
@@ -288,6 +286,7 @@ void GameClass::physics(){
 	for (size_t i = PLAYER + 1; i < dynamics.size(); i++){
 		if (player->collideBounce(dynamics[i], HITSPEED)) {
 			Mix_PlayChannel(-1, hurtSound, 0);
+			hurtTime = lastTickCount;
 		}
 	}
 
@@ -305,6 +304,11 @@ void GameClass::physics(){
 		//Hit a door?
 		for (size_t j = 0; j < doors.size(); j++){ if (beams[i].hit(doors[j])) { break; } }
 		
+		//Hit an enemy?
+		for (size_t j = PLAYER + 1; j < dynamics.size(); j++){
+			if (beams[i].hit(dynamics[j])) { break; }
+		}
+
 	}
 	
 	//Move doors (also limited to x-axis)
@@ -360,13 +364,6 @@ void GameClass::animate(){
 		}
 		player->setFrame(sf);
 
-		//Hoppers
-		for (size_t i = PLAYER + 1; i < dynamics.size(); i++){
-			if (dynamics[i].getType() == HOPPER){
-				AnimatedDynamic& h = dynamics[i];
-				if (h.getVy() > 0){ h.nextFrame(); }
-			}
-		}
 
 		frameChange = lastTickCount;
 	}
@@ -376,6 +373,7 @@ void GameClass::renderGame(){
 	glClear(GL_COLOR_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+
 	glTranslatef(-player->getX(), -player->getY(), 0);
 
 	for (size_t i = 0; i < beams.size(); i++){ beams[i].draw(); }
@@ -388,5 +386,10 @@ void GameClass::renderGame(){
 
 	theLevel.draw();
 
+	if (lastTickCount - hurtTime < 0.1f){
+		glLoadIdentity();
+		hurtFlash.draw();
+	}
+	
 	SDL_GL_SwapWindow(displayWindow);
 }
