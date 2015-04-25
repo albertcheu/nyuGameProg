@@ -17,11 +17,29 @@
 #define FRIC_X 7.7f
 #define MOVE 3.8f
 
-#define PLAYER 0
-enum SamusCycles {STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT, SITLEFT, SITRIGHT};
+enum SamusCycles {
+	STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT,
+	SITLEFT, SITRIGHT,
+	STANDLEFTUP, STANDRIGHTUP, RUNLEFTUP, RUNRIGHTUP
+};
+
+class Samus : public Dynamic{
+public:
+	Samus();
+	Samus(float x, float y, float width, float height, Sprite s, int swidth, int sheight);
+	
+	bool lookLeft, standing, aimUp;
+
+	void standUp(); void sitDown();
+	void nextFrame();
+
+private:
+	std::vector<AnimCycle> cycles;
+};
 
 void moveDynamicY(Dynamic& d, Level& theLevel);
 void moveDynamicX(Dynamic& d, Level& theLevel);
+void moveDynamic(Dynamic& d, Level& theLevel, std::vector<Door>& doors);
 void moveEnemy(Dynamic& d, Level& theLevel);
 
 class GameClass{
@@ -45,6 +63,12 @@ private:
 	Level theLevel;
 	void loadLevel(const char* fname, TextureData texSource);
 
+	Samus* player; void createPlayer();
+	Entity hurtFlash; float hurtTime;
+
+	std::vector<Dynamic> enemies;
+	Sprite hopperSprite, runnerSprite;	void createEnemySprites();
+
 	//Music to play during the level
 	Mix_Music* music;
 	
@@ -58,21 +82,7 @@ private:
 	Sprite redDoor, yellowDoor, greenDoor, blueDoor;//(avoid repeated constructor calls)
 	void createDoorSprite(Sprite& d, float u_offset);
 
-	//Player and enemies
-	TextureData spriteSheet; void createPlayer();
-	std::vector<Dynamic> dynamics;
-	//std::vector<AnimatedDynamic> dynamics;
-	Dynamic* player; Entity hurtFlash; float hurtTime;
-	Sprite hopperSprite, runnerSprite;	void createEnemySprites();
-
-	//Player's animation cycles; are we looking left or right; are we standing
-	std::vector<AnimCycle> cycles; bool lookLeft, standing;
-	void standUp(); void sitDown();
-
-	//Hopper's animation cycle
-	//AnimCycle hopperAnim;
-
-	//Time variables for physics and animation
+	//Time variables
 	float lastTickCount, leftover, elapsed, frameChange;
 
 	void physics();

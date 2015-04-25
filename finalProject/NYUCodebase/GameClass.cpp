@@ -1,16 +1,85 @@
 #include "GameClass.h"
 
+Samus::Samus():Dynamic(){}
+Samus::Samus(float x, float y, float width, float height, Sprite s, int swidth, int sheight)
+	: Dynamic(x, y, width, height, s, NOT_ENEMY), cycles(cycles),
+	lookLeft(false), standing(true), aimUp(false) {
+	//Standing
+	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, -1, 31.02f / swidth, 36.0f / sheight));
+	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, 1, 31.02f / swidth, 36.0f / sheight));
+
+	//Running
+	size_t arr[10] = { 0, 9, 1, 2, 7, 8, 4, 11, 5, 6 };
+	//left	
+	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, -1, 37.5f / swidth, 36.0f / sheight));
+	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, -1, 37.0f / swidth, 36.0f / sheight));
+	cycles.back().setFrame(8, 81.0f / swidth, 35.0f / swidth);
+	cycles[RUNLEFT].reorder(10, arr);
+	//right
+	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, 1, 37.5f / swidth, 36.0f / sheight));
+	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, 1, 37.0f / swidth, 36.0f / sheight));
+	cycles.back().setFrame(8, (swidth - 118.0f) / swidth, 35.0f / swidth);
+	cycles.back().setFrame(1, (swidth - 76.0f) / swidth, 35.0f / swidth);
+	cycles[RUNRIGHT].reorder(10, arr);
+
+	//Sitting
+	cycles.push_back(AnimCycle(6, 0.5f, 597.0f / sheight, -1, 28.02f / swidth, 27.0f / sheight));
+	cycles.push_back(AnimCycle(6, 0.5f, 597.0f / sheight, 1, 28.02f / swidth, 27.0f / sheight));
+	
+	//STANDLEFTUP//STANDRIGHTUP
+	cycles.push_back(AnimCycle(1, 0.5f, 632.0f / sheight, -1, 24.02f / swidth, 45.0f / sheight));
+	cycles.push_back(AnimCycle(1, 0.5f, 632.0f / sheight, 1, 24.02f / swidth, 45.0f / sheight));
+	
+	//RUNLEFTUP, RUNRIGHTUP
+
+}
+void Samus::standUp(){
+	//if (standing) { return; }
+	standing = true;
+	setSize(0.17f, 0.17f);
+}
+void Samus::sitDown(){
+	//if (!standing || !getBottom()) { return; }
+	standing = false;
+	setSize(0.16f, 0.13f);
+}
+void Samus::nextFrame(){
+	SpriteFrame sf;
+	
+	//Stationary
+	if (fabs(vx) < 0.08f || getLeft() || getRight()) {
+		if (standing){
+			if (lookLeft) {
+				if (aimUp) { sf = cycles[STANDLEFTUP].getNext(); }
+				else { sf = cycles[STANDLEFT].getNext(); }
+			}
+			else {
+				if (aimUp) { sf = cycles[STANDRIGHTUP].getNext(); }
+				else { sf = cycles[STANDRIGHT].getNext(); }
+			}
+		}
+		else{
+			if (lookLeft) { sf = cycles[SITLEFT].getNext(); }
+			else { sf = cycles[SITRIGHT].getNext(); }
+		}
+	}
+
+	//Mobile
+	else{
+		if (lookLeft) { sf = cycles[RUNLEFT].getNext(); }
+		else { sf = cycles[RUNRIGHT].getNext(); }
+	}
+	setFrame(sf);
+}
 GameClass::~GameClass(){
 	for (size_t i = 0; i < beams.size(); i+=NUMBEAMS) { beams[i].freeSound(); }
-	//OutputDebugString("Freed beam sounds");
 	Mix_FreeChunk(pickupSound);
-	//OutputDebugString("Freed pickup sound");
 	Mix_FreeChunk(hurtSound);
-	//OutputDebugString("Freed hurt sound");
 	Mix_FreeMusic(music);
-	//OutputDebugString("Freed ambient music");
+	
+	delete player;
+
 	SDL_Quit();
-	//OutputDebugString("Quit sdl");
 }
 TextureData GameClass::loadOpenGL(){
 	//Boilerplate
@@ -33,7 +102,7 @@ TextureData GameClass::loadOpenGL(){
 	return LoadTextureRGBA("mfTRO.png");
 }
 GameClass::GameClass()
-	: lastTickCount(0), leftover(0), player(NULL), lookLeft(true), frameChange(0),
+	: lastTickCount(0), leftover(0), player(NULL), frameChange(0),
 	elapsed(0), whichRed(0), whichYellow(NUMBEAMS), whichGreen(2 * NUMBEAMS),
 	whichBlue(3 * NUMBEAMS), hurtTime(0), pool(loadOpenGL()){
 	
@@ -54,38 +123,13 @@ void GameClass::createDoorSprite(Sprite& d, float u_offset){
 }
 
 void GameClass::createPlayer(){
-	spriteSheet = LoadTextureRGBA("MetroidZeroMissionSheet1.png");
+	TextureData spriteSheet = LoadTextureRGBA("MetroidZeroMissionSheet1.png");
 	int swidth = spriteSheet.width; int sheight = spriteSheet.height;
-
-	//Standing
-	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, -1, 31.02f / swidth, 36.0f / sheight));
-	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, 1, 31.02f / swidth, 36.0f / sheight));
-	
-	//Running
-	size_t arr[10] = { 0, 9, 1, 2, 7, 8, 4, 11, 5, 6 };
-	//left	
-	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, -1, 37.5f / swidth, 36.0f / sheight));
-	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, -1, 37.0f / swidth, 36.0f / sheight));
-	cycles.back().setFrame(8, 81.0f / swidth, 35.0f / swidth);
-	cycles[RUNLEFT].reorder(10, arr);
-	//right
-	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, 1, 37.5f / swidth, 36.0f / sheight));
-	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, 1, 37.0f / swidth, 36.0f / sheight));
-	cycles.back().setFrame(8, (swidth - 118.0f) / swidth, 35.0f / swidth);
-	cycles.back().setFrame(1, (swidth - 76.0f) / swidth, 35.0f / swidth);
-	cycles[RUNRIGHT].reorder(10, arr);
-
-	//Sitting
-	cycles.push_back(AnimCycle(6, 0.5f, 597.0f / sheight, -1, 28.02f / swidth, 27.0f / sheight));
-	cycles.push_back(AnimCycle(6, 0.5f, 597.0f / sheight, 1, 28.02f / swidth, 27.0f / sheight));
-
-	Sprite p(spriteSheet.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
-	dynamics.push_back(Dynamic(0, 0, 0.17f, 0.17f, p, NOT_ENEMY));
-	//dynamics.push_back(Dynamic(0, 0, 0.17f, 0.17f, Sprite(), NOT_ENEMY));
-	lookLeft = false; standing = true;
+	Sprite s(spriteSheet.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
+	player = new Samus(0, 0, 0.17f, 0.17f, s, swidth, sheight);
 
 	hurtSound = Mix_LoadWAV("hurt.wav");
-	Sprite s = Sprite(LoadTextureRGBA("hitCircle.png").id, 0, 0, 1, 1);
+	s = Sprite(LoadTextureRGBA("hitCircle.png").id, 0, 0, 1, 1);
 	hurtFlash = Entity(0, 0, 2.66f, 2.0f, s);
 }
 
@@ -131,7 +175,7 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 	theLevel = Level(fname, texSource, TILEPIX, TILECOUNTX, TILECOUNTY);
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
-		if (wts->typeName == "PlayerStart") { dynamics[PLAYER].setPos(wts->x, wts->y); }
+		if (wts->typeName == "PlayerStart") { player->setPos(wts->x, wts->y); }
 		
 		//weapon upgrades
 		else if (wts->typeName == "pickup") {
@@ -140,12 +184,12 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 			else if (wts->name == "blue") { pickups[BLUE].activate(wts->x, wts->y); }
 		}
 		
-		//push_back enemies to the vector of dynamics
+		//push_back enemies to the vector of enemies
 		else if (wts->typeName == "hopper"){
-			dynamics.push_back(Dynamic(wts->x, wts->y, 0.09f*43.0f/21.0f, 0.09f, hopperSprite, HOPPER));
+			enemies.push_back(Dynamic(wts->x, wts->y, 0.09f*43.0f/21.0f, 0.09f, hopperSprite, HOPPER));
 		}
 		else if (wts->typeName == "runner"){
-			dynamics.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.07f, runnerSprite, RUNNER));
+			enemies.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.09f, runnerSprite, RUNNER));
 		}
 
 		else{//Doors
@@ -161,47 +205,56 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		}
 	}
 
-	//a vector's location in memory changes; any pointers must be defined after pushes
-	player = &(dynamics[PLAYER]);
-
 	for (size_t i = 0; i < doors.size(); i += 2){
 		doors[i].setComplement(&doors[i + 1]);
 		doors[i + 1].setComplement(&doors[i]);
 	}
 }
 
-void GameClass::sitDown(){
-	if (!standing) { return; }
-	standing = false;
-	player->setSize(0.16f,0.13f);
-	player->setY(player->getY() - 0.04f);
-}
-void GameClass::standUp(){
-	if (standing) { return; }
-	standing = true;
-	player->setY(player->getY() + 0.04f);
-	player->setSize(0.17f, 0.17f);	
-}
-
 void GameClass::pollForPlayer(){
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
+	
+	player->aimUp = false;
 	if (keys[SDL_SCANCODE_LEFT]) {
-		standUp();
-		lookLeft = true;
+		player->standUp();
+		player->lookLeft = true;
 		player->setAx(-MOVE);
 	}
 	else if (keys[SDL_SCANCODE_RIGHT]) {
-		standUp();
-		lookLeft = false;
+		player->standUp();
+		player->lookLeft = false;
 		player->setAx(MOVE);
 	}
-	else { player->setAx(0); }
+	else {
+		player->setAx(0);
+		if (keys[SDL_SCANCODE_UP]){
+			player->aimUp = true;
+			player->setSize(0.13f, 0.2f);
+		}
+		else{
+			player->aimUp = false;
+			player->setSize(0.17f, (player->standing ? 0.17f : 0.13f));
+		}
+	}
+
+	
 }
 
 void GameClass::playerShoot(size_t& which, size_t cap){
-	float offset = standing ? 0.034f : 0.011f;
-	float bx = player->getX() + (lookLeft ? -player->getHalfWidth() : player->getHalfWidth());
-	beams[which].fire(bx, player->getY()+offset, lookLeft ? BEAMDIR_LEFT : BEAMDIR_RIGHT);
+	float bx, by, theta;
+	if (player->aimUp){
+		bx = player->getX();
+		by = player->getY() + player->getHalfHeight();
+		theta = 90.0f;
+	}
+	else{
+		bx = player->getX() + (player->lookLeft ? -1 : 1)*player->getHalfWidth();
+		by = player->getY() + (player->standing ? 0.034f : 0.011f);
+		theta = (player->lookLeft ? 180.0f : 0);
+	}	
+
+	beams[which].fire(bx, by, theta);
+
 	which++;
 	if (which == cap) { which = cap-NUMBEAMS; }
 }
@@ -218,7 +271,10 @@ StateAndRun GameClass::handleEvents(){
 		else if (event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.scancode){
 			case SDL_SCANCODE_SPACE:
-				if (player->getBottom()) { player->setVy(JUMP); }
+				if (player->getBottom()) {
+					player->standUp();
+					player->setVy(JUMP);
+				}
 				break;
 			case SDL_SCANCODE_ESCAPE:
 				ans = { 0, false };
@@ -236,10 +292,10 @@ StateAndRun GameClass::handleEvents(){
 				if (pickups[BLUE].have()){ playerShoot(whichBlue, 4 * NUMBEAMS); }
 				break;
 			case SDL_SCANCODE_DOWN:
-				sitDown();
+				player->sitDown();
 				break;
 			case SDL_SCANCODE_UP:
-				standUp();
+				player->standUp();
 				break;
 			}
 		}
@@ -270,7 +326,24 @@ void moveDynamicX(Dynamic& d, Level& theLevel){
 		if (newX != x) { d.stickRight(newX); }
 	}
 }
+void moveDynamic(Dynamic& d, Level& theLevel, std::vector<Door>& doors){
+	//Assume we are not in contact w/ anything
+	d.noTouch();
+	//Move in y and resolve collisions with level
+	moveDynamicY(d, theLevel);
+	//Move in x and resolve collisions with level
+	moveDynamicX(d, theLevel);
 
+	//Can't walk thru doors either
+	float hw = d.getHalfWidth();
+	float x = d.getX();
+	for (size_t j = 0; j < doors.size(); j++){
+		if (!(doors[j].getVisibility() && d.collide(doors[j]))) { continue; }
+	}
+
+	//If it's an enemy type, run or hop
+	moveEnemy(d, theLevel);
+}
 void moveEnemy(Dynamic& d, Level& theLevel){
 	switch (d.getType()){
 	case HOPPER:
@@ -292,40 +365,27 @@ void moveEnemy(Dynamic& d, Level& theLevel){
 }
 
 void GameClass::physics(){
-	//Move dynamic objects
-	for (size_t i = 0; i < dynamics.size(); i++){
-		if (!dynamics[i].getVisibility()){ continue; }
-		//Assume we are not in contact w/ anything
-		dynamics[i].noTouch();
-		//Move in y and resolve collisions with level
-		moveDynamicY(dynamics[i], theLevel);		
-		//Move in x and resolve collisions with level
-		moveDynamicX(dynamics[i], theLevel);
+	moveDynamic(*player, theLevel, doors);
+	for (size_t i = 0; i < enemies.size(); i++){
+		if (!enemies[i].getVisibility()){ continue; }
 		
-		//Can't walk thru doors either
-		float hw = dynamics[i].getHalfWidth();
-		float x = dynamics[i].getX();
-		for (size_t j = 0; j < doors.size(); j++){
-			if (!(doors[j].getVisibility() && dynamics[i].collide(doors[j]))) { continue; }
-		}
+		moveDynamic(enemies[i], theLevel, doors);
 
-		//If it's an enemy type, run or hop
-		moveEnemy(dynamics[i], theLevel);
-	}
-	
-	for (size_t i = PLAYER + 1; i < dynamics.size(); i++){
-		if (player->collideBounce(dynamics[i], HITSPEED)) {
+		if (player->collideBounce(enemies[i], HITSPEED)) {
 			Mix_PlayChannel(-1, hurtSound, 0);
 			hurtTime = lastTickCount;
+			player->standUp();
 		}
 	}
 
-	//Move beams (only go horizontally)
+	//Move beams
 	for (size_t i = 0; i < beams.size(); i++){
 		if (!beams[i].getVisibility()){ continue; }
-		int dir = beams[i].getDir();
-		float newX = beams[i].getX() + TIMESTEP*BEAMSPEED*dir;
-		beams[i].setX(newX);
+		//TIMESTEP*BEAMSPEED*dir;
+		float radAngle = beams[i].getAngle() * M_PI / 180.0f;
+		float newX = beams[i].getX() + (TIMESTEP*BEAMSPEED)*cos(radAngle);
+		float newY = beams[i].getY() + (TIMESTEP*BEAMSPEED)*sin(radAngle);
+		beams[i].setPos(newX, newY);
 
 		if (newX != theLevel.tileCollide(newX,beams[i].getY(),newX,0,false)){
 			beams[i].setVisibility(false);
@@ -335,8 +395,8 @@ void GameClass::physics(){
 		for (size_t j = 0; j < doors.size(); j++){ if (beams[i].hit(doors[j])) { break; } }
 		
 		//Hit an enemy?
-		for (size_t j = PLAYER + 1; j < dynamics.size(); j++){
-			if (beams[i].hit(dynamics[j])) { break; }
+		for (size_t j = 0; j < enemies.size(); j++){
+			if (beams[i].hit(enemies[j])) { break; }
 		}
 
 	}
@@ -381,25 +441,7 @@ bool GameClass::run(){
 
 void GameClass::animate(){
 	if (lastTickCount - frameChange >= 0.1f){
-		//Player
-		SpriteFrame sf;
-		if (fabs(player->getVx()) < 0.05f || player->getLeft() || player->getRight()) {
-			if (standing){
-				if (lookLeft) { sf = cycles[STANDLEFT].getNext(); }
-				else { sf = cycles[STANDRIGHT].getNext(); }
-			}
-			else{
-				if (lookLeft) { sf = cycles[SITLEFT].getNext(); }
-				else { sf = cycles[SITRIGHT].getNext(); }
-			}
-		}
-		else{
-			if (lookLeft) { sf = cycles[RUNLEFT].getNext(); }
-			else { sf = cycles[RUNRIGHT].getNext(); }
-		}
-		player->setFrame(sf);
-
-
+		player->nextFrame();
 		frameChange = lastTickCount;
 	}
 }
@@ -413,7 +455,8 @@ void GameClass::renderGame(){
 
 	for (size_t i = 0; i < beams.size(); i++){ beams[i].draw(); }
 
-	for (size_t i = 0; i < dynamics.size(); i++){ dynamics[i].draw(); }
+	player->draw();
+	for (size_t i = 0; i < enemies.size(); i++){ enemies[i].draw(); }
 	
 	for (size_t i = 0; i < doors.size(); i++){ doors[i].draw(); }
 	

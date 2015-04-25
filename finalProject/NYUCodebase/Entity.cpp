@@ -97,6 +97,7 @@ bool Dynamic::collide(Entity& other){
 }
 
 bool Dynamic::collideBounce(Dynamic& enemy, float bounceMag){
+	if (!enemy.getVisibility()){ return false; }
 	//Check how much we need to depenetrate
 	Vector v = pushOut(enemy);
 	//Collide with it
@@ -125,9 +126,8 @@ Beam::Beam() : ColoredDir(), soundPtr(NULL) { visible = false; }
 Beam::Beam(float width, float height, Sprite s, BeamColor color, Mix_Chunk* sp)
 	: ColoredDir(0, 0, width, height, s, color, dir), soundPtr(sp) { visible = false; }
 
-void Beam::fire(float xcoor, float ycoor, int newDir){
-	visible = true; x = xcoor; y = ycoor; dir = newDir;
-	angle = (dir == BEAMDIR_LEFT ? 180.0f: 0);
+void Beam::fire(float xcoor, float ycoor, float theta){
+	visible = true; x = xcoor; y = ycoor; angle = theta;
 	Mix_PlayChannel(-1, soundPtr, 0);
 }
 bool Beam::hit(Door& d){

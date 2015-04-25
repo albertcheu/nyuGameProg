@@ -131,7 +131,7 @@ public:
 	Beam();
 	Beam(float width, float height, Sprite s, BeamColor color, Mix_Chunk* sp);
 	//Set location, direction, and become visible (active)
-	void fire(float x, float y, int newDir);
+	void fire(float x, float y, float theta);
 
 	//If we hit a closed door (visible) and it matches our color, open it
 	bool hit(Door& d);
