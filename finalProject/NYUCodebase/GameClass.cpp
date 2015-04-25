@@ -61,24 +61,32 @@ void GameClass::createPlayer(){
 	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, -1, 31.02f / swidth, 36.0f / sheight));
 	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, 1, 31.02f / swidth, 36.0f / sheight));
 	
-	//Running, left
+	//Running
+	size_t arr[10] = { 0, 9, 1, 2, 7, 8, 4, 11, 5, 6 };
+	//left	
 	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, -1, 37.5f / swidth, 36.0f / sheight));
 	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, -1, 37.0f / swidth, 36.0f / sheight));
 	cycles.back().setFrame(8, 81.0f / swidth, 35.0f / swidth);
-	size_t arr[10] = { 0, 9, 1, 2, 7, 8, 4, 11, 5, 6 };
 	cycles[RUNLEFT].reorder(10, arr);
 	//right
 	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, 1, 37.5f / swidth, 36.0f / sheight));
 	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, 1, 37.0f / swidth, 36.0f / sheight));
-	cycles.back().setFrame(8, (swidth - 45.0f) / swidth, 35.0f / swidth);
+	cycles.back().setFrame(8, (swidth - 118.0f) / swidth, 35.0f / swidth);
+	cycles.back().setFrame(1, (swidth - 76.0f) / swidth, 35.0f / swidth);
 	cycles[RUNRIGHT].reorder(10, arr);
-	
+
+	//Sitting
+	cycles.push_back(AnimCycle(6, 0.5f, 597.0f / sheight, -1, 28.02f / swidth, 27.0f / sheight));
+	cycles.push_back(AnimCycle(6, 0.5f, 597.0f / sheight, 1, 28.02f / swidth, 27.0f / sheight));
+
 	Sprite p(spriteSheet.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
-	dynamics.push_back(Dynamic(0, 0, 0.17f, 0.17f, p, NOT_ENEMY));	
+	dynamics.push_back(Dynamic(0, 0, 0.17f, 0.17f, p, NOT_ENEMY));
+	//dynamics.push_back(Dynamic(0, 0, 0.17f, 0.17f, Sprite(), NOT_ENEMY));
+	lookLeft = false; standing = true;
 
 	hurtSound = Mix_LoadWAV("hurt.wav");
 	Sprite s = Sprite(LoadTextureRGBA("hitCircle.png").id, 0, 0, 1, 1);
-	hurtFlash = Entity(0, 0, 0.17f, 0.17f, s);
+	hurtFlash = Entity(0, 0, 2.66f, 2.0f, s);
 }
 
 void GameClass::createPickups(){
@@ -162,13 +170,28 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 	}
 }
 
+void GameClass::sitDown(){
+	if (!standing) { return; }
+	standing = false;
+	player->setSize(0.16f,0.13f);
+	player->setY(player->getY() - 0.04f);
+}
+void GameClass::standUp(){
+	if (standing) { return; }
+	standing = true;
+	player->setY(player->getY() + 0.04f);
+	player->setSize(0.17f, 0.17f);	
+}
+
 void GameClass::pollForPlayer(){
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
 	if (keys[SDL_SCANCODE_LEFT]) {
+		standUp();
 		lookLeft = true;
 		player->setAx(-MOVE);
 	}
 	else if (keys[SDL_SCANCODE_RIGHT]) {
+		standUp();
 		lookLeft = false;
 		player->setAx(MOVE);
 	}
@@ -176,8 +199,9 @@ void GameClass::pollForPlayer(){
 }
 
 void GameClass::playerShoot(size_t& which, size_t cap){
-	beams[which].fire(player->getX(), player->getY()+0.034f,
-		lookLeft ? BEAMDIR_LEFT : BEAMDIR_RIGHT);
+	float offset = standing ? 0.034f : 0.011f;
+	float bx = player->getX() + (lookLeft ? -player->getHalfWidth() : player->getHalfWidth());
+	beams[which].fire(bx, player->getY()+offset, lookLeft ? BEAMDIR_LEFT : BEAMDIR_RIGHT);
 	which++;
 	if (which == cap) { which = cap-NUMBEAMS; }
 }
@@ -210,6 +234,12 @@ StateAndRun GameClass::handleEvents(){
 				break;
 			case SDL_SCANCODE_R:
 				if (pickups[BLUE].have()){ playerShoot(whichBlue, 4 * NUMBEAMS); }
+				break;
+			case SDL_SCANCODE_DOWN:
+				sitDown();
+				break;
+			case SDL_SCANCODE_UP:
+				standUp();
 				break;
 			}
 		}
@@ -351,12 +381,17 @@ bool GameClass::run(){
 
 void GameClass::animate(){
 	if (lastTickCount - frameChange >= 0.1f){
-		
 		//Player
 		SpriteFrame sf;
-		if (fabs(player->getVx()) < 0.02f || player->getLeft() || player->getRight()) {
-			if (lookLeft) { sf = cycles[STANDLEFT].getNext(); }
-			else { sf = cycles[STANDRIGHT].getNext(); }
+		if (fabs(player->getVx()) < 0.05f || player->getLeft() || player->getRight()) {
+			if (standing){
+				if (lookLeft) { sf = cycles[STANDLEFT].getNext(); }
+				else { sf = cycles[STANDRIGHT].getNext(); }
+			}
+			else{
+				if (lookLeft) { sf = cycles[SITLEFT].getNext(); }
+				else { sf = cycles[SITRIGHT].getNext(); }
+			}
 		}
 		else{
 			if (lookLeft) { sf = cycles[RUNLEFT].getNext(); }

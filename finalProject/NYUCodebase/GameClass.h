@@ -18,7 +18,7 @@
 #define MOVE 3.8f
 
 #define PLAYER 0
-enum SamusCycles {STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT};
+enum SamusCycles {STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT, SITLEFT, SITRIGHT};
 
 void moveDynamicY(Dynamic& d, Level& theLevel);
 void moveDynamicX(Dynamic& d, Level& theLevel);
@@ -65,8 +65,9 @@ private:
 	Dynamic* player; Entity hurtFlash; float hurtTime;
 	Sprite hopperSprite, runnerSprite;	void createEnemySprites();
 
-	//Player's animation cycles; are we looking left or right
-	std::vector<AnimCycle> cycles; bool lookLeft;
+	//Player's animation cycles; are we looking left or right; are we standing
+	std::vector<AnimCycle> cycles; bool lookLeft, standing;
+	void standUp(); void sitDown();
 
 	//Hopper's animation cycle
 	//AnimCycle hopperAnim;
