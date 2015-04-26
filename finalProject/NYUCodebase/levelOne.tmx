@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="80" height="35" tilewidth="16" tileheight="16" nextobjectid="25">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="80" height="35" tilewidth="16" tileheight="16" nextobjectid="26">
  <tileset firstgid="1" name="mfTRO" tilewidth="16" tileheight="16">
   <image source="mfTRO.png" trans="000000" width="257" height="384"/>
  </tileset>
@@ -15,12 +15,13 @@
   <object id="12" name="yellow" type="pickup" gid="75" x="305.333" y="540.666"/>
   <object id="14" name="green" type="pickup" gid="76" x="403.167" y="413"/>
   <object id="17" name="hopper1" type="hopper" x="758.667" y="396.333"/>
-  <object id="18" name="runner1" type="runner" x="687.667" y="336.333"/>
+  <object id="18" name="runner1" type="runner" x="1119.67" y="357.333"/>
   <object id="19" name="door3" type="yellow" x="439" y="378.333"/>
   <object id="20" name="blue" type="pickup" gid="77" x="993.167" y="398"/>
   <object id="21" name="door4" type="blue" x="455.667" y="58"/>
   <object id="22" name="door5" type="red" x="391" y="503"/>
   <object id="23" name="door6" type="green" x="968" y="441"/>
   <object id="24" name="door7" type="blue" x="951" y="247"/>
+  <object id="25" name="tank1" type="pickup" gid="73" x="175" y="300"/>
  </objectgroup>
 </map>

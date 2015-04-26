@@ -29,15 +29,11 @@ public:
 	Samus(float x, float y, float width, float height, Sprite s, int swidth, int sheight);
 	
 	bool lookLeft, standing, aimUp;
-
 	void standUp(); void sitDown();
 	void nextFrame();
 
-	int changeHealth(int change);
-
 private:
 	std::vector<AnimCycle> cycles;
-	int health;
 };
 
 void moveDynamicY(Dynamic& d, Level& theLevel);
@@ -56,9 +52,9 @@ private:
 	
 	//Doors and pickups are from one file (mfTRO.png)
 	TextureData pool;
-	Mix_Chunk* pickupSound, *hurtSound;
+	Mix_Chunk* pickupSound, *hurtSound, *hitRunner, *hitHopper, *hitDoor;
 	std::vector<Pickup> pickups; void createPickups();
-	Text healthDisplay;
+	Text healthDisplay, maxHealthDisplay;
 
 	//Load in the sdl and opengl functions, and get the pool
 	TextureData loadOpenGL();

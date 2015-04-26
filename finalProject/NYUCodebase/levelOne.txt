@@ -80,7 +80,7 @@ location=47,24,0,0
 [StartLocations]
 # runner1
 type=runner
-location=42,21,0,0
+location=69,22,0,0
 
 [StartLocations]
 # door3
@@ -111,4 +111,9 @@ location=60,27,0,0
 # door7
 type=blue
 location=59,15,0,0
+
+[StartLocations]
+# tank1
+type=pickup
+location=10,18,0,0
 

@@ -100,18 +100,17 @@ bool Dynamic::collideBounce(Dynamic& enemy, float bounceMag){
 	if (!enemy.getVisibility()){ return false; }
 	//Check how much we need to depenetrate
 	Vector v = pushOut(enemy);
-	//Collide with it
 	if (v.x == 0 && v.y == 0) { return false; }
 
 	//Enemy is to our right and nothing to our left
-	if (x < enemy.x && !touchLeft) { vx = -bounceMag; }
+	if (x < enemy.x && !touchLeft) { vx = -bounceMag; x -= 1.1f*fabs(v.x); }
 	//Enemy is to our left and nothing to our right
-	else if (enemy.x < x && !touchRight){ vx = bounceMag; }
+	else if (enemy.x < x && !touchRight){ vx = bounceMag; x += 1.1f*fabs(v.x); }
 
 	//Enemy above and nothing below
-	if (y < enemy.y && !touchBottom) { vy = -bounceMag; }
+	if (y < enemy.y && !touchBottom) { vy = -bounceMag; y -= 1.1f*fabs(v.y); }
 	//Enemy below and nothing above
-	else if (enemy.y < y && !touchTop) { vy = bounceMag; }
+	else if (enemy.y < y && !touchTop) { vy = bounceMag; y += 1.1f*fabs(v.y); }
 
 	return true;
 }
@@ -130,10 +129,13 @@ void Beam::fire(float xcoor, float ycoor, float theta){
 	visible = true; x = xcoor; y = ycoor; angle = theta;
 	Mix_PlayChannel(-1, soundPtr, 0);
 }
-bool Beam::hit(Door& d){
+bool Beam::hit(Door& d, Mix_Chunk* hitDoor){
 	if (this->collide(d) && d.getVisibility()){
 		visible = false;
-		if (color == d.getColor()) { d.open(); }
+		if (color == d.getColor()) {
+			d.open();
+			Mix_PlayChannel(-1, hitDoor, 0);
+		}
 		return true;
 	}
 	return false;
@@ -141,7 +143,7 @@ bool Beam::hit(Door& d){
 bool Beam::hit(Dynamic& enemy){
 	if (this->collide(enemy) && enemy.getVisibility()){
 		visible = false;
-		enemy.reset();
+		if (enemy.changeHealth(-(int)(color + 1)) == 0){ enemy.reset(); }
 		return true;
 	}
 	return false;
@@ -172,23 +174,36 @@ Pickup::Pickup(TextureData td, float u_offset)
 				1.0f*TILEPIX / td.height),
 			false), acquired(false){}
 void Pickup::activate(float newX, float newY){ x = newX; y = newY; visible = true; }
-void Pickup::hit(Entity* player, Mix_Chunk* soundPtr){
+bool Pickup::hit(Entity* player, Mix_Chunk* soundPtr){
 	if (visible && this->collide(*player)){
 		Mix_PlayChannel(-1, soundPtr, 0);
-		acquired = true; visible = false;		
+		acquired = true; visible = false;
+		return true;
 	}
+	return false;
 }
 bool Pickup::have(){ return acquired; }
 
 Dynamic::Dynamic()
 	: Entity(), vx(0), vy(0), ax(0), ay(0),
-	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false), et(NOT_ENEMY)
-{}
+	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false), et(SAMUS),
+	health(0), maxHealth(0){}
 
 Dynamic::Dynamic(float x, float y, float width, float height, Sprite s, EnemyType et)
 	: Entity(x, y, width, height, s), vx(0), vy(0), ax(0), ay(0),
 	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false), et(et)
-{}
+{
+	switch (et){
+	case HOPPER:
+		health = maxHealth = 6;
+		break;
+	case RUNNER:
+		health = maxHealth = 2;
+		break;
+	case SAMUS:
+		health = maxHealth = 100;
+	}
+}
 
 void Dynamic::setSpeed(float v, float dir) {
 	vx = v*cos(dir * M_PI / 180.0f);
@@ -230,6 +245,14 @@ void Dynamic::setFrame(SpriteFrame sf){
 }
 
 EnemyType Dynamic::getType(){ return et; }
+int Dynamic::changeHealth(int change){
+	health += change;
+	return health;
+}
+int Dynamic::changeMaxHealth(int change){
+	maxHealth += change;
+	return maxHealth;
+}
 
 AnimatedDynamic::AnimatedDynamic(){}
 AnimatedDynamic::AnimatedDynamic(float x, float y, float width, float height,

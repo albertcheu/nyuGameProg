@@ -2,8 +2,8 @@
 
 Samus::Samus():Dynamic(){}
 Samus::Samus(float x, float y, float width, float height, Sprite s, int swidth, int sheight)
-	: Dynamic(x, y, width, height, s, NOT_ENEMY), cycles(cycles),
-	lookLeft(false), standing(true), aimUp(false), health(99) {
+	: Dynamic(x, y, width, height, s, SAMUS), cycles(cycles),
+	lookLeft(false), standing(true), aimUp(false){
 	//Standing
 	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, -1, 31.02f / swidth, 36.0f / sheight));
 	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, 1, 31.02f / swidth, 36.0f / sheight));
@@ -34,12 +34,10 @@ Samus::Samus(float x, float y, float width, float height, Sprite s, int swidth, 
 
 }
 void Samus::standUp(){
-	//if (standing) { return; }
 	standing = true;
 	setSize(0.17f, 0.17f);
 }
 void Samus::sitDown(){
-	//if (!standing || !getBottom()) { return; }
 	standing = false;
 	setSize(0.16f, 0.13f);
 }
@@ -71,15 +69,14 @@ void Samus::nextFrame(){
 	}
 	setFrame(sf);
 }
-int Samus::changeHealth(int change){
-	health += change;
-	return health;
-}
 
 GameClass::~GameClass(){
 	for (size_t i = 0; i < beams.size(); i+=NUMBEAMS) { beams[i].freeSound(); }
 	Mix_FreeChunk(pickupSound);
 	Mix_FreeChunk(hurtSound);
+	Mix_FreeChunk(hitHopper);
+	Mix_FreeChunk(hitRunner);
+	Mix_FreeChunk(hitDoor);
 	Mix_FreeMusic(music);
 	
 	delete player;
@@ -111,6 +108,7 @@ GameClass::GameClass()
 	elapsed(0), whichRed(0), whichYellow(NUMBEAMS), whichGreen(2 * NUMBEAMS),
 	whichBlue(3 * NUMBEAMS), hurtTime(0), pool(loadOpenGL()){
 	
+	hitDoor = Mix_LoadWAV("hitDoor.wav");
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
 	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
 	
@@ -128,18 +126,20 @@ void GameClass::createDoorSprite(Sprite& d, float u_offset){
 }
 
 void GameClass::createPlayer(){
-	TextureData spriteSheet = LoadTextureRGBA("MetroidZeroMissionSheet1.png");
-	int swidth = spriteSheet.width; int sheight = spriteSheet.height;
-	Sprite s(spriteSheet.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
+	TextureData td = LoadTextureRGBA("MetroidZeroMissionSheet1.png");
+	int swidth = td.width; int sheight = td.height;
+	Sprite s(td.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
 	player = new Samus(0, 0, 0.17f, 0.17f, s, swidth, sheight);
 
 	hurtSound = Mix_LoadWAV("hurt.wav");
 	s = Sprite(LoadTextureRGBA("hitCircle.png").id, 0, 0, 1, 1);
 	hurtFlash = Entity(0, 0, 2.66f, 2.0f, s);
 
-	TextureData t = LoadTextureRGBA("font.png");
-	healthDisplay = Text(t.id, 1.0f / 16.0f, 0.08f, 0, 0,
-		std::to_string(player->changeHealth(0)));
+	td = LoadTextureRGBA("font.png");
+	healthDisplay = Text(td.id, 1.0f / 16.0f, 0.08f,
+		0, 0.9f, std::to_string(player->changeHealth(0)));
+	maxHealthDisplay = Text(td.id, 1.0f / 16.0f, 0.08f,
+		0, 0.8f, std::to_string(player->changeMaxHealth(0)));
 }
 
 void GameClass::createPickups(){
@@ -148,6 +148,8 @@ void GameClass::createPickups(){
 		if (i > RED){ pickups.push_back(Pickup(pool, 10.0f + i - 1)); }
 		else { pickups.push_back(Pickup()); }//placeholder for easy array access
 	}
+	//There will always be at most 4 energy tanks
+	for (int i = 0; i < 4; i++){ pickups.push_back(Pickup(pool,8.0f)); }
 }
 
 void GameClass::createBeams(){
@@ -168,16 +170,13 @@ void GameClass::createBeams(){
 }
 
 void GameClass::createEnemySprites(){
-	//TextureData etd = LoadTextureRGB("enemies.png");
-	//hopperSprite = Sprite(etd.id, 0, 0.5f, 0.25f, 0.5f);
-	
 	TextureData etd = LoadTextureRGBA("hopper.png");
 	hopperSprite = Sprite(etd.id, 0, 128.0f / 293.0f, 43.0f / 352.0f, 21.0f / 293.0f);
-	//hopperAnim = AnimCycle(3, 0, 128.0f / 293.0f, 1, 43.0f / 352.0f, 21.0f / 293.0f);
-	//hopperAnim.merge(AnimCycle(3, 0, 171.0f / 293.0f, 1, 43.0f / 352.0f, 56.0f / 293.0f));
+	hitHopper = Mix_LoadWAV("hitHopper.wav");
 
 	etd = LoadTextureRGBA("runner.png");
 	runnerSprite = Sprite(etd.id, 2.0f/84.0f, 2.0f/232.0f, 15.0f/84.0f, 15.0f/232.0f);
+	hitRunner = Mix_LoadWAV("hitRunner.wav");
 }
 
 void GameClass::loadLevel(const char* fname, TextureData texSource){
@@ -186,11 +185,19 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 	while (wts = theLevel.getNext()){
 		if (wts->typeName == "PlayerStart") { player->setPos(wts->x, wts->y); }
 		
-		//weapon upgrades
+		//upgrades
 		else if (wts->typeName == "pickup") {
 			if (wts->name == "yellow") { pickups[YELLOW].activate(wts->x,wts->y); }
 			else if (wts->name == "green"){ pickups[GREEN].activate(wts->x, wts->y); }
 			else if (wts->name == "blue") { pickups[BLUE].activate(wts->x, wts->y); }
+			else{//energy tank
+				for (size_t i = BLUE + 1; i < pickups.size(); i++){
+					if (!pickups[i].getVisibility()){
+						pickups[i].activate(wts->x, wts->y);
+						break;
+					}
+				}
+			}
 		}
 		
 		//push_back enemies to the vector of enemies
@@ -404,11 +411,16 @@ void GameClass::physics(){
 		}
 		
 		//Hit a door?
-		for (size_t j = 0; j < doors.size(); j++){ if (beams[i].hit(doors[j])) { break; } }
+		for (size_t j = 0; j < doors.size(); j++){
+			if (beams[i].hit(doors[j], hitDoor)) { break; }
+		}
 		
 		//Hit an enemy?
 		for (size_t j = 0; j < enemies.size(); j++){
-			if (beams[i].hit(enemies[j])) { break; }
+			if (beams[i].hit(enemies[j])) {
+				Mix_PlayChannel(-1, (enemies[j].getType() == RUNNER) ? hitRunner : hitHopper, 0);
+				break;
+			}
 		}
 
 	}
@@ -422,7 +434,13 @@ void GameClass::physics(){
 
 	//Check if we got any of the pickups
 	for (size_t i = 0; i < pickups.size(); i++){
-		pickups[i].hit(player, pickupSound);
+		if (pickups[i].hit(player, pickupSound) && i > BLUE){
+			int newMaxHealth = player->changeMaxHealth(100);
+			maxHealthDisplay.changeText(std::to_string(newMaxHealth));
+
+			int delta = newMaxHealth - player->changeHealth(0);
+			healthDisplay.changeText(std::to_string(player->changeHealth(delta)));
+		}
 	}
 	
 }
@@ -478,6 +496,7 @@ void GameClass::renderGame(){
 
 	glLoadIdentity();
 	healthDisplay.draw();
+	maxHealthDisplay.draw();
 	if (lastTickCount - hurtTime < 0.1f){ hurtFlash.draw();	}
 	
 	SDL_GL_SwapWindow(displayWindow);

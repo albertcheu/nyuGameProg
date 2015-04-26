@@ -43,12 +43,13 @@ public:
 
 enum BeamColor{RED,YELLOW,GREEN,BLUE};
 
-enum EnemyType{ NOT_ENEMY, HOPPER, RUNNER };
+enum EnemyType{ SAMUS, HOPPER, RUNNER };
 class Dynamic : public Entity{
 protected:
 	float vx, vy, ax, ay;
 	bool touchTop, touchLeft, touchBottom, touchRight;
 	EnemyType et;
+	int health, maxHealth;
 
 public:
 	Dynamic();
@@ -73,6 +74,7 @@ public:
 	void setFrame(SpriteFrame sf);
 
 	EnemyType getType();
+	int changeHealth(int change); int changeMaxHealth(int change);
 
 	bool collide(Entity& other);
 	bool collideBounce(Dynamic& other, float bounceMag);
@@ -134,7 +136,7 @@ public:
 	void fire(float x, float y, float theta);
 
 	//If we hit a closed door (visible) and it matches our color, open it
-	bool hit(Door& d);
+	bool hit(Door& d, Mix_Chunk* hitDoor);
 	//If we hit an enemy, kill it
 	bool hit(Dynamic& enemy);
 
@@ -153,7 +155,7 @@ public:
 	//Make the pickup availble for pickup at the specified location
 	void activate(float newX, float newY);
 	//If the player collided with this pickup, turn invisible and make a sound
-	void hit(Entity* player, Mix_Chunk* soundPtr);
+	bool hit(Entity* player, Mix_Chunk* soundPtr);
 	//Did the player collect this?
 	bool have();
 };
