@@ -3,7 +3,7 @@
 Samus::Samus():Dynamic(){}
 Samus::Samus(float x, float y, float width, float height, Sprite s, int swidth, int sheight)
 	: Dynamic(x, y, width, height, s, NOT_ENEMY), cycles(cycles),
-	lookLeft(false), standing(true), aimUp(false) {
+	lookLeft(false), standing(true), aimUp(false), health(99) {
 	//Standing
 	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, -1, 31.02f / swidth, 36.0f / sheight));
 	cycles.push_back(AnimCycle(5, 0.5f, 559.0f / sheight, 1, 31.02f / swidth, 36.0f / sheight));
@@ -47,7 +47,7 @@ void Samus::nextFrame(){
 	SpriteFrame sf;
 	
 	//Stationary
-	if (fabs(vx) < 0.08f || getLeft() || getRight()) {
+	if (ax == 0 || getLeft() || getRight()) {
 		if (standing){
 			if (lookLeft) {
 				if (aimUp) { sf = cycles[STANDLEFTUP].getNext(); }
@@ -71,6 +71,11 @@ void Samus::nextFrame(){
 	}
 	setFrame(sf);
 }
+int Samus::changeHealth(int change){
+	health += change;
+	return health;
+}
+
 GameClass::~GameClass(){
 	for (size_t i = 0; i < beams.size(); i+=NUMBEAMS) { beams[i].freeSound(); }
 	Mix_FreeChunk(pickupSound);
@@ -131,6 +136,10 @@ void GameClass::createPlayer(){
 	hurtSound = Mix_LoadWAV("hurt.wav");
 	s = Sprite(LoadTextureRGBA("hitCircle.png").id, 0, 0, 1, 1);
 	hurtFlash = Entity(0, 0, 2.66f, 2.0f, s);
+
+	TextureData t = LoadTextureRGBA("font.png");
+	healthDisplay = Text(t.id, 1.0f / 16.0f, 0.08f, 0, 0,
+		std::to_string(player->changeHealth(0)));
 }
 
 void GameClass::createPickups(){
@@ -372,6 +381,9 @@ void GameClass::physics(){
 		moveDynamic(enemies[i], theLevel, doors);
 
 		if (player->collideBounce(enemies[i], HITSPEED)) {
+			int change = (enemies[i].getType() == RUNNER) ? -5 : -10;
+			healthDisplay.changeText(std::to_string(player->changeHealth(change)));
+
 			Mix_PlayChannel(-1, hurtSound, 0);
 			hurtTime = lastTickCount;
 			player->standUp();
@@ -464,10 +476,9 @@ void GameClass::renderGame(){
 
 	theLevel.draw();
 
-	if (lastTickCount - hurtTime < 0.1f){
-		glLoadIdentity();
-		hurtFlash.draw();
-	}
+	glLoadIdentity();
+	healthDisplay.draw();
+	if (lastTickCount - hurtTime < 0.1f){ hurtFlash.draw();	}
 	
 	SDL_GL_SwapWindow(displayWindow);
 }

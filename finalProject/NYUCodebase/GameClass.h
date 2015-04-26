@@ -20,7 +20,7 @@
 enum SamusCycles {
 	STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT,
 	SITLEFT, SITRIGHT,
-	STANDLEFTUP, STANDRIGHTUP, RUNLEFTUP, RUNRIGHTUP
+	STANDLEFTUP, STANDRIGHTUP
 };
 
 class Samus : public Dynamic{
@@ -33,8 +33,11 @@ public:
 	void standUp(); void sitDown();
 	void nextFrame();
 
+	int changeHealth(int change);
+
 private:
 	std::vector<AnimCycle> cycles;
+	int health;
 };
 
 void moveDynamicY(Dynamic& d, Level& theLevel);
@@ -55,6 +58,7 @@ private:
 	TextureData pool;
 	Mix_Chunk* pickupSound, *hurtSound;
 	std::vector<Pickup> pickups; void createPickups();
+	Text healthDisplay;
 
 	//Load in the sdl and opengl functions, and get the pool
 	TextureData loadOpenGL();
@@ -79,7 +83,7 @@ private:
 
 	//Doors that open to weapon fire
 	std::vector<Door> doors;
-	Sprite redDoor, yellowDoor, greenDoor, blueDoor;//(avoid repeated constructor calls)
+	Sprite redDoor, yellowDoor, greenDoor, blueDoor;
 	void createDoorSprite(Sprite& d, float u_offset);
 
 	//Time variables
