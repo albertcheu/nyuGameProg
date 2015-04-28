@@ -400,7 +400,6 @@ void GameClass::physics(){
 	//Move beams
 	for (size_t i = 0; i < beams.size(); i++){
 		if (!beams[i].getVisibility()){ continue; }
-		//TIMESTEP*BEAMSPEED*dir;
 		float radAngle = beams[i].getAngle() * M_PI / 180.0f;
 		float newX = beams[i].getX() + (TIMESTEP*BEAMSPEED)*cos(radAngle);
 		float newY = beams[i].getY() + (TIMESTEP*BEAMSPEED)*sin(radAngle);

@@ -143,7 +143,7 @@ bool Beam::hit(Door& d, Mix_Chunk* hitDoor){
 bool Beam::hit(Dynamic& enemy){
 	if (this->collide(enemy) && enemy.getVisibility()){
 		visible = false;
-		if (enemy.changeHealth(-(int)(color + 1)) == 0){ enemy.reset(); }
+		if (enemy.changeHealth(-(int)(color + 1)) <= 0){ enemy.reset(); }
 		return true;
 	}
 	return false;
