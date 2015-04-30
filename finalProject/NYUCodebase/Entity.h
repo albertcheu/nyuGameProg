@@ -39,6 +39,7 @@ public:
 
 	Vector pushOut(Entity& other);
 	bool collide(Entity& other);
+	bool contains(float otherX, float otherY);
 };
 
 enum BeamColor{RED,YELLOW,GREEN,BLUE};
@@ -80,7 +81,6 @@ public:
 	int changeHealth(int change); int changeMaxHealth(int change);
 
 	bool collide(Entity& other);
-	bool collideBounce(Dynamic& other, float bounceMag);
 };
 
 class AnimatedDynamic :public Dynamic{

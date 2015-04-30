@@ -69,6 +69,24 @@ void Samus::nextFrame(){
 	}
 	setFrame(sf);
 }
+bool Samus::collideBounce(Dynamic& enemy, float bounceMag){
+	if (!enemy.getVisibility()){ return false; }
+	//Check how much we need to depenetrate
+	Vector v = pushOut(enemy);
+	if (v.x == 0 && v.y == 0) { return false; }
+
+	//Enemy is to our right and nothing to our left
+	if (x < enemy.getX() && !touchLeft) { vx = -bounceMag; }
+	//Enemy is to our left and nothing to our right
+	else if (enemy.getX() < x && !touchRight){ vx = bounceMag; }
+
+	//Enemy above and nothing below
+	if (y < enemy.getY() && !touchBottom) { vy = -bounceMag; }
+	//Enemy below and nothing above
+	else if (enemy.getY() < y && !touchTop) { vy = bounceMag; }
+
+	return true;
+}
 
 GameClass::~GameClass(){
 	for (size_t i = 0; i < beams.size(); i+=NUMBEAMS) { beams[i].freeSound(); }
@@ -323,7 +341,17 @@ StateAndRun GameClass::handleEvents(){
 	return ans;
 }
 
-void moveDynamicY(Dynamic& d, Level& theLevel){
+bool GameClass::castToPlayer(Dynamic& d){
+	//increment in lengths of TILEUNITS
+	Vector v = Vector(player->getX() - d.getX(), player->getY() - d.getY(), 0) * TILEUNITS;
+	float x = d.getX(); float y = d.getY();
+	while (!theLevel.solidTile(x, y)){
+		x += v.x; y += v.y;
+		if (player->contains(x, y)){ return true; }
+	}
+	return false;
+}
+void GameClass::moveDynamicY(Dynamic& d){
 	float hh = d.getHalfHeight();	float hw = d.getHalfWidth();
 	d.moveY(TIMESTEP, FRIC_Y, GRAVITY);
 	float x = d.getX(); float y = d.getY();
@@ -334,7 +362,7 @@ void moveDynamicY(Dynamic& d, Level& theLevel){
 		if (newY != y){ d.stickTop(newY); }
 	}
 }
-void moveDynamicX(Dynamic& d, Level& theLevel){
+void GameClass::moveDynamicX(Dynamic& d){
 	float hh = d.getHalfHeight();	float hw = d.getHalfWidth();
 	d.moveX(TIMESTEP, FRIC_X);
 	float x = d.getX(); float y = d.getY(); float quart = hh / 2.0f;
@@ -345,13 +373,13 @@ void moveDynamicX(Dynamic& d, Level& theLevel){
 		if (newX != x) { d.stickRight(newX); }
 	}
 }
-void moveDynamic(Dynamic& d, Level& theLevel, std::vector<Door>& doors){
+void GameClass::moveDynamic(Dynamic& d){
 	//Assume we are not in contact w/ anything
 	d.noTouch();
 	//Move in y and resolve collisions with level
-	moveDynamicY(d, theLevel);
+	moveDynamicY(d);
 	//Move in x and resolve collisions with level
-	moveDynamicX(d, theLevel);
+	moveDynamicX(d);
 
 	//Can't walk thru doors either
 	float hw = d.getHalfWidth();
@@ -360,44 +388,47 @@ void moveDynamic(Dynamic& d, Level& theLevel, std::vector<Door>& doors){
 		if (!(doors[j].getVisibility() && d.collide(doors[j]))) { continue; }
 	}
 }
-void moveHoriz(Dynamic& d, Level& theLevel){
+void GameClass::moveHoriz(Dynamic& d){
 	
-	if (d.getLeft()) { d.setAx(MOVE); }
-	else if (d.getRight())	{ d.setAx(-MOVE); }
+	if (d.getLeft()) { d.setAx(ENEMY_MOVE); }
+	else if (d.getRight())	{ d.setAx(-ENEMY_MOVE); }
 
 	else if (d.getBottom()){
 		if (!theLevel.solidTile(d.getX() - d.getHalfWidth() - 0.001f,
-			d.getY() - d.getHalfHeight() - 0.001f)){ d.setAx(MOVE);	}
+			d.getY() - d.getHalfHeight() - 0.001f)){ d.setAx(ENEMY_MOVE);	}
 		if (!theLevel.solidTile(d.getX() + d.getHalfWidth() + 0.001f,
-			d.getY() - d.getHalfHeight() - 0.001f)){ d.setAx(-MOVE); }
+			d.getY() - d.getHalfHeight() - 0.001f)){ d.setAx(-ENEMY_MOVE); }
 	}
 
-	else if (d.getVx() == 0) { d.setAx(MOVE); }
-	else { d.setAx(d.getVx() > 0 ? MOVE : -MOVE); }
+	else if (d.getVx() == 0) { d.setAx(ENEMY_MOVE); }
+	else { d.setAx(d.getVx() > 0 ? ENEMY_MOVE : -ENEMY_MOVE); }
 	
 }
-void moveEnemy(Dynamic& d, Level& theLevel, Samus* player){
+void GameClass::moveEnemy(Dynamic& d){
 	switch (d.getType()){
 	case HOPPER:
-		if (d.getBottom()) { d.setVy(JUMP); }
-		if (fabs(d.getX() - player->getX()) < 0.4f){
-			if (d.getX() < player->getX()){ d.setAx(MOVE); }
-			else { d.setAx(-MOVE); }
-		}		
+		//Touching the ground (or player): hop
+		if (d.getBottom()) { d.setVy(ENEMY_JUMP); }
+		//Stalk player
+		if (fabs(d.getX() - player->getX()) < 0.3f &&
+			fabs(d.getY() - player->getY()) < 0.05f){		
+			if (d.getX() < player->getX()){ d.setAx(ENEMY_MOVE); }
+			else { d.setAx(-ENEMY_MOVE); }
+		}
 		break;
 	case RUNNER:
-		moveHoriz(d, theLevel);
+		moveHoriz(d);
 		break;
 	case FLIER:
-		moveHoriz(d, theLevel);
-		//revert to the flying state
+		moveHoriz(d);
+		//Touching the ground (or player): revert to the flying state
 		if (d.getBottom()) {
 			d.setAy(-GRAVITY);
-			d.setVy(JUMP);
+			d.setVy(ENEMY_JUMP);
 		}
-		//If player is near, drop
-		else if (fabs(player->getX() - d.getX()) < 0.3f &&
-				fabs(player->getY() - d.getY()) < 0.65f){
+		//If player is visible beneath us, drop
+		else if (fabs(player->getX() - d.getX()) < 0.1f &&
+				d.getY() > player->getY() && castToPlayer(d)){
 			d.setAy(0);
 		}
 		break;
@@ -407,17 +438,16 @@ void moveEnemy(Dynamic& d, Level& theLevel, Samus* player){
 }
 
 void GameClass::physics(){
-	moveDynamic(*player, theLevel, doors);
+	moveDynamic(*player);
+
 	for (size_t i = 0; i < enemies.size(); i++){
 		if (!enemies[i].getVisibility()){ continue; }
-		
-		moveDynamic(enemies[i], theLevel, doors);
-		moveEnemy(enemies[i], theLevel, player);
+		moveDynamic(enemies[i]);
+		moveEnemy(enemies[i]);
 
 		if (player->collideBounce(enemies[i], HITSPEED)) {
 			int change = DAMAGE_AMT[enemies[i].getType()];
 			healthDisplay.changeText(std::to_string(player->changeHealth(change)));
-
 			Mix_PlayChannel(-1, hurtSound, 0);
 			hurtTime = lastTickCount;
 			player->standUp();

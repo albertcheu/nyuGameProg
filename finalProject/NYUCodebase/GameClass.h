@@ -12,11 +12,13 @@
 #define GRAVITY -7.8f
 #define FRIC_Y 5.6f
 #define JUMP 4.0f
+#define ENEMY_JUMP 3.1f
 
 #define HITSPEED 2.7f
 
 #define FRIC_X 7.7f
 #define MOVE 3.8f
+#define ENEMY_MOVE 3.0f
 
 enum SamusCycles {
 	STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT,
@@ -32,16 +34,12 @@ public:
 	bool lookLeft, standing, aimUp;
 	void standUp(); void sitDown();
 	void nextFrame();
+	bool collideBounce(Dynamic& other, float bounceMag);
 
 private:
 	std::vector<AnimCycle> cycles;
 };
 
-void moveDynamicY(Dynamic& d, Level& theLevel);
-void moveDynamicX(Dynamic& d, Level& theLevel);
-void moveDynamic(Dynamic& d, Level& theLevel, std::vector<Door>& doors);
-void moveEnemy(Dynamic& d, Level& theLevel, Samus* player);
-void moveHoriz(Dynamic& d, Level& theLevel);
 
 class GameClass{
 public:
@@ -88,6 +86,13 @@ private:
 	float lastTickCount, leftover, elapsed, frameChange;
 
 	void physics();
+	void moveDynamicY(Dynamic& d);
+	void moveDynamicX(Dynamic& d);
+	void moveDynamic(Dynamic& d);
+	void moveEnemy(Dynamic& d);
+	void moveHoriz(Dynamic& d);
+	bool castToPlayer(Dynamic& d);
+
 
 	StateAndRun handleEvents();
 	void pollForPlayer();

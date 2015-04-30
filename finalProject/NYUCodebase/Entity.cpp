@@ -85,6 +85,13 @@ bool Entity::collide(Entity& other){
 
 	return !(v.x == 0 && v.y == 0);
 }
+bool Entity::contains(float otherX, float otherY){
+	//convert the world coordinates to object space
+	buildTransform();
+	Vector converted = mat.inverse() * Vector(otherX, otherY, 0);
+	return (converted.x > -halfWidth && converted.x < halfWidth &&
+			converted.y > -halfHeight && converted.y < halfHeight);
+}
 
 bool Dynamic::collide(Entity& other){
 	float oldX = x; float oldY = y;
@@ -94,25 +101,6 @@ bool Dynamic::collide(Entity& other){
 	if (oldY < y) { stickBottom(y); }
 	else if (oldY > y) { stickTop(y); }
 	return ans;
-}
-
-bool Dynamic::collideBounce(Dynamic& enemy, float bounceMag){
-	if (!enemy.getVisibility()){ return false; }
-	//Check how much we need to depenetrate
-	Vector v = pushOut(enemy);
-	if (v.x == 0 && v.y == 0) { return false; }
-
-	//Enemy is to our right and nothing to our left
-	if (x < enemy.x && !touchLeft) { vx = -bounceMag; x -= 1.1f*fabs(v.x); }
-	//Enemy is to our left and nothing to our right
-	else if (enemy.x < x && !touchRight){ vx = bounceMag; x += 1.1f*fabs(v.x); }
-
-	//Enemy above and nothing below
-	if (y < enemy.y && !touchBottom) { vy = -bounceMag; y -= 1.1f*fabs(v.y); }
-	//Enemy below and nothing above
-	else if (enemy.y < y && !touchTop) { vy = bounceMag; y += 1.1f*fabs(v.y); }
-
-	return true;
 }
 
 ColoredDir::ColoredDir():Entity(),color(RED),dir(BEAMDIR_LEFT){}
