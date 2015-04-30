@@ -24,6 +24,8 @@ typedef struct{
 	bool keepRunning;
 } StateAndRun;
 
+float dist(float x1, float y1, float x2, float y2);
+
 float lerp(float v0, float v1, float t);
 float depenetrate(float c1, float h1, float c2, float h2);
 

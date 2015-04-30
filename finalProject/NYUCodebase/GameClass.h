@@ -7,6 +7,7 @@
 
 #define BEAMSPEED 3.5f
 #define NUMBEAMS 10
+#define NUMTANKS 6
 
 #define GRAVITY -7.8f
 #define FRIC_Y 5.6f
@@ -39,7 +40,8 @@ private:
 void moveDynamicY(Dynamic& d, Level& theLevel);
 void moveDynamicX(Dynamic& d, Level& theLevel);
 void moveDynamic(Dynamic& d, Level& theLevel, std::vector<Door>& doors);
-void moveEnemy(Dynamic& d, Level& theLevel);
+void moveEnemy(Dynamic& d, Level& theLevel, Samus* player);
+void moveHoriz(Dynamic& d, Level& theLevel);
 
 class GameClass{
 public:

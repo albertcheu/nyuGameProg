@@ -1,5 +1,11 @@
 #include "Helpers.h"
 
+float dist(float x1, float y1, float x2, float y2){
+	float delX = fabs(x1 - x2);
+	float delY = fabs(y1 - y2);
+	return sqrt(delX*delX + delY*delY);
+}
+
 float lerp(float v0, float v1, float t) {
 	return (1.0f - t)*v0 + t*v1;
 }

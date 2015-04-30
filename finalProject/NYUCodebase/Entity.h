@@ -43,7 +43,10 @@ public:
 
 enum BeamColor{RED,YELLOW,GREEN,BLUE};
 
-enum EnemyType{ SAMUS, HOPPER, RUNNER };
+enum EnemyType{ SAMUS, HOPPER, RUNNER, FLIER, BOSS };
+const int HEALTH_AMT[] = { 100, 5, 2, 2, 50 };
+const int DAMAGE_AMT[] = { 0, -5, -1, -5, -20 };
+
 class Dynamic : public Entity{
 protected:
 	float vx, vy, ax, ay;

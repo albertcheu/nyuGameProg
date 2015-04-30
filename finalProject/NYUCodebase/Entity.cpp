@@ -193,16 +193,7 @@ Dynamic::Dynamic(float x, float y, float width, float height, Sprite s, EnemyTyp
 	: Entity(x, y, width, height, s), vx(0), vy(0), ax(0), ay(0),
 	touchTop(false), touchLeft(false), touchBottom(false), touchRight(false), et(et)
 {
-	switch (et){
-	case HOPPER:
-		health = maxHealth = 6;
-		break;
-	case RUNNER:
-		health = maxHealth = 2;
-		break;
-	case SAMUS:
-		health = maxHealth = 100;
-	}
+	health = maxHealth = HEALTH_AMT[et];
 }
 
 void Dynamic::setSpeed(float v, float dir) {

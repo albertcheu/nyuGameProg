@@ -149,7 +149,7 @@ void GameClass::createPickups(){
 		else { pickups.push_back(Pickup()); }//placeholder for easy array access
 	}
 	//There will always be at most 4 energy tanks
-	for (int i = 0; i < 4; i++){ pickups.push_back(Pickup(pool,8.0f)); }
+	for (int i = 0; i < NUMTANKS; i++){ pickups.push_back(Pickup(pool,8.0f)); }
 }
 
 void GameClass::createBeams(){
@@ -206,6 +206,9 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		}
 		else if (wts->typeName == "runner"){
 			enemies.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.09f, runnerSprite, RUNNER));
+		}
+		else if (wts->typeName == "flier"){
+			enemies.push_back(Dynamic(wts->x, wts->y, 0.11f, 0.09f, Sprite(), FLIER));
 		}
 
 		else{//Doors
@@ -356,26 +359,49 @@ void moveDynamic(Dynamic& d, Level& theLevel, std::vector<Door>& doors){
 	for (size_t j = 0; j < doors.size(); j++){
 		if (!(doors[j].getVisibility() && d.collide(doors[j]))) { continue; }
 	}
-
-	//If it's an enemy type, run or hop
-	moveEnemy(d, theLevel);
 }
-void moveEnemy(Dynamic& d, Level& theLevel){
+void moveHoriz(Dynamic& d, Level& theLevel){
+	
+	if (d.getLeft()) { d.setAx(MOVE); }
+	else if (d.getRight())	{ d.setAx(-MOVE); }
+
+	else if (d.getBottom()){
+		if (!theLevel.solidTile(d.getX() - d.getHalfWidth() - 0.001f,
+			d.getY() - d.getHalfHeight() - 0.001f)){ d.setAx(MOVE);	}
+		if (!theLevel.solidTile(d.getX() + d.getHalfWidth() + 0.001f,
+			d.getY() - d.getHalfHeight() - 0.001f)){ d.setAx(-MOVE); }
+	}
+
+	else if (d.getVx() == 0) { d.setAx(MOVE); }
+	else { d.setAx(d.getVx() > 0 ? MOVE : -MOVE); }
+	
+}
+void moveEnemy(Dynamic& d, Level& theLevel, Samus* player){
 	switch (d.getType()){
 	case HOPPER:
 		if (d.getBottom()) { d.setVy(JUMP); }
+		if (fabs(d.getX() - player->getX()) < 0.4f){
+			if (d.getX() < player->getX()){ d.setAx(MOVE); }
+			else { d.setAx(-MOVE); }
+		}		
 		break;
 	case RUNNER:
-		if (d.getLeft() || !theLevel.solidTile(d.getX()-d.getHalfWidth()-0.001f,
-											d.getY()-d.getHalfHeight()-0.001f))
-			{ d.setAx(MOVE); }
-		else if (d.getRight() || !theLevel.solidTile(d.getX() + d.getHalfWidth() + 0.001f,
-											d.getY() - d.getHalfHeight() - 0.001f))
-			{ d.setAx(-MOVE); }
-		else {
-			if (d.getVx() == 0) { d.setAx(MOVE); }
-			else { d.setAx(d.getVx() > 0 ? MOVE : -MOVE); }
+		moveHoriz(d, theLevel);
+		break;
+	case FLIER:
+		moveHoriz(d, theLevel);
+		//revert to the flying state
+		if (d.getBottom()) {
+			d.setAy(-GRAVITY);
+			d.setVy(JUMP);
 		}
+		//If player is near, drop
+		else if (fabs(player->getX() - d.getX()) < 0.3f &&
+				fabs(player->getY() - d.getY()) < 0.65f){
+			d.setAy(0);
+		}
+		break;
+	case BOSS:
 		break;
 	}
 }
@@ -386,9 +412,10 @@ void GameClass::physics(){
 		if (!enemies[i].getVisibility()){ continue; }
 		
 		moveDynamic(enemies[i], theLevel, doors);
+		moveEnemy(enemies[i], theLevel, player);
 
 		if (player->collideBounce(enemies[i], HITSPEED)) {
-			int change = (enemies[i].getType() == RUNNER) ? -5 : -10;
+			int change = DAMAGE_AMT[enemies[i].getType()];
 			healthDisplay.changeText(std::to_string(player->changeHealth(change)));
 
 			Mix_PlayChannel(-1, hurtSound, 0);

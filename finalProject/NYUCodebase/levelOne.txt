@@ -117,3 +117,8 @@ location=59,15,0,0
 type=pickup
 location=10,18,0,0
 
+[StartLocations]
+# flier1
+type=flier
+location=12,2,0,0
+
