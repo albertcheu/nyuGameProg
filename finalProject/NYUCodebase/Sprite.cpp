@@ -125,7 +125,8 @@ void Text::draw(){
 }
 
 AnimCycle::AnimCycle(){}
-AnimCycle::AnimCycle(int numFrames, float cu, float cv, int dir, float width, float height) :i(0){
+AnimCycle::AnimCycle(int numFrames, float cu, float cv, int dir, float width, float height)
+	:i(0), sign(1), am(RESET){
 	for (int j = 0; j < numFrames; j++){
 		sfs.push_back(SpriteFrame());
 		int offset = (dir < 0) ? (numFrames - j) : (numFrames - j - 1);
@@ -133,6 +134,8 @@ AnimCycle::AnimCycle(int numFrames, float cu, float cv, int dir, float width, fl
 		sfs.back().w = width; sfs.back().h = height;
 	}	
 }
+void AnimCycle::changeMode(AnimMode newMode){ am = newMode; }
+
 void AnimCycle::setFrame(size_t index, float u, float width){
 	sfs[index].u = u;
 	sfs[index].w = width;
@@ -150,7 +153,40 @@ void AnimCycle::reorder(size_t s, const size_t* newOrder){
 }
 
 SpriteFrame AnimCycle::getNext(){
-	size_t index = i++;
-	if (i == sfs.size()) { i = 0; }
+	size_t index = i;
+	switch (am){
+	case RESET:
+		index = i++;
+		if (i == sfs.size()) { i = 0; }
+		break;
+	case PINGPONG:
+		index = (i += sign);
+		if (i == sfs.size() || i == 0) { sign *= -1; }
+		break;
+	case STOP:
+		if (i != sfs.size()-1) { index = i++; }
+		break;
+	}
 	return sfs[index];
+}
+
+AnimatedSprite::AnimatedSprite(){}
+AnimatedSprite::AnimatedSprite(GLuint textureID, float u, float v, float width, float height,
+	AnimCycle cycle, float threshold, float currentTime)
+	:Sprite(textureID, u, v, width, height),
+	cycle(cycle), threshold(threshold), lastChange(currentTime){}
+
+bool AnimatedSprite::draw(float presentationWidth, float presentationHeight, float currentTime){
+	bool ans = false;
+	if (currentTime - lastChange > threshold){
+		lastChange = currentTime;
+		ans = true;
+		SpriteFrame sf = cycle.getNext();
+		u = sf.u;
+		v = sf.v;
+		width = sf.w;
+		height = sf.h;
+	}
+	Sprite::draw(presentationWidth, presentationHeight);
+	return ans;
 }

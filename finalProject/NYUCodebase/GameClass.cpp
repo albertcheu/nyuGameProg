@@ -195,6 +195,9 @@ void GameClass::createEnemySprites(){
 	etd = LoadTextureRGBA("runner.png");
 	runnerSprite = Sprite(etd.id, 2.0f/84.0f, 2.0f/232.0f, 15.0f/84.0f, 15.0f/232.0f);
 	hitRunner = Mix_LoadWAV("hitRunner.wav");
+
+	etd = LoadTextureRGBA("flier.png");
+	flierSprite = Sprite(etd.id, 0, 74.0f / 118.0f, 34.0f / 140.0f, 27.0f / 118.0f);
 }
 
 void GameClass::loadLevel(const char* fname, TextureData texSource){
@@ -220,13 +223,13 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		
 		//push_back enemies to the vector of enemies
 		else if (wts->typeName == "hopper"){
-			enemies.push_back(Dynamic(wts->x, wts->y, 0.09f*43.0f/21.0f, 0.09f, hopperSprite, HOPPER));
+			enemies.push_back(Dynamic(wts->x, wts->y, 0.18f, 0.09f, hopperSprite, HOPPER));
 		}
 		else if (wts->typeName == "runner"){
 			enemies.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.09f, runnerSprite, RUNNER));
 		}
 		else if (wts->typeName == "flier"){
-			enemies.push_back(Dynamic(wts->x, wts->y, 0.11f, 0.09f, Sprite(), FLIER));
+			enemies.push_back(Dynamic(wts->x, wts->y, 0.12f, 0.11f, flierSprite, FLIER));
 		}
 
 		else{//Doors

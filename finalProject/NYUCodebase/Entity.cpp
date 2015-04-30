@@ -235,10 +235,19 @@ int Dynamic::changeMaxHealth(int change){
 
 AnimatedDynamic::AnimatedDynamic(){}
 AnimatedDynamic::AnimatedDynamic(float x, float y, float width, float height,
-	Sprite s, EnemyType et)
-	:Dynamic(x,y,width,height,s,et)
+	AnimatedSprite aSprite, EnemyType et)
+	:Dynamic(x, y, width, height, Sprite(), et), aSprite(aSprite)
 {}
-void AnimatedDynamic::setCycle(AnimCycle& ac){ cycle = ac; }
-void AnimatedDynamic::nextFrame(){
-	setFrame(cycle.getNext());
+void AnimatedDynamic::draw(float currentTime){
+	if (visible){
+		buildTransform();
+
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+
+		glMultMatrixf(mat.ml);
+		aSprite.draw(width, height, currentTime);
+
+		glPopMatrix();
+	}
 }

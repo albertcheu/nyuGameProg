@@ -46,7 +46,7 @@ enum BeamColor{RED,YELLOW,GREEN,BLUE};
 
 enum EnemyType{ SAMUS, HOPPER, RUNNER, FLIER, BOSS };
 const int HEALTH_AMT[] = { 100, 5, 2, 2, 50 };
-const int DAMAGE_AMT[] = { 0, -5, -1, -5, -20 };
+const int DAMAGE_AMT[] = { 0, -5, -1, -5, -10 };
 
 class Dynamic : public Entity{
 protected:
@@ -86,12 +86,11 @@ public:
 class AnimatedDynamic :public Dynamic{
 public:
 	AnimatedDynamic();
-	AnimatedDynamic(float x, float y, float width, float height, Sprite s, EnemyType et);
-	void setCycle(AnimCycle& ac);
-	void nextFrame();
-
+	AnimatedDynamic(float x, float y, float width, float height, AnimatedSprite aSprite,
+		EnemyType et);
+	void draw(float currentTime);
 private:
-	AnimCycle cycle;
+	AnimatedSprite aSprite;
 };
 
 //This derivative of Entity contains color and direction info
