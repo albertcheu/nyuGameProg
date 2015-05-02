@@ -40,6 +40,7 @@ Sprite::Sprite(GLuint textureID, float u, float v, float width, float height)
 void Sprite::draw(float presentationWidth, float presentationHeight) {
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, textureID);
+	//OutputDebugString("bound texture");
 	float hw = presentationWidth / 2.0f;
 	float hh = presentationHeight / 2.0f;
 	glEnable(GL_BLEND);

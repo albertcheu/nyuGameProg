@@ -67,7 +67,7 @@ private:
 	Entity hurtFlash; float hurtTime;
 
 	std::vector<Dynamic> enemies;
-	Sprite hopperSprite, runnerSprite, flierSprite;
+	Sprite hopperSprite, runnerSprite, flierSprite, bossSprite;
 	void createEnemySprites();
 
 	//Music to play during the level

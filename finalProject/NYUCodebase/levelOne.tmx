@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="80" height="35" tilewidth="16" tileheight="16" nextobjectid="27">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="80" height="35" tilewidth="16" tileheight="16" nextobjectid="29">
  <tileset firstgid="1" name="mfTRO" tilewidth="16" tileheight="16">
   <image source="mfTRO.png" trans="000000" width="257" height="384"/>
  </tileset>
  <layer name="Tile Layer 1" width="80" height="35">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <objectgroup name="StartLocations">
@@ -24,5 +24,6 @@
   <object id="24" name="door7" type="blue" x="951" y="247"/>
   <object id="25" name="tank1" type="pickup" gid="73" x="175" y="300"/>
   <object id="26" name="flier1" type="flier" x="200" y="37"/>
+  <object id="27" name="daBoss" type="boss" x="1004" y="47.8333" width="20" height="20"/>
  </objectgroup>
 </map>

@@ -198,6 +198,12 @@ void GameClass::createEnemySprites(){
 
 	etd = LoadTextureRGBA("flier.png");
 	flierSprite = Sprite(etd.id, 0, 74.0f / 118.0f, 34.0f / 140.0f, 27.0f / 118.0f);
+
+	etd = LoadTextureRGBA("template.png");
+	bossSprite = Sprite(etd.id, 0, 1000.0f/1282.0f, 80.0f / 640.0f, 80.0f/1282.0f);
+	//etd = LoadTextureRGBA("boss.png");
+	//bossSprite = Sprite(etd.id, 0, 0, 80.0f / 240.0f, 80.0f / 168.0f);
+	OutputDebugString("Loaded boss sprite");
 }
 
 void GameClass::loadLevel(const char* fname, TextureData texSource){
@@ -230,6 +236,9 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		}
 		else if (wts->typeName == "flier"){
 			enemies.push_back(Dynamic(wts->x, wts->y, 0.12f, 0.11f, flierSprite, FLIER));
+		}
+		else if (wts->typeName == "boss"){
+			enemies.push_back(Dynamic(wts->x, wts->y, 0.17f, 0.17f, bossSprite, BOSS));
 		}
 
 		else{//Doors
@@ -346,7 +355,9 @@ StateAndRun GameClass::handleEvents(){
 
 bool GameClass::castToPlayer(Dynamic& d){
 	//increment in lengths of TILEUNITS
-	Vector v = Vector(player->getX() - d.getX(), player->getY() - d.getY(), 0) * TILEUNITS;
+	Vector v = Vector(player->getX() - d.getX(), player->getY() - d.getY(), 0);
+	v.normalize();
+	v = v * TILEUNITS;
 	float x = d.getX(); float y = d.getY();
 	while (!theLevel.solidTile(x, y)){
 		x += v.x; y += v.y;
@@ -436,6 +447,7 @@ void GameClass::moveEnemy(Dynamic& d){
 		}
 		break;
 	case BOSS:
+		d.setAy(-GRAVITY);
 		break;
 	}
 }
