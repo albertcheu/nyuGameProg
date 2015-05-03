@@ -5,7 +5,7 @@
  </tileset>
  <layer name="Tile Layer 1" width="80" height="35">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <objectgroup name="StartLocations">
@@ -18,7 +18,7 @@
   <object id="18" name="runner1" type="runner" x="1119.67" y="357.333"/>
   <object id="19" name="door3" type="yellow" x="439" y="378.333"/>
   <object id="20" name="blue" type="pickup" gid="77" x="993.167" y="398"/>
-  <object id="21" name="door4" type="blue" x="455.667" y="58"/>
+  <object id="21" name="door4" type="red" x="455.667" y="58"/>
   <object id="22" name="door5" type="red" x="391" y="503"/>
   <object id="23" name="door6" type="green" x="968" y="441"/>
   <object id="24" name="door7" type="blue" x="951" y="247"/>

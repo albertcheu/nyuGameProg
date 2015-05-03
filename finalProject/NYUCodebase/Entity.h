@@ -139,7 +139,7 @@ public:
 
 	//If we hit a closed door (visible) and it matches our color, open it
 	bool hit(Door& d, Mix_Chunk* hitDoor);
-	//If we hit an enemy, kill it
+	//If we hit an enemy, damage it
 	bool hit(Dynamic& enemy);
 
 	//Free allocated memory upon game end

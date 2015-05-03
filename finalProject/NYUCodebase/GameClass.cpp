@@ -203,7 +203,9 @@ void GameClass::createEnemySprites(){
 	bossSprite = Sprite(etd.id, 0, 1000.0f/1282.0f, 80.0f / 640.0f, 80.0f/1282.0f);
 	//etd = LoadTextureRGBA("boss.png");
 	//bossSprite = Sprite(etd.id, 0, 0, 80.0f / 240.0f, 80.0f / 168.0f);
-	OutputDebugString("Loaded boss sprite");
+	etd = LoadTextureRGBA("shield.png");
+	shield = Entity(0,0,0.2f,0.2f,Sprite(etd.id, 0, 0, 0.33f, 0.25f));
+	shieldHealth = SHIELD_HEALTH;	shieldRating = RED;
 }
 
 void GameClass::loadLevel(const char* fname, TextureData texSource){
@@ -211,7 +213,6 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
 		if (wts->typeName == "PlayerStart") { player->setPos(wts->x, wts->y); }
-		
 		//upgrades
 		else if (wts->typeName == "pickup") {
 			if (wts->name == "yellow") { pickups[YELLOW].activate(wts->x,wts->y); }
@@ -226,7 +227,6 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 				}
 			}
 		}
-		
 		//push_back enemies to the vector of enemies
 		else if (wts->typeName == "hopper"){
 			enemies.push_back(Dynamic(wts->x, wts->y, 0.18f, 0.09f, hopperSprite, HOPPER));
@@ -236,11 +236,12 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		}
 		else if (wts->typeName == "flier"){
 			enemies.push_back(Dynamic(wts->x, wts->y, 0.12f, 0.11f, flierSprite, FLIER));
+			enemies.back().setAy(-GRAVITY);
 		}
 		else if (wts->typeName == "boss"){
 			enemies.push_back(Dynamic(wts->x, wts->y, 0.17f, 0.17f, bossSprite, BOSS));
+			enemies.back().setAy(-GRAVITY);
 		}
-
 		else{//Doors
 			Sprite s = redDoor; BeamColor color = RED;
 			if (wts->typeName == "yellow") { s = yellowDoor; color = YELLOW; }
@@ -447,9 +448,27 @@ void GameClass::moveEnemy(Dynamic& d){
 		}
 		break;
 	case BOSS:
-		d.setAy(-GRAVITY);
+		if (castToPlayer(d) && fabs(d.getX()-player->getX())<0.4f) {
+			//fire at player
+
+			//stalk player
+			if (d.getX() < player->getX()){ d.setAx(ENEMY_MOVE); }
+			else { d.setAx(-ENEMY_MOVE); }
+		}
+		else { moveHoriz(d); }
 		break;
 	}
+}
+void GameClass::weakenShield(){
+	shieldHealth--;
+	if (shieldHealth == 0 && shieldRating == BLUE) { shield.setVisibility(false); }
+	else if (shieldHealth == 0) {
+		shieldRating = (BeamColor)(shieldRating + 1);
+		shieldHealth = SHIELD_HEALTH;
+	}
+	float u = (shieldHealth > 2 * SHIELD_HEALTH / 3) ? 0 :
+		((shieldHealth > SHIELD_HEALTH / 3) ? 0.33f : 0.66f);
+	shield.setUV(u, shieldRating*0.25f);
 }
 
 void GameClass::physics(){
@@ -494,6 +513,12 @@ void GameClass::physics(){
 			}
 		}
 
+		//Hit boss' shield?
+		if (shield.getVisibility() && beams[i].collide(shield)){
+			beams[i].setVisibility(false);
+			if (beams[i].getColor() != shieldRating) { continue; }
+			weakenShield();
+		}
 	}
 	
 	//Move doors (also limited to x-axis)
@@ -557,8 +582,14 @@ void GameClass::renderGame(){
 	for (size_t i = 0; i < beams.size(); i++){ beams[i].draw(); }
 
 	player->draw();
-	for (size_t i = 0; i < enemies.size(); i++){ enemies[i].draw(); }
-	
+	for (size_t i = 0; i < enemies.size(); i++){
+		enemies[i].draw();
+		if (enemies[i].getType() == BOSS) {
+			shield.setPos(enemies[i].getX(),enemies[i].getY());
+			shield.draw();
+		}
+	}
+
 	for (size_t i = 0; i < doors.size(); i++){ doors[i].draw(); }
 	
 	for (size_t i = 0; i < pickups.size(); i++){ pickups[i].draw(); }

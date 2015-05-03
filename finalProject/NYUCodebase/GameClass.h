@@ -20,6 +20,8 @@
 #define MOVE 3.8f
 #define ENEMY_MOVE 3.0f
 
+#define SHIELD_HEALTH 6
+
 enum SamusCycles {
 	STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT,
 	SITLEFT, SITRIGHT,
@@ -69,6 +71,7 @@ private:
 	std::vector<Dynamic> enemies;
 	Sprite hopperSprite, runnerSprite, flierSprite, bossSprite;
 	void createEnemySprites();
+	Entity shield; BeamColor shieldRating; int shieldHealth;
 
 	//Music to play during the level
 	Mix_Music* music;
@@ -93,7 +96,7 @@ private:
 	void moveEnemy(Dynamic& d);
 	void moveHoriz(Dynamic& d);
 	bool castToPlayer(Dynamic& d);
-
+	void weakenShield();
 
 	StateAndRun handleEvents();
 	void pollForPlayer();
