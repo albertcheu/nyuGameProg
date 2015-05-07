@@ -76,12 +76,12 @@ bool Samus::collideBounce(Dynamic& enemy, float bounceMag){
 	if (v.x == 0 && v.y == 0) { return false; }
 
 	//Enemy is to our right and nothing to our left
-	if (x < enemy.getX() && !touchLeft) { vx = -bounceMag; }
+	if (x <= enemy.getX() && !touchLeft) { vx = -bounceMag; }
 	//Enemy is to our left and nothing to our right
 	else if (enemy.getX() < x && !touchRight){ vx = bounceMag; }
 
 	//Enemy above and nothing below
-	if (y < enemy.getY() && !touchBottom) { vy = -bounceMag; }
+	if (y <= enemy.getY() && !touchBottom) { vy = -bounceMag; }
 	//Enemy below and nothing above
 	else if (enemy.getY() < y && !touchTop) { vy = bounceMag; }
 
@@ -124,7 +124,7 @@ TextureData GameClass::loadOpenGL(){
 GameClass::GameClass()
 	: lastTickCount(0), leftover(0), player(NULL), frameChange(0),
 	elapsed(0), whichRed(0), whichYellow(NUMBEAMS), whichGreen(2 * NUMBEAMS),
-	whichBlue(3 * NUMBEAMS), hurtTime(0), pool(loadOpenGL()){
+	whichBlue(3 * NUMBEAMS), hurtTime(0), bossBeam(NULL), bossTime(0), pool(loadOpenGL()){
 	
 	hitDoor = Mix_LoadWAV("hitDoor.wav");
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
@@ -133,6 +133,9 @@ GameClass::GameClass()
 	createPlayer(); createPickups(); createBeams(); createEnemySprites();
 
 	loadLevel("levelOne.txt", pool);
+	enemies.push_back(Dynamic(0, 0, 0.09f, 0.09f, Sprite(), BOSS_BEAM));
+	enemies.back().setVisibility(false);
+	bossBeam = &(enemies.back());
 
 	music = Mix_LoadMUS("Underclocked_EricSkiff.mp3");
 	Mix_PlayMusic(music, -1);
@@ -436,7 +439,7 @@ void GameClass::moveEnemy(Dynamic& d){
 		break;
 	case FLIER:
 		moveHoriz(d);
-		//Touching the ground (or player): revert to the flying state
+		//Upon, touching the ground (or player), fly back up
 		if (d.getBottom()) {
 			d.setAy(-GRAVITY);
 			d.setVy(ENEMY_JUMP);
@@ -449,8 +452,13 @@ void GameClass::moveEnemy(Dynamic& d){
 		break;
 	case BOSS:
 		if (castToPlayer(d) && fabs(d.getX()-player->getX())<0.4f) {
-			//fire at player
-
+			//fire at player if we're "fully charged"
+			if (!bossBeam->getVisibility() && fabs(d.getX() - player->getX()) < 0.1f
+				&& lastTickCount - bossTime > 1.4f){
+				bossBeam->setPos(d.getX(), d.getY() - d.getHalfWidth());
+				bossBeam->setVisibility(true);
+				bossTime = lastTickCount;
+			}
 			//stalk player
 			if (d.getX() < player->getX()){ d.setAx(ENEMY_MOVE); }
 			else { d.setAx(-ENEMY_MOVE); }
@@ -478,13 +486,18 @@ void GameClass::physics(){
 		if (!enemies[i].getVisibility()){ continue; }
 		moveDynamic(enemies[i]);
 		moveEnemy(enemies[i]);
-
 		if (player->collideBounce(enemies[i], HITSPEED)) {
 			int change = DAMAGE_AMT[enemies[i].getType()];
 			healthDisplay.changeText(std::to_string(player->changeHealth(change)));
 			Mix_PlayChannel(-1, hurtSound, 0);
 			hurtTime = lastTickCount;
 			player->standUp();
+			if (enemies[i].getType() == BOSS_BEAM){
+				enemies[i].reset();
+			}
+		}
+		if (enemies[i].getType() == BOSS_BEAM && enemies[i].getBottom()){
+			enemies[i].reset();
 		}
 	}
 
@@ -521,7 +534,7 @@ void GameClass::physics(){
 		}
 	}
 	
-	//Move doors (also limited to x-axis)
+	//Move doors (limited to x-axis)
 	for (size_t i = 0; i < doors.size(); i++){
 		if (!(doors[i].getVisibility() && doors[i].moving())){ continue; }
 		doors[i].setX(doors[i].getX() + doors[i].getDir()*TIMESTEP*BEAMSPEED/4.0f);
@@ -533,7 +546,6 @@ void GameClass::physics(){
 		if (pickups[i].hit(player, pickupSound) && i > BLUE){
 			int newMaxHealth = player->changeMaxHealth(100);
 			maxHealthDisplay.changeText(std::to_string(newMaxHealth));
-
 			int delta = newMaxHealth - player->changeHealth(0);
 			healthDisplay.changeText(std::to_string(player->changeHealth(delta)));
 		}

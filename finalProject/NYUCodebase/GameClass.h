@@ -72,6 +72,7 @@ private:
 	Sprite hopperSprite, runnerSprite, flierSprite, bossSprite;
 	void createEnemySprites();
 	Entity shield; BeamColor shieldRating; int shieldHealth;
+	Dynamic* bossBeam; float bossTime;
 
 	//Music to play during the level
 	Mix_Music* music;
