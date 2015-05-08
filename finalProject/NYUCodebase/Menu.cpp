@@ -24,6 +24,22 @@ Menu::Menu(SDL_Window* displayWindow)
 
 	td = LoadTextureRGBA("sprites/bossBeam.png");
 	selector = Entity(-0.3f,0,0.1f,0.1f,Sprite(td.id, 0, 0, 1, 1));
+
+	td = LoadTextureRGBA("sprites/font.png");
+	exitIcon = Text(td.id, 1.0f / 16.0f, 0.05f, -1, 0.8f, "ESC");
+	leftIcon = Text(td.id, 1.0f / 16.0f, 0.13f, -1.1f, 0, "<");
+	rightIcon = Text(td.id, 1.0f / 16.0f, 0.13f, 1.1f, 0, ">");
+}
+GameState Menu::select(){
+	switch (whichOption){
+	case 0:
+		return PLAY;
+	case 1:
+		whichSprite++;
+		return MENU;
+	case 2:
+		return EXIT;
+	}
 }
 GameState Menu::handleEvents(){
 	GameState ans = MENU;
@@ -35,12 +51,16 @@ GameState Menu::handleEvents(){
 		else if (event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.scancode){
 			case SDL_SCANCODE_SPACE:
+				if (whichSprite == 0){ ans = select(); }
 				break;
 			case SDL_SCANCODE_RETURN:
+				if (whichSprite == 0){ ans = select(); }
 				break;
 			case SDL_SCANCODE_LEFT:
+				if (whichSprite > 1){ whichSprite--; }
 				break;
 			case SDL_SCANCODE_RIGHT:
+				if (whichSprite < sprites.size() - 1){ whichSprite++; }
 				break;
 			case SDL_SCANCODE_UP:
 				if (whichSprite == 0){
@@ -67,9 +87,15 @@ void Menu::renderMenu(){
 	//475x283, 418x283
 	float width = 1.4f*(whichSprite == 0 ? 475.0f / 283.0f : 418.0f / 283.0f);
 	sprites[whichSprite].draw(width,1.4f);
-
-	selector.setY(0.16f-0.3f*whichOption);
-	selector.draw();
+	if (whichSprite == 0){
+		selector.setY(0.16f - 0.3f*whichOption);
+		selector.draw();
+	}
+	else{
+		exitIcon.draw();
+		if (whichSprite > 1) { leftIcon.draw(); }
+		if (whichSprite < sprites.size() - 1) { rightIcon.draw(); }
+	}
 
 	SDL_GL_SwapWindow(displayWindow);
 }
