@@ -104,7 +104,7 @@ GameClass::~GameClass(){
 TextureData GameClass::loadOpenGL(){
 	//Boilerplate
 	SDL_Init(SDL_INIT_VIDEO);
-	displayWindow = SDL_CreateWindow("Totally not Metroid",
+	displayWindow = SDL_CreateWindow("MODERIT",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
 	SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
@@ -119,13 +119,15 @@ TextureData GameClass::loadOpenGL(){
 	
 	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
 
-	return LoadTextureRGBA("mfTRO.png");
+	return LoadTextureRGBA("sprites/mfTRO.png");
 }
 GameClass::GameClass()
 	: lastTickCount(0), leftover(0), player(NULL), frameChange(0),
 	elapsed(0), whichRed(0), whichYellow(NUMBEAMS), whichGreen(2 * NUMBEAMS),
-	whichBlue(3 * NUMBEAMS), hurtTime(0), bossBeam(NULL), bossTime(0), pool(loadOpenGL()){
-	
+	whichBlue(3 * NUMBEAMS), hurtTime(0), bossBeam(NULL), bossTime(0), state(MENU),
+	pool(loadOpenGL()){
+	m = Menu(displayWindow);
+
 	hitDoor = Mix_LoadWAV("hitDoor.wav");
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
 	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
@@ -138,8 +140,7 @@ GameClass::GameClass()
 	enemies.back().setAngle(270.0f);
 	bossBeam = &(enemies.back());
 
-	music = Mix_LoadMUS("Underclocked_EricSkiff.mp3");
-	Mix_PlayMusic(music, -1);
+	music = Mix_LoadMUS("sounds/Underclocked_EricSkiff.mp3");
 }
 
 void GameClass::createDoorSprite(Sprite& d, float u_offset){
@@ -148,16 +149,16 @@ void GameClass::createDoorSprite(Sprite& d, float u_offset){
 }
 
 void GameClass::createPlayer(){
-	TextureData td = LoadTextureRGBA("MetroidZeroMissionSheet1.png");
+	TextureData td = LoadTextureRGBA("sprites/MetroidZeroMissionSheet1.png");
 	int swidth = td.width; int sheight = td.height;
 	Sprite s(td.id, 217.0f/swidth, 3.0f/sheight, 16.0f / swidth, 38.0f / sheight);
 	player = new Samus(0, 0, 0.17f, 0.17f, s, swidth, sheight);
 
-	hurtSound = Mix_LoadWAV("hurt.wav");
-	s = Sprite(LoadTextureRGBA("hitCircle.png").id, 0, 0, 1, 1);
+	hurtSound = Mix_LoadWAV("sounds/hurt.wav");
+	s = Sprite(LoadTextureRGBA("sprites/hitCircle.png").id, 0, 0, 1, 1);
 	hurtFlash = Entity(0, 0, 2.66f, 2.0f, s);
 
-	td = LoadTextureRGBA("font.png");
+	td = LoadTextureRGBA("sprites/font.png");
 	healthDisplay = Text(td.id, 1.0f / 16.0f, 0.08f,
 		0, 0.9f, std::to_string(player->changeHealth(0)));
 	maxHealthDisplay = Text(td.id, 1.0f / 16.0f, 0.08f,
@@ -165,7 +166,7 @@ void GameClass::createPlayer(){
 }
 
 void GameClass::createPickups(){
-	pickupSound = Mix_LoadWAV("powerup.wav");
+	pickupSound = Mix_LoadWAV("sounds/powerup.wav");
 	for (size_t i = RED; i <= BLUE; i++){
 		if (i > RED){ pickups.push_back(Pickup(pool, 10.0f + i - 1)); }
 		else { pickups.push_back(Pickup()); }//placeholder for easy array access
@@ -175,14 +176,14 @@ void GameClass::createPickups(){
 }
 
 void GameClass::createBeams(){
-	TextureData btd = LoadTextureRGB("beams.png");
+	TextureData btd = LoadTextureRGB("sprites/beams.png");
 	for (unsigned int i = RED; i <= BLUE; i++){
 		//Color
 		BeamColor bc = (BeamColor)(RED + i);
 		//Sprite
 		Sprite b(btd.id, 0, i*0.25f, 1.0f, 0.25f);
 		//Sound file
-		char buf[11]; sprintf_s(buf, 11, "beam%d.wav", (i + 1));
+		char buf[20]; sprintf_s(buf, 20, "sounds/beam%d.wav", (i + 1));
 		Mix_Chunk* sound_ptr = Mix_LoadWAV(buf);
 		//Actually make the beams now
 		for (int j = 0; j < NUMBEAMS; j++){
@@ -192,24 +193,24 @@ void GameClass::createBeams(){
 }
 
 void GameClass::createEnemySprites(){
-	TextureData etd = LoadTextureRGBA("hopper.png");
+	TextureData etd = LoadTextureRGBA("sprites/hopper.png");
 	hopperSprite = Sprite(etd.id, 0, 128.0f / 293.0f, 43.0f / 352.0f, 21.0f / 293.0f);
-	hitHopper = Mix_LoadWAV("hitHopper.wav");
+	hitHopper = Mix_LoadWAV("sounds/hitHopper.wav");
 
-	etd = LoadTextureRGBA("runner.png");
+	etd = LoadTextureRGBA("sprites/runner.png");
 	runnerSprite = Sprite(etd.id, 2.0f/84.0f, 2.0f/232.0f, 15.0f/84.0f, 15.0f/232.0f);
-	hitRunner = Mix_LoadWAV("hitRunner.wav");
+	hitRunner = Mix_LoadWAV("sounds/hitRunner.wav");
 
-	etd = LoadTextureRGBA("flier.png");
+	etd = LoadTextureRGBA("sprites/flier.png");
 	flierSprite = Sprite(etd.id, 0, 74.0f / 118.0f, 34.0f / 140.0f, 27.0f / 118.0f);
 
-	etd = LoadTextureRGBA("template.png");
+	etd = LoadTextureRGBA("sprites/template.png");
 	bossSprite = Sprite(etd.id, 0, 1000.0f/1282.0f, 80.0f / 640.0f, 80.0f/1282.0f);
 
-	etd = LoadTextureRGBA("bossBeam.png");
+	etd = LoadTextureRGBA("sprites/bossBeam.png");
 	bbSprite = Sprite(etd.id, 0, 0, 1, 1);
 
-	etd = LoadTextureRGBA("shield.png");
+	etd = LoadTextureRGBA("sprites/shield.png");
 	shield = Entity(0,0,0.2f,0.2f,Sprite(etd.id, 0, 0, 0.33f, 0.25f));
 	shieldHealth = SHIELD_HEALTH;	shieldRating = RED;
 }
@@ -491,7 +492,8 @@ void GameClass::physics(){
 		moveEnemy(enemies[i]);
 		if (player->collideBounce(enemies[i], HITSPEED)) {
 			int change = DAMAGE_AMT[enemies[i].getType()];
-			healthDisplay.changeText(std::to_string(player->changeHealth(change)));
+			if (player->changeHealth(change) <= 0) { state = LOSE; }
+			healthDisplay.changeText(std::to_string(player->changeHealth(0)));
 			Mix_PlayChannel(-1, hurtSound, 0);
 			hurtTime = lastTickCount;
 			player->standUp();
@@ -553,31 +555,43 @@ void GameClass::physics(){
 			healthDisplay.changeText(std::to_string(player->changeHealth(delta)));
 		}
 	}
-	
 }
 
 bool GameClass::run(){
-	float ticks = (float)SDL_GetTicks() / 1000.0f;
-	elapsed = ticks - lastTickCount;
-	lastTickCount = ticks;
-	
-	float fixedElapsed = elapsed + leftover;
-	if (fixedElapsed > TIMESTEP * MAX_STEPS) { fixedElapsed = TIMESTEP * MAX_STEPS;	}
-	while (fixedElapsed >= TIMESTEP) {
-		fixedElapsed -= TIMESTEP;
-		physics();
-	}
-	leftover = fixedElapsed;
+	float ticks, fixedElapsed;
+	GameState oldState = state;
+	switch (state){
+	case PLAY:
+		ticks = (float)SDL_GetTicks() / 1000.0f;
+		elapsed = ticks - lastTickCount;
+		lastTickCount = ticks;
 
-	GameState s = handleEvents();
+		fixedElapsed = elapsed + leftover;
+		if (fixedElapsed > TIMESTEP * MAX_STEPS) { fixedElapsed = TIMESTEP * MAX_STEPS; }
+		while (fixedElapsed >= TIMESTEP) {
+			fixedElapsed -= TIMESTEP;
+			physics();
+			if (state == LOSE) { return false; }
+		}
+		leftover = fixedElapsed;
 
-	pollForPlayer();
+		state = handleEvents();
 
-	animate();
-	
-	renderGame();
-	
-	return s != EXIT;
+		pollForPlayer();
+
+		animate();
+
+		renderGame();
+		break;
+	case MENU:
+		state = m.handleEvents();
+		OutputDebugString("handled events");
+		m.renderMenu();
+		OutputDebugString("drew");
+		break;
+	}	
+	if (oldState == MENU && state == PLAY){ Mix_PlayMusic(music, -1); }
+	return state != EXIT;
 }
 
 void GameClass::animate(){

@@ -1,6 +1,7 @@
 #pragma once
 #include "Entity.h"
 #include "Level.h"
+#include "Menu.h"
 
 #define TIMESTEP 0.0166f
 #define MAX_STEPS 6
@@ -42,7 +43,6 @@ private:
 	std::vector<AnimCycle> cycles;
 };
 
-enum GameState{ MENU,PLAY,LOSE,EXIT };
 class GameClass{
 public:
 	GameClass();
@@ -50,6 +50,8 @@ public:
 	bool run();
 
 private:
+	Menu m;
+	GameState state;
 	SDL_Window* displayWindow;
 	
 	//Doors and pickups are from one file (mfTRO.png)
