@@ -42,7 +42,7 @@ private:
 	std::vector<AnimCycle> cycles;
 };
 
-
+enum GameState{ MENU,PLAY,LOSE,EXIT };
 class GameClass{
 public:
 	GameClass();
@@ -69,7 +69,7 @@ private:
 	Entity hurtFlash; float hurtTime;
 
 	std::vector<Dynamic> enemies;
-	Sprite hopperSprite, runnerSprite, flierSprite, bossSprite;
+	Sprite hopperSprite, runnerSprite, flierSprite, bossSprite, bbSprite;
 	void createEnemySprites();
 	Entity shield; BeamColor shieldRating; int shieldHealth;
 	Dynamic* bossBeam; float bossTime;
@@ -99,7 +99,7 @@ private:
 	bool castToPlayer(Dynamic& d);
 	void weakenShield();
 
-	StateAndRun handleEvents();
+	GameState handleEvents();
 	void pollForPlayer();
 	void animate();
 	

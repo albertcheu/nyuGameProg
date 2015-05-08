@@ -1,42 +1,9 @@
-Each flare file has a name of the form <format><0-10>.txt
-	<format> gives the number of doors of a room and its shape
-		left/rightCubby (one door)
-		shortPath (two doors)
-		longPath (two doors)
-		shortQuad (four doors)
-		tallQuad (four doors)
-		boss (two doors)
-	<0-9> permits me to create multiple variants of the same format
-		0: Start
-		1: End
-		2: Yellow pickup
-		3: Green
-		4: Blue
-		5: Logbook
-		6: Energy tank
-		7-9: Variable (blank or enemy)
-		10: Boss
-
-We require that there be:
-	a starting point and an end point
-	0-6 are cubbies
-	7-9 are either "-Path" or "-Quad"
-
-	one path from start to end that
-		contains at least one blue door
-		has a length from 3-6
-		whose penultimate room is the boss room
-
-	places to pickup the four weapon upgrades (one each)
-	a path of red doors to yellow pickup, etc.
-
-	places to pickup the <number of> logbooks
-	4 places to pickup energy tanks
-
-
-LevelMaker constructs a graph of flare filenames:
-	Vertices are 0-9, edges are colored RED-BLUE
-	Create vertices 0, 10, and 1 with a BLUE edge between 0 and 10
-	(From now until I say so, add RED edges)
-	Add Variable vertices between 0-10
-	Create vertices 2, 3, and 4
+MAIN_MENU has options; arrows to move, space/enter to select
+	Play
+	Information->send to Menu_1
+	Quit
+INFO: arrows to scroll between tabs, escape to return
+	Controls
+	Objective: boss
+	Enemies: runners, hoppers, fliers
+	Exploration: doors, beams, energy tanks

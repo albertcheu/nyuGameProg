@@ -133,8 +133,9 @@ GameClass::GameClass()
 	createPlayer(); createPickups(); createBeams(); createEnemySprites();
 
 	loadLevel("levelOne.txt", pool);
-	enemies.push_back(Dynamic(0, 0, 0.09f, 0.09f, Sprite(), BOSS_BEAM));
+	enemies.push_back(Dynamic(0, 0, 0.09f, 0.09f, bbSprite, BOSS_BEAM));
 	enemies.back().setVisibility(false);
+	enemies.back().setAngle(270.0f);
 	bossBeam = &(enemies.back());
 
 	music = Mix_LoadMUS("Underclocked_EricSkiff.mp3");
@@ -204,8 +205,10 @@ void GameClass::createEnemySprites(){
 
 	etd = LoadTextureRGBA("template.png");
 	bossSprite = Sprite(etd.id, 0, 1000.0f/1282.0f, 80.0f / 640.0f, 80.0f/1282.0f);
-	//etd = LoadTextureRGBA("boss.png");
-	//bossSprite = Sprite(etd.id, 0, 0, 80.0f / 240.0f, 80.0f / 168.0f);
+
+	etd = LoadTextureRGBA("bossBeam.png");
+	bbSprite = Sprite(etd.id, 0, 0, 1, 1);
+
 	etd = LoadTextureRGBA("shield.png");
 	shield = Entity(0,0,0.2f,0.2f,Sprite(etd.id, 0, 0, 0.33f, 0.25f));
 	shieldHealth = SHIELD_HEALTH;	shieldRating = RED;
@@ -312,14 +315,14 @@ void GameClass::playerShoot(size_t& which, size_t cap){
 	if (which == cap) { which = cap-NUMBEAMS; }
 }
 
-StateAndRun GameClass::handleEvents(){
-	StateAndRun ans = { 0, true };
+GameState GameClass::handleEvents(){
+	GameState ans = PLAY;
 
 	//Keyboard (and close-window) events
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-			ans = { 0, false };
+			ans = EXIT;
 		}
 		else if (event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.scancode){
@@ -330,7 +333,7 @@ StateAndRun GameClass::handleEvents(){
 				}
 				break;
 			case SDL_SCANCODE_ESCAPE:
-				ans = { 0, false };
+				ans = EXIT;
 				break;
 			case SDL_SCANCODE_Q:
 				playerShoot(whichRed, NUMBEAMS);
@@ -517,14 +520,6 @@ void GameClass::physics(){
 		for (size_t j = 0; j < doors.size(); j++){
 			if (beams[i].hit(doors[j], hitDoor)) { break; }
 		}
-		
-		//Hit an enemy?
-		for (size_t j = 0; j < enemies.size(); j++){
-			if (beams[i].hit(enemies[j])) {
-				Mix_PlayChannel(-1, (enemies[j].getType() == RUNNER) ? hitRunner : hitHopper, 0);
-				break;
-			}
-		}
 
 		//Hit boss' shield?
 		if (shield.getVisibility() && beams[i].collide(shield)){
@@ -532,6 +527,14 @@ void GameClass::physics(){
 			if (beams[i].getColor() != shieldRating) { continue; }
 			weakenShield();
 		}
+
+		//Hit an enemy?
+		for (size_t j = 0; j < enemies.size(); j++){
+			if (beams[i].hit(enemies[j])) {
+				Mix_PlayChannel(-1, (enemies[j].getType() == RUNNER) ? hitRunner : hitHopper, 0);
+				break;
+			}
+		}	
 	}
 	
 	//Move doors (limited to x-axis)
@@ -566,7 +569,7 @@ bool GameClass::run(){
 	}
 	leftover = fixedElapsed;
 
-	StateAndRun sar = handleEvents();
+	GameState s = handleEvents();
 
 	pollForPlayer();
 
@@ -574,7 +577,7 @@ bool GameClass::run(){
 	
 	renderGame();
 	
-	return sar.keepRunning;
+	return s != EXIT;
 }
 
 void GameClass::animate(){
