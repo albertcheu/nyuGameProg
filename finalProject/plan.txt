@@ -1,3 +1,28 @@
-After making the level tree, Generator makes a corresponding flare file
-Generator traverses the tree in BFS order:
-	
+After making the level tree, Generator assigns orientation/variation
+	Leaves/"cubbies"
+		Left/right small
+		Left/right large
+	Path
+		Platform
+		No platform
+	Quad (only one kind)
+
+struct{
+bool topLeft, topRight, bottomLeft, bottomRight
+} availableSpace
+
+Pair every node with an availableSpace structure.
+Quads use all 4 slots, Paths use the first two, Cubbies one of the the first two
+Initialize all to false
+
+Root must be a small cubby
+	If left cubby, topRight = true
+	Else, topLeft = true
+Push in queue
+Traverse the tree in BFS order:
+	Pop node x
+	for every availableSpace:
+		mark it as unavailable
+		Open up available space for child
+		Close a slot that links with x (special restriction for quad-quad)
+		Push child in queue

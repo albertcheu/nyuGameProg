@@ -4,6 +4,7 @@
 typedef struct{
 	std::string name, typeName;
 	float x, y;
+	int col, row;
 } WhereToStart;
 
 class Level{

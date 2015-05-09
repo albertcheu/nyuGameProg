@@ -174,6 +174,8 @@ void Level::loadStarts(std::ifstream& infile){
 			std::istringstream lineStream(value);
 			getline(lineStream, buf, ',');		int col = atoi(buf.c_str());
 			getline(lineStream, buf, ',');		int row = atoi(buf.c_str());
+			wts.col = col; wts.row = row;
+
 			tile2world(&(wts.x), &(wts.y), col, row);
 
 			startLocs.push_back(wts);

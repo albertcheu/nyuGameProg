@@ -2,17 +2,20 @@
 #include <queue>
 #include "Level.h"
 
-const int SMALL_WIDTH = 8;
-const int SMALL_HEIGHT = 7;
+enum RoomVariant{ BLANK, LEFTSMALL, RIGHTSMALL, LEFTLARGE, RIGHTLARGE, PATH1, PATH2, QUAD };
+enum ParentDir{PARENTLESS,P_LEFT,P_RIGHT};
 
-const int PATH_WIDTH = 18;
-const int PATH_HEIGHT = 9;
+struct Node{
+	size_t row, col;
+	std::vector<size_t> neighbors;
+	RoomVariant rv;
+	ParentDir pd;
+};
 
-const int QUAD_WIDTH = 16;
-const int QUAD_HEIGHT = 26;
-
-const int LARGE_WIDTH = 27;
-const int LARGE_HEIGHT = 14;
+struct Corners{
+	struct { size_t topRight, topLeft, botRight, botLeft; }x;
+	struct { size_t topRight, topLeft, botRight, botLeft; }y;
+};
 
 class Generator{
 public:
@@ -20,8 +23,17 @@ public:
 	void gen();
 
 private:
-	std::queue<int> leaves;
-	std::vector<std::vector<int> > adj;
+	std::queue<size_t> leaves;
+	std::vector< Node > adj;
+	std::vector<std::vector<RoomVariant> > grid;
+
+	void setup();
+	void firstNodes();
+
+	Corners checkQuad(size_t leaf);
+	Corners checkPath(size_t leaf);
+	Corners checkLarge(size_t leaf);
+
 	Level levelSheet;
 	
 	void makeFlare();
