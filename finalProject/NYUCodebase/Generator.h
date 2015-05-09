@@ -12,9 +12,8 @@ struct Node{
 	ParentDir pd;
 };
 
-struct Corners{
-	struct { size_t topRight, topLeft, botRight, botLeft; }x;
-	struct { size_t topRight, topLeft, botRight, botLeft; }y;
+struct Corner{
+	int row, col;
 };
 
 class Generator{
@@ -27,12 +26,20 @@ private:
 	std::vector< Node > adj;
 	std::vector<std::vector<RoomVariant> > grid;
 
-	void setup();
+	void clear();
 	void firstNodes();
 
-	Corners checkQuad(size_t leaf);
-	Corners checkPath(size_t leaf);
-	Corners checkLarge(size_t leaf);
+	bool blankArea(Corner c1, Corner c2);
+	Corner checkQuad(Corner c, ParentDir pd);
+	bool checkQuadHelper(Corner c1, Corner c2, Corner parent);
+	void fillArea(Corner c1, Corner c2, RoomVariant rv);
+
+	Corner getPastPath(Corner c, ParentDir pd);
+	Corner checkPath(Corner c, ParentDir pd);
+	bool checkLarge(Corner c, ParentDir pd);
+
+	void toPath(size_t leaf, Corner c, ParentDir pd, Corner candidatePath);
+	void toLarge(size_t leaf, Corner c, ParentDir pd);
 
 	Level levelSheet;
 	
