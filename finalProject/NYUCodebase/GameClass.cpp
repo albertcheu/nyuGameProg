@@ -128,17 +128,11 @@ GameClass::GameClass()
 	pool(loadOpenGL()){
 	m = Menu(displayWindow);
 
-	hitDoor = Mix_LoadWAV("hitDoor.wav");
+	hitDoor = Mix_LoadWAV("sounds/hitDoor.wav");
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
 	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
 	
 	createPlayer(); createPickups(); createBeams(); createEnemySprites();
-
-	loadLevel("levelOne.txt", pool);
-	enemies.push_back(Dynamic(0, 0, 0.09f, 0.09f, bbSprite, BOSS_BEAM));
-	enemies.back().setVisibility(false);
-	enemies.back().setAngle(270.0f);
-	bossBeam = &(enemies.back());
 
 	music = Mix_LoadMUS("sounds/Underclocked_EricSkiff.mp3");
 }
@@ -266,6 +260,11 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 		doors[i].setComplement(&doors[i + 1]);
 		doors[i + 1].setComplement(&doors[i]);
 	}
+
+	enemies.push_back(Dynamic(0, 0, 0.09f, 0.09f, bbSprite, BOSS_BEAM));
+	enemies.back().setVisibility(false);
+	enemies.back().setAngle(270.0f);
+	bossBeam = &(enemies.back());
 }
 
 void GameClass::pollForPlayer(){
@@ -497,9 +496,7 @@ void GameClass::physics(){
 			Mix_PlayChannel(-1, hurtSound, 0);
 			hurtTime = lastTickCount;
 			player->standUp();
-			if (enemies[i].getType() == BOSS_BEAM){
-				enemies[i].reset();
-			}
+			if (enemies[i].getType() == BOSS_BEAM){ enemies[i].reset(); }
 		}
 		if (enemies[i].getType() == BOSS_BEAM && enemies[i].getBottom()){
 			enemies[i].reset();
@@ -534,6 +531,9 @@ void GameClass::physics(){
 		for (size_t j = 0; j < enemies.size(); j++){
 			if (beams[i].hit(enemies[j])) {
 				Mix_PlayChannel(-1, (enemies[j].getType() == RUNNER) ? hitRunner : hitHopper, 0);
+				if (enemies[j].getType() == BOSS && enemies[j].changeHealth(0) <= 0){
+					state = WIN;
+				}
 				break;
 			}
 		}	
@@ -568,29 +568,46 @@ bool GameClass::run(){
 
 		fixedElapsed = elapsed + leftover;
 		if (fixedElapsed > TIMESTEP * MAX_STEPS) { fixedElapsed = TIMESTEP * MAX_STEPS; }
-		while (fixedElapsed >= TIMESTEP) {
+		while (state == PLAY && fixedElapsed >= TIMESTEP) {
 			fixedElapsed -= TIMESTEP;
 			physics();
-			if (state == LOSE) { return false; }
+			//if (state == LOSE) { return false; }
 		}
 		leftover = fixedElapsed;
 
-		state = handleEvents();
-
-		pollForPlayer();
-
-		animate();
+		if (state == PLAY){
+			state = handleEvents();
+			pollForPlayer();
+			animate();
+		}
 
 		renderGame();
 		break;
 	case MENU:
 		state = m.handleEvents();
-		OutputDebugString("handled events");
-		m.renderMenu();
-		OutputDebugString("drew");
+		m.renderMenu(MENU);
+		break;
+	case LOSE:
+		Mix_HaltMusic();
+		state = m.handleEndgame(LOSE); 
+		m.renderMenu(LOSE);
+		break;
+	case WIN:
+		Mix_HaltMusic();
+		state = m.handleEndgame(WIN);
+		m.renderMenu(WIN);
 		break;
 	}	
-	if (oldState == MENU && state == PLAY){ Mix_PlayMusic(music, -1); }
+	if (oldState == MENU && state == PLAY){
+		g.gen();
+		for (size_t i = 0; i < pickups.size(); i++){ pickups[i].reset(); }
+		doors.clear();
+		enemies.clear();
+		healthDisplay.changeText(std::to_string(player->changeHealth(100, true)));
+		maxHealthDisplay.changeText(std::to_string(player->changeMaxHealth(100, true)));
+		loadLevel("levelOne.txt", pool);
+		Mix_PlayMusic(music, -1);
+	}
 	return state != EXIT;
 }
 

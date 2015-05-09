@@ -2,6 +2,7 @@
 #include "Entity.h"
 #include "Level.h"
 #include "Menu.h"
+#include "Generator.h"
 
 #define TIMESTEP 0.0166f
 #define MAX_STEPS 6
@@ -50,6 +51,7 @@ public:
 	bool run();
 
 private:
+	Generator g;
 	Menu m;
 	GameState state;
 	SDL_Window* displayWindow;

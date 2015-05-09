@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="74" height="26" tilewidth="16" tileheight="16" nextobjectid="43">
+ <tileset firstgid="1" name="mfTRO" tilewidth="16" tileheight="16">
+  <image source="mfTRO.png" trans="000000" width="257" height="384"/>
+ </tileset>
+ <layer name="Tile Layer 1" width="74" height="26">
+  <data encoding="base64" compression="zlib">
+   eJzdmN1RAkEMgO+wA+xAO8AK8P/ZDvxBfEX8e9WhAXQs4AYtANAC0LEAFPsxmckONzt32VsSdkcePgKXbLJ37OaySZMkSQWMgVPgDGgB50AbuADegJcc7ZzOjDG/cew7+WsV2C3i2/iT+pA8H8OJkh8kW4K/B6GPSeJeD67/A/WPivc1XIK/S6GPKclnxmYAvDL6L4feF1e8GP4GJLl1WQPWGP2TQ++LK14MfzWS3DqvA+uMvu/Q+8LFa8LHNrADHAG7wB5wAByiwQLzrzonlNy+2wA2GX3m0PviihfD30aF59QAthj90KH3xRUvhr8GyR+gC1wB18ANcAvc0fUyXQ/4JcnZzEhydua6LSW+u3RdWv+Mc1JSh7Xo94xsbB/adZ9vPHxfYQ7DnIZ5rMqzaZL9fjp/X0rrMB+yCPGkdesxSWkd5oNG3Rc6Xp/kZ8B59yPEk67fLMJzmkSIV1YfYg7C/OPKXUOSXF2gzTRCvJHQR4fkR8B5d/5hvHuS34HmnFDMUPFSpXgmj9t5zj5HmT1ctn/tfW7OXUX2Ref3ZcbDc/oomddDvvUT2pt9p9nvcaHdD6iyFqT1U0YyZF7VOL/73qN0HcR432n3A6rco1afLmQ9o90PcIG5RatPx/ULys7k5iyeH9Oz7Mz3vE+jCxUP+xlF+7ys51eU5+sF41cRrT7dqqPVp1t1Ftnndq5AP39lctS8
+  </data>
+ </layer>
+ <objectgroup name="StartLocations">
+  <object id="31" name="leftSmall" type="leaf" x="118.5" y="137.5"/>
+  <object id="32" name="rightSmall" type="leaf" x="136.5" y="135.5"/>
+  <object id="33" name="leftEntrance" type="pathA" x="265.333" y="138"/>
+  <object id="34" name="rightEntrance" type="pathA" x="566.667" y="136.667"/>
+  <object id="35" name="rightEntrance" type="pathB" x="888.001" y="135.334"/>
+  <object id="36" name="leftEntrance" type="pathB" x="586.667" y="136.667"/>
+  <object id="37" name="topLeft" type="quad" x="905.333" y="137.333"/>
+  <object id="38" name="topRight" type="quad" x="1159.33" y="136.667"/>
+  <object id="39" name="bottomLeft" type="quad" x="906.67" y="408.666"/>
+  <object id="40" name="bottomRight" type="quad" x="1160.67" y="408"/>
+  <object id="41" name="rightLarge" type="leaf" x="456.5" y="358.5"/>
+  <object id="42" name="leftLarge" type="leaf" x="438.5" y="360.5"/>
+ </objectgroup>
+</map>

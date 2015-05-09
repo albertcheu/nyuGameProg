@@ -172,6 +172,11 @@ bool Pickup::hit(Entity* player, Mix_Chunk* soundPtr){
 	return false;
 }
 bool Pickup::have(){ return acquired; }
+void Pickup::reset(){
+	acquired = false;
+	visible = false;
+	x = y = 0;
+}
 
 Dynamic::Dynamic()
 	: Entity(), vx(0), vy(0), ax(0), ay(0),
@@ -225,12 +230,14 @@ void Dynamic::setFrame(SpriteFrame sf){
 }
 
 EnemyType Dynamic::getType(){ return et; }
-int Dynamic::changeHealth(int change){
-	health += change;
+int Dynamic::changeHealth(int change, bool set){
+	if (!set){ health += change; }
+	else { health = change; }
 	return health;
 }
-int Dynamic::changeMaxHealth(int change){
-	maxHealth += change;
+int Dynamic::changeMaxHealth(int change, bool set){
+	if (!set) { maxHealth += change; }
+	else { maxHealth = change; }
 	return maxHealth;
 }
 

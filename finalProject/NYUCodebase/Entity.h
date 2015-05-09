@@ -78,7 +78,8 @@ public:
 	void setFrame(SpriteFrame sf);
 
 	EnemyType getType();
-	int changeHealth(int change); int changeMaxHealth(int change);
+	int changeHealth(int change, bool set=false);
+	int changeMaxHealth(int change, bool set=false);
 
 	bool collide(Entity& other);
 };
@@ -160,4 +161,7 @@ public:
 	bool hit(Entity* player, Mix_Chunk* soundPtr);
 	//Did the player collect this?
 	bool have();
+
+	//Restart the level
+	void reset();
 };

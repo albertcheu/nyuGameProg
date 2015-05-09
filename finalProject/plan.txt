@@ -1,9 +1,3 @@
-MAIN_MENU has options; arrows to move, space/enter to select
-	Play
-	Information->send to Menu_1
-	Quit
-INFO: arrows to scroll between tabs, escape to return
-	Controls
-	Objective: boss
-	Enemies: runners, hoppers, fliers
-	Exploration: doors, beams, energy tanks
+After making the level tree, Generator makes a corresponding flare file
+Generator traverses the tree in BFS order:
+	
