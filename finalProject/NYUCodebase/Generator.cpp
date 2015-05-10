@@ -254,10 +254,7 @@ void Generator::fillArea(Corner c1, Corner c2, RoomVariant rv){
 	}
 }
 
-void Generator::gen(){
-	clear();
-	firstNodes();
-	
+void Generator::fillGrid(){
 	size_t minNumLeaves = 10 + (rand() % 7);
 	size_t numLeaves = 1;
 	leaves.push(1);
@@ -273,30 +270,30 @@ void Generator::gen(){
 
 		Corner candidatePath = checkPath(c, pd);
 		if (candidatePath.col > -1){
-		
+
 			Corner candidateQuad = checkQuad(c, pd);
 			if (candidateQuad.col > -1){
-				if (rand()%3) {
+				if (rand() % 3) {
 					toQuad(leaf, c, pd, candidateQuad);
 					numLeaves += 2;
 				}
 				else{ toPath(leaf, c, pd, candidatePath); }
-								
+
 			}
-			
+
 			//can only be path
-			else{ toPath(leaf, c, pd, candidatePath);	}
+			else{ toPath(leaf, c, pd, candidatePath); }
 		}
 
 		else{
 			//can't do anything
-		}		
+		}
 	}
 
 	int counter = 0;
 	for (size_t i = 0; i < adj.size(); i++){
 		Corner c = { adj[i].row, adj[i].col };
-		if (adj[i].neighbors.size() == 1 && checkLarge(c,adj[i].pd)){
+		if (adj[i].neighbors.size() == 1 && checkLarge(c, adj[i].pd)){
 			counter++;
 			toLarge(i, c, adj[i].pd);
 		}
@@ -311,4 +308,23 @@ void Generator::gen(){
 		ofs << std::endl;
 	}
 	ofs.close();
+}
+
+void Generator::gen(){
+	clear();
+	firstNodes();
+	fillGrid();	
+
+	const WhereToStart* wts;
+	while (wts = levelSheet.getNext()){
+		if (wts->typeName == "leftSmall"){}
+		else if (wts->typeName == "rightSmall"){}
+		else if (wts->typeName == "leftLarge"){}
+		else if (wts->typeName == "rightLarge"){}
+		else if (wts->typeName == "path1"){}
+		else if (wts->typeName == "path2"){}
+		else{}
+	}
+
+	//levelSheet.data;
 }

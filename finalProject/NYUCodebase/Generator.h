@@ -9,16 +9,18 @@ const int NUM_LARGE = 3;
 enum RoomVariant{ BLANK, LEFTSMALL, RIGHTSMALL, LEFTLARGE, RIGHTLARGE, PATH1, PATH2, QUAD };
 enum ParentDir{PARENTLESS,P_LEFT,P_RIGHT};
 
+struct Corner{
+	int row, col;
+};
+
 struct Node{
 	size_t row, col;
 	std::vector<size_t> neighbors;
 	RoomVariant rv;
 	ParentDir pd;
+	Corner upperLeft;
 };
 
-struct Corner{
-	int row, col;
-};
 
 class Generator{
 public:
@@ -51,5 +53,7 @@ private:
 
 	Level levelSheet;
 	
+	void fillGrid();
+
 	void makeFlare();
 };

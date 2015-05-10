@@ -26,6 +26,8 @@ public:
 	const char* getLevelName();
 	bool solidTile(float x, float y);
 
+	std::vector<std::vector<int>> data;
+
 private:
 	void load(const char* flareName);
 
@@ -46,7 +48,6 @@ private:
 
 	//Process a filestream to determine which tile goes where
 	void loadLevel(std::ifstream& infile);
-	std::vector<std::vector<int>> data;
 	
 	//Using level data, calculate gl- and uv-coordinates for rendering
 	void fillRenderVectors();
