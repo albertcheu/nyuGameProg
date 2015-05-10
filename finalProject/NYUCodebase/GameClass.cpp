@@ -12,14 +12,21 @@ Samus::Samus(float x, float y, float width, float height, Sprite s, int swidth, 
 	size_t arr[10] = { 0, 9, 1, 2, 7, 8, 4, 11, 5, 6 };
 	//left	
 	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, -1, 37.5f / swidth, 36.0f / sheight));
-	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, -1, 37.0f / swidth, 36.0f / sheight));
-	cycles.back().setFrame(8, 81.0f / swidth, 35.0f / swidth);
+	cycles[RUNLEFT].merge(AnimCycle(6, 0.5f, 131.0f / sheight, -1, 37.0f / swidth, 36.0f / sheight));
+	cycles[RUNLEFT].setFrame(8, 81.0f / swidth, 35.0f / swidth);
+	//cycles[RUNLEFT].setFrame(1, 92.0f / swidth, 35.0f / swidth);
+	//cycles[RUNLEFT].setFrame(7, 81.0f / swidth, 35.0f / swidth);
+	cycles[RUNLEFT].setFrame(9, 113.0f / swidth, 35.0f / swidth);
+
 	cycles[RUNLEFT].reorder(10, arr);
 	//right
-	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, 1, 37.5f / swidth, 36.0f / sheight));
-	cycles.back().merge(AnimCycle(6, 0.5f, 131.0f / sheight, 1, 37.0f / swidth, 36.0f / sheight));
-	cycles.back().setFrame(8, (swidth - 118.0f) / swidth, 35.0f / swidth);
-	cycles.back().setFrame(1, (swidth - 76.0f) / swidth, 35.0f / swidth);
+	cycles.push_back(AnimCycle(6, 0.5f, 91.0f / sheight, 1, 37.0f / swidth, 36.0f / sheight));
+	cycles[RUNRIGHT].merge(AnimCycle(6, 0.5f, 131.0f / sheight, 1, 37.0f / swidth, 36.0f / sheight));
+	cycles[RUNRIGHT].setFrame(8, (swidth - 118.0f) / swidth, 35.0f / swidth);
+	cycles[RUNRIGHT].setFrame(1, (swidth - 76.0f) / swidth, 35.0f / swidth);
+	cycles[RUNRIGHT].setFrame(7, (swidth - 80.0f) / swidth, 35.0f / swidth);
+	cycles[RUNRIGHT].setFrame(9, (swidth - 154.0f) / swidth, 35.0f / swidth);//154
+
 	cycles[RUNRIGHT].reorder(10, arr);
 
 	//Sitting
@@ -95,6 +102,11 @@ GameClass::~GameClass(){
 	Mix_FreeChunk(hitHopper);
 	Mix_FreeChunk(hitRunner);
 	Mix_FreeChunk(hitDoor);
+	Mix_FreeChunk(hitShield);
+	Mix_FreeChunk(move);
+	Mix_FreeChunk(bump);
+	Mix_FreeChunk(switchSound);
+
 	Mix_FreeMusic(music);
 	
 	delete player;
@@ -126,15 +138,21 @@ GameClass::GameClass()
 	elapsed(0), whichRed(0), whichYellow(NUMBEAMS), whichGreen(2 * NUMBEAMS),
 	whichBlue(3 * NUMBEAMS), hurtTime(0), bossBeam(NULL), bossTime(0), state(MENU),
 	pool(loadOpenGL()){
-	m = Menu(displayWindow);
-
+	
 	hitDoor = Mix_LoadWAV("sounds/hitDoor.wav");
+	hitShield = Mix_LoadWAV("sounds/hitShield.wav");
 	createDoorSprite(redDoor, 14.0f); createDoorSprite(yellowDoor, 12.0f);
 	createDoorSprite(greenDoor, 10.0f); createDoorSprite(blueDoor, 8.0f);
 	
 	createPlayer(); createPickups(); createBeams(); createEnemySprites();
 
 	music = Mix_LoadMUS("sounds/Underclocked_EricSkiff.mp3");
+
+	m = Menu(displayWindow,
+		switchSound = Mix_LoadWAV("sounds/switch.wav"),
+		move = Mix_LoadWAV("sounds/move.wav"),
+		bump = Mix_LoadWAV("sounds/bump.wav")
+		);
 }
 
 void GameClass::createDoorSprite(Sprite& d, float u_offset){
@@ -481,6 +499,7 @@ void GameClass::weakenShield(){
 	float u = (shieldHealth > 2 * SHIELD_HEALTH / 3) ? 0 :
 		((shieldHealth > SHIELD_HEALTH / 3) ? 0.33f : 0.66f);
 	shield.setUV(u, shieldRating*0.25f);
+	Mix_PlayChannel(-1, hitShield, 0);
 }
 
 void GameClass::physics(){
@@ -607,6 +626,7 @@ bool GameClass::run(){
 		maxHealthDisplay.changeText(std::to_string(player->changeMaxHealth(100, true)));
 		
 		loadLevel("output.txt", pool);
+		//loadLevel("levelOne.txt", pool);
 		Mix_PlayMusic(music, -1);
 	}
 	return state != EXIT;
@@ -614,6 +634,7 @@ bool GameClass::run(){
 
 void GameClass::animate(){
 	if (lastTickCount - frameChange >= 0.1f){
+	//if (lastTickCount - frameChange >= 0.4f){
 		player->nextFrame();
 		frameChange = lastTickCount;
 	}

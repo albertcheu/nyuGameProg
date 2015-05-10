@@ -52,12 +52,14 @@ public:
 private:
 	Generator g;
 	Menu m;
+	Mix_Chunk *move, *switchSound, *bump;
+
 	GameState state;
 	SDL_Window* displayWindow;
 	
 	//Doors and pickups are from one file (mfTRO.png)
 	TextureData pool;
-	Mix_Chunk* pickupSound, *hurtSound, *hitRunner, *hitHopper, *hitDoor;
+	Mix_Chunk* pickupSound, *hurtSound, *hitRunner, *hitHopper, *hitDoor, *hitShield;
 	std::vector<Pickup> pickups; void createPickups();
 	Text healthDisplay, maxHealthDisplay;
 

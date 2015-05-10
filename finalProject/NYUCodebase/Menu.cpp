@@ -1,8 +1,10 @@
 #include "Menu.h"
 
-Menu::Menu(){}
-Menu::Menu(SDL_Window* displayWindow)
-	:displayWindow(displayWindow), whichOption(0), whichSprite(0)
+Menu::Menu() :move(NULL), bump(NULL), switchSound(NULL){}
+Menu::Menu(SDL_Window* displayWindow, Mix_Chunk *switchSound,
+	Mix_Chunk *move, Mix_Chunk* bump)
+	:displayWindow(displayWindow), whichOption(0), whichSprite(0),
+	move(move), bump(bump), switchSound(switchSound)
 {
 	TextureData td = LoadTextureRGB("menus/menu.png");
 	sprites.push_back(Sprite(td.id, 0, 0, 1, 1));
@@ -34,6 +36,7 @@ Menu::Menu(SDL_Window* displayWindow)
 	loseCard = Sprite(td.id, 0, 0, 1, 1);
 	td = LoadTextureRGB("menus/win.png");
 	winCard = Sprite(td.id, 0, 0, 1, 1);
+
 }
 GameState Menu::select(){
 	switch (whichOption){
@@ -56,29 +59,35 @@ GameState Menu::handleEvents(){
 		else if (event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.scancode){
 			case SDL_SCANCODE_SPACE:
-				if (whichSprite == 0){ ans = select(); }
+				if (whichSprite == 0){ ans = select(); Mix_PlayChannel(-1, switchSound, 0); }
 				break;
 			case SDL_SCANCODE_RETURN:
-				if (whichSprite == 0){ ans = select(); }
+				if (whichSprite == 0){ ans = select(); Mix_PlayChannel(-1, switchSound, 0); }
 				break;
 			case SDL_SCANCODE_LEFT:
-				if (whichSprite > 1){ whichSprite--; }
+				if (whichSprite > 1){ whichSprite--; Mix_PlayChannel(-1, move, 0); }
+				else { Mix_PlayChannel(-1, bump, 0); }
 				break;
 			case SDL_SCANCODE_RIGHT:
-				if (whichSprite < sprites.size() - 1){ whichSprite++; }
+				if (whichSprite < sprites.size() - 1){ whichSprite++; Mix_PlayChannel(-1,move, 0); }
+				else { Mix_PlayChannel(-1, bump, 0); }
 				break;
 			case SDL_SCANCODE_UP:
 				if (whichSprite == 0){
 					whichOption = (whichOption - 1) % 3;
+					Mix_PlayChannel(-1, move, 0);
 				}
+				else { Mix_PlayChannel(-1, bump, 0); }
 				break;
 			case SDL_SCANCODE_DOWN:
 				if (whichSprite == 0){
 					whichOption = (whichOption + 1) % 3;
+					Mix_PlayChannel(-1, move, 0);
 				}
+				else { Mix_PlayChannel(-1, bump, 0); }
 				break;
 			case SDL_SCANCODE_ESCAPE:
-				if (whichSprite > 0){ whichSprite = 0; }
+				if (whichSprite > 0){ whichSprite = 0; Mix_PlayChannel(-1, switchSound, 0); }
 				break;
 			}
 		}
