@@ -54,36 +54,46 @@ data=
 
 [StartLocations]
 # leftSmall
-type=leftSmall
+type=anchor
 location=1,1,0,0
 
 [StartLocations]
 # rightSmall
-type=rightSmall
+type=anchor
 location=10,1,0,0
 
 [StartLocations]
 # rightLarge
-type=rightLarge
+type=anchor
 location=18,11,0,0
 
 [StartLocations]
 # leftLarge
-type=leftLarge
+type=anchor
 location=1,11,0,0
 
 [StartLocations]
-# x
-type=path2
+# path2
+type=anchor
 location=36,1,0,0
 
 [StartLocations]
-# x
-type=path1
+# path1
+type=anchor
 location=19,1,0,0
 
 [StartLocations]
-# x
-type=quad
+# quad
+type=anchor
 location=53,1,0,0
+
+[StartLocations]
+# leftSmall
+type=playerStart
+location=4,5,0,0
+
+[StartLocations]
+# rightSmall
+type=playerStart
+location=14,5,0,0
 

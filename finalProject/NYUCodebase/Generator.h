@@ -2,7 +2,6 @@
 #include <queue>
 #include "Level.h"
 
-
 const size_t LENGTH = 30;
 const int NUM_LARGE = 3;
 
@@ -14,11 +13,11 @@ struct Corner{
 };
 
 struct Node{
-	size_t row, col;
+	//size_t row, col;
 	std::vector<size_t> neighbors;
 	RoomVariant rv;
 	ParentDir pd;
-	Corner upperLeft;
+	Corner c, upperLeft;
 };
 
 
@@ -28,31 +27,32 @@ public:
 	void gen();
 
 private:
+	std::vector<Corner> upperLefts;
+
 	std::queue<size_t> leaves;
 	std::vector< Node > adj;
 	std::vector<std::vector<RoomVariant> > grid;
+	int gridMinRow, gridMinCol, gridMaxRow, gridMaxCol;
+	Level levelSheet;
 
 	void clear();
 	void firstNodes();
 
-	bool blankArea(Corner c1, Corner c2);
+	Corner fillArea(Corner c1, Corner c2, RoomVariant rv);
+		bool blankArea(Corner c1, Corner c2);
+		void toQuad(size_t leaf, Corner c, ParentDir pd, Corner candidateQuad);
+		Corner checkQuad(Corner c, ParentDir pd);
+			bool checkQuadHelper(Corner c1, Corner c2, ParentDir pd);
+			std::vector<Corner> getPastQuad(Corner c1, Corner c2, ParentDir pd);
 
-	Corner checkQuad(Corner c, ParentDir pd);
-	bool checkQuadHelper(Corner c1, Corner c2, ParentDir pd);
-	std::vector<Corner> getPastQuad(Corner c1, Corner c2, ParentDir pd);
+		void toPath(size_t leaf, Corner c, ParentDir pd, Corner candidatePath);
+		Corner checkPath(Corner c, ParentDir pd);
+		Corner getPastPath(Corner c, ParentDir pd);
 
-	Corner getPastPath(Corner c, ParentDir pd);
-	Corner checkPath(Corner c, ParentDir pd);
-	bool checkLarge(Corner c, ParentDir pd);
-
-	void toPath(size_t leaf, Corner c, ParentDir pd, Corner candidatePath);
-	void toLarge(size_t leaf, Corner c, ParentDir pd);
-	void toQuad(size_t leaf, Corner c, ParentDir pd, Corner candidateQuad);
-
-	void fillArea(Corner c1, Corner c2, RoomVariant rv);
-
-	Level levelSheet;
+		void toLarge(size_t leaf, Corner c, ParentDir pd);
+		bool checkLarge(Corner c, ParentDir pd);
 	
+		
 	void fillGrid();
 
 	void makeFlare();

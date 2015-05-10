@@ -1,27 +1,19 @@
-enum{LEFTSMALL,RIGHTSMALL,LEFTLARGE,RIGHTLARGE,PATH1,PATH2,QUAD}
+We now have an outline of our final map
+The outline really only takes up a portion of the LENGTHxLENGTH grid
+Compute the size of that portion; each unit corresponds to 8 tiles
 
-struct node{
-coordinate
-neighbors
-parentDir
-}
+Save the upperleft and lower right corners
+Allocate a widthxheight(x8) data grid
+For every node,
+	Retrieve its upperleft corner (functions as the uv-coordinate)
+	Offset by upper left corner of portion
+	From node's room variant, determine the room's dimensions
+	Copy the corresponding tile data from levelSheet
 
-64x64 grid of ints (-1 is blank)
-select one corner as the start point
-Put either LEFTSMALL or RIGHTSMALL there
-Put another small cubby next to it and establish parentage
-Enqueue that leaf
-While we don't have enough leaves,
-	dequeue a leaf
-	Is there room to turn it into a quad?
-		2x4 box placed in one of two positions
-		not only must 7 more spots be empty, 3 neighbors must be as well
-		Enqueue the neighbors
-	is there room to turn it into a larger cubby?
-		2x2 box
-		3 more spots must be empty
-	is there room to turn it into a path?
-		2x1 box
-		not only must 1 more spot be empty, 1 neighbor must be as well
-		Enqueue the neighbor
-	put all these possiblities in a bucket and pick at random
+We now have the skeleton of the level
+Now we need to place the player: somewhere in node 0.
+Place enemies:
+	Hoppers, runners, fliers are randomly placed based on levelSheet
+	Boss is put in one of the large leaves/cubbies
+Placing doors:
+	???

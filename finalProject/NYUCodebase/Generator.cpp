@@ -2,7 +2,22 @@
 
 Generator::Generator()
 	:levelSheet(Level("levelSheet.txt", "mfTRO.png", TILEPIX, TILECOUNTX, TILECOUNTY))
-{}
+{
+	for (int i = 0; i < 8; i++){ upperLefts.push_back(Corner()); }
+
+	const WhereToStart* wts;
+	while (wts = levelSheet.getNext()){
+		if (wts->typeName == "anchor"){
+			if (wts->name == "leftSmall"){ upperLefts[LEFTSMALL] = { wts->row, wts->col }; }
+			else if (wts->name == "rightSmall"){ upperLefts[RIGHTSMALL] = { wts->row, wts->col }; }
+			else if (wts->name == "leftLarge"){ upperLefts[LEFTLARGE] = { wts->row, wts->col }; }
+			else if (wts->name == "rightLarge"){ upperLefts[RIGHTLARGE] = { wts->row, wts->col }; }
+			else if (wts->name == "path1"){ upperLefts[PATH1] = { wts->row, wts->col }; }
+			else if (wts->name == "path2"){ upperLefts[PATH2] = { wts->row, wts->col }; }
+			else{ upperLefts[QUAD] = { wts->row, wts->col }; }
+		}
+	}
+}
 
 void Generator::clear(){
 	srand(SDL_GetTicks());
@@ -28,24 +43,29 @@ void Generator::firstNodes(){
 	top = rand() % 2;
 	left = rand() % 2;
 
-	if (top) { adj[0].row = adj[1].row = 0; }
-	else{ adj[0].row = adj[1].row = LENGTH-1; }
+	if (top) { adj[0].c.row = adj[1].c.row = 0; }
+	else{ adj[0].c.row = adj[1].c.row = LENGTH-1; }
 	if (left) {
-		adj[0].col = 0;
-		adj[1].col = 1;
+		adj[0].c.col = 0;
+		adj[1].c.col = 1;
 		adj[0].rv = LEFTSMALL;
 		adj[1].rv = RIGHTSMALL;
-		adj[1].pd = P_RIGHT;
+		adj[1].pd = P_RIGHT;	
 	}
 	else{
-		adj[0].col = LENGTH-1;
-		adj[1].col = LENGTH-2;
+		adj[0].c.col = LENGTH-1;
+		adj[1].c.col = LENGTH-2;
 		adj[0].rv = RIGHTSMALL;
 		adj[1].rv = LEFTSMALL;
 		adj[1].pd = P_LEFT;
 	}
-	grid[adj[0].row][adj[0].col] = adj[0].rv;
-	grid[adj[1].row][adj[1].col] = adj[1].rv;
+
+	adj[0].upperLeft = adj[0].c;
+	gridMinRow = gridMaxRow = adj[0].c.row;
+	gridMinCol = gridMaxCol = adj[0].c.col;
+
+	grid[adj[0].c.row][adj[0].c.col] = adj[0].rv;
+	grid[adj[1].c.row][adj[1].c.col] = adj[1].rv;
 
 }
 bool Generator::blankArea(Corner c1, Corner c2){
@@ -178,35 +198,41 @@ void Generator::toPath(size_t leaf, Corner c, ParentDir pd, Corner candidatePath
 	size_t node = adj.size();
 	Corner past = getPastPath(c, pd);
 	adj.push_back(Node());
-	adj[node].row = past.row;
-	adj[node].col = past.col;
+	adj[node].c = adj[node].upperLeft = past;
 	adj[node].pd = pd;
 	adj[node].rv = adj[leaf].rv;
 	
 	adj[node].neighbors.push_back(leaf);
 	adj[leaf].neighbors.push_back(node);
 	adj[leaf].rv = ((rand() % 2) ? PATH2 : PATH1);
-	fillArea(c, candidatePath, adj[leaf].rv);
+	adj[leaf].upperLeft = fillArea(c, candidatePath, adj[leaf].rv);
 	grid[past.row][past.col] = ((pd == P_LEFT)?LEFTSMALL:RIGHTSMALL);
 
 	leaves.push(node);
+	if (adj[node].c.col < gridMinCol){ gridMinCol = adj[node].c.col; }
+	if (adj[node].c.col > gridMaxCol){ gridMaxCol = adj[node].c.col; }
 }
 
 void Generator::toLarge(size_t leaf, Corner c, ParentDir pd){
-	size_t row = c.row;
-	size_t col = c.col;
+	int row = c.row;
+	int col = c.col;
 	if (adj[leaf].rv == LEFTSMALL){
 		adj[leaf].rv = LEFTLARGE;
 		grid[row][col] = grid[row][col-1] = grid[row-1][col-1] = grid[row-1][col] = LEFTLARGE;
+		adj[leaf].upperLeft = { row - 1, col - 1 };
+		if (col - 1 < gridMinCol){ gridMinCol = col - 1; }
 	}
 	else{
 		adj[leaf].rv = RIGHTLARGE;
 		grid[row][col] = grid[row][col + 1] = grid[row - 1][col + 1] = grid[row - 1][col] = RIGHTLARGE;
+		adj[leaf].upperLeft = { row - 1, col };
+		if (col + 1 > gridMaxCol){ gridMaxCol = col + 1; }
 	}
+	if (row - 1 < gridMinRow){ gridMinRow = row - 1; }
 }
 
 void Generator::toQuad(size_t leaf, Corner c, ParentDir pd, Corner candidateQuad){
-	fillArea(c, candidateQuad,QUAD);
+	adj[leaf].upperLeft = fillArea(c, candidateQuad,QUAD);
 	adj[leaf].rv = QUAD;
 	std::vector<Corner> newLocs = getPastQuad(c, candidateQuad, pd);
 	for (size_t i = 0; i < 3; i++){
@@ -214,9 +240,8 @@ void Generator::toQuad(size_t leaf, Corner c, ParentDir pd, Corner candidateQuad
 		adj.push_back(Node());
 		adj[leaf].neighbors.push_back(node);
 		adj[node].neighbors.push_back(leaf);
-		adj[node].row = newLocs[i].row;
-		adj[node].col = newLocs[i].col;
-		if (adj[node].col > adj[leaf].col){
+		adj[node].c = adj[node].upperLeft = newLocs[i];
+		if (adj[node].c.col > adj[leaf].c.col){
 			adj[node].rv = RIGHTSMALL;
 			adj[node].pd = P_RIGHT;
 		}
@@ -224,12 +249,17 @@ void Generator::toQuad(size_t leaf, Corner c, ParentDir pd, Corner candidateQuad
 			adj[node].rv = LEFTSMALL;
 			adj[node].pd = P_LEFT;
 		}
-		grid[adj[node].row][adj[node].col] = adj[node].rv;
+		grid[adj[node].c.row][adj[node].c.col] = adj[node].rv;
 		leaves.push(node);
+
+		if (adj[node].c.row < gridMinRow){ gridMinRow = adj[node].c.row; }
+		if (adj[node].c.row > gridMaxRow){ gridMaxRow = adj[node].c.row; }
+		if (adj[node].c.col < gridMinCol){ gridMinCol = adj[node].c.col; }
+		if (adj[node].c.col > gridMaxCol){ gridMaxCol = adj[node].c.col; }
 	}
 }
 
-void Generator::fillArea(Corner c1, Corner c2, RoomVariant rv){
+Corner Generator::fillArea(Corner c1, Corner c2, RoomVariant rv){
 	size_t minRow, minCol, maxRow, maxCol;
 	if (c1.row < c2.row){
 		minRow = c1.row;
@@ -252,6 +282,7 @@ void Generator::fillArea(Corner c1, Corner c2, RoomVariant rv){
 			grid[row][col] = rv;
 		}
 	}
+	return{ minRow, minCol };
 }
 
 void Generator::fillGrid(){
@@ -263,10 +294,8 @@ void Generator::fillGrid(){
 		size_t leaf = leaves.front();
 		leaves.pop();
 
-		size_t row = adj[leaf].row;
-		size_t col = adj[leaf].col;
 		ParentDir pd = adj[leaf].pd;
-		Corner c = { row, col };
+		Corner c = adj[leaf].c;
 
 		Corner candidatePath = checkPath(c, pd);
 		if (candidatePath.col > -1){
@@ -285,46 +314,81 @@ void Generator::fillGrid(){
 			else{ toPath(leaf, c, pd, candidatePath); }
 		}
 
-		else{
-			//can't do anything
-		}
+		//can't do anything but assert leafhood
+		else{ adj[leaf].upperLeft = adj[leaf].c; }
 	}
 
 	int counter = 0;
 	for (size_t i = 0; i < adj.size(); i++){
-		Corner c = { adj[i].row, adj[i].col };
+		Corner c = adj[i].c;
 		if (adj[i].neighbors.size() == 1 && checkLarge(c, adj[i].pd)){
 			counter++;
 			toLarge(i, c, adj[i].pd);
 		}
 		if (counter == NUM_LARGE) { break; }
 	}
-
-	std::ofstream ofs("output.txt");
-	for (size_t i = 0; i < grid.size(); i++){
-		for (size_t j = 0; j < grid[i].size(); j++){
-			ofs << grid[i][j] << ' ';
-		}
-		ofs << std::endl;
-	}
-	ofs.close();
 }
 
 void Generator::gen(){
 	clear();
 	firstNodes();
-	fillGrid();	
+	fillGrid();
 
-	const WhereToStart* wts;
-	while (wts = levelSheet.getNext()){
-		if (wts->typeName == "leftSmall"){}
-		else if (wts->typeName == "rightSmall"){}
-		else if (wts->typeName == "leftLarge"){}
-		else if (wts->typeName == "rightLarge"){}
-		else if (wts->typeName == "path1"){}
-		else if (wts->typeName == "path2"){}
-		else{}
+	//Initialize our tile data as an empty matrix
+	std::vector<std::vector<int> > data;
+	int width = gridMaxCol - gridMinCol + 1;
+	int height = gridMaxRow - gridMinRow + 1;
+	for (int row = 0; row < height*8; row++){//Each cell in grid stands for 8x8 tiles
+		data.push_back(std::vector<int>());
+		for (int col = 0; col < width*8; col++){			
+			data[row].push_back(1);//flare uses 1-based, so our Level class does too
+		}
 	}
+	
+	//Fill tile data using the levelSheet
+	for (size_t i = 0; i < adj.size(); i++){
+		int row = adj[i].upperLeft.row - gridMinRow;
+		int col = adj[i].upperLeft.col - gridMinCol;
+		row *= 8;
+		col *= 8;
+		
+		int roomWidth = 2;
+		int roomHeight = 4;
+		if (adj[i].rv == LEFTLARGE || adj[i].rv == RIGHTLARGE){ roomHeight = 2; }
+		else if (adj[i].rv == PATH1 || adj[i].rv == PATH2){ roomHeight = 1; }
+		else if (adj[i].rv == LEFTSMALL || adj[i].rv == RIGHTSMALL){
+			roomWidth = roomHeight = 1;
+		}
+		roomWidth *= 8;
+		roomHeight *= 8;
+		
+		for (int tileRow = row; tileRow < row + roomHeight; tileRow++){
+			for (int tileCol = col; tileCol < col + roomWidth; tileCol++){
+				int templateRow = upperLefts[adj[i].rv].row + (tileRow - row);
+				int templateCol = upperLefts[adj[i].rv].col + (tileCol - col);
+				int input = levelSheet.data[templateRow][templateCol];
+				if (input < 1) { input = 1; }
+				data[tileRow][tileCol] = input;
+			}
+		}
+	}
+	
 
-	//levelSheet.data;
+	std::ofstream ofs("output.txt");
+	ofs << gridMinRow << ' ' << gridMinCol << std::endl;
+	ofs << gridMaxRow << ' ' << gridMaxCol << std::endl;
+	for (size_t i = 0; i < LENGTH; i++){
+		for (size_t j = 0; j < LENGTH; j++){
+			ofs << grid[i][j] << ' ';
+		}
+		ofs << std::endl;
+	}
+	for (size_t i = 0; i < data.size(); i++){
+		for (size_t j = 0; j < data[i].size(); j++){
+			ofs << data[i][j] << ' ';
+		}
+		ofs << std::endl;
+	}
+	
+	ofs.close();
 }
