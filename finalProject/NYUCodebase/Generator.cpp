@@ -1,21 +1,26 @@
 #include "Generator.h"
 
+void Generator::fillRoomData(RoomVariant rv, const WhereToStart* wts){
+	if (wts->name == "anchor") { roomData[rv].anchor = { wts->row, wts->col }; }
+	else if (wts->name == "playerStart") { roomData[rv].playerStart = { wts->row, wts->col }; }
+	else if (wts->name == "pickup") { roomData[rv].pickup = { wts->row, wts->col }; }
+}
+
 Generator::Generator()
 	:levelSheet(Level("levelSheet.txt", "mfTRO.png", TILEPIX, TILECOUNTX, TILECOUNTY))
 {
-	for (int i = 0; i < 8; i++){ upperLefts.push_back(Corner()); }
+	for (int i = 0; i < 8; i++){ roomData.push_back(RoomData()); }
 
 	const WhereToStart* wts;
 	while (wts = levelSheet.getNext()){
-		if (wts->typeName == "anchor"){
-			if (wts->name == "leftSmall"){ upperLefts[LEFTSMALL] = { wts->row, wts->col }; }
-			else if (wts->name == "rightSmall"){ upperLefts[RIGHTSMALL] = { wts->row, wts->col }; }
-			else if (wts->name == "leftLarge"){ upperLefts[LEFTLARGE] = { wts->row, wts->col }; }
-			else if (wts->name == "rightLarge"){ upperLefts[RIGHTLARGE] = { wts->row, wts->col }; }
-			else if (wts->name == "path1"){ upperLefts[PATH1] = { wts->row, wts->col }; }
-			else if (wts->name == "path2"){ upperLefts[PATH2] = { wts->row, wts->col }; }
-			else{ upperLefts[QUAD] = { wts->row, wts->col }; }
-		}
+		if (wts->typeName == "leftSmall"){ fillRoomData(LEFTSMALL, wts); }
+		else if (wts->typeName == "rightSmall"){ fillRoomData(RIGHTSMALL, wts); }
+		else if (wts->typeName == "leftLarge"){ fillRoomData(LEFTLARGE, wts); }
+		else if (wts->typeName == "rightLarge"){ fillRoomData(RIGHTLARGE, wts); }
+		else if (wts->typeName == "path1"){ fillRoomData(PATH1, wts); }
+		else if (wts->typeName == "path2"){ fillRoomData(PATH2, wts); }
+		else{ fillRoomData(QUAD, wts); }
+		
 	}
 }
 
@@ -30,6 +35,7 @@ void Generator::clear(){
 			grid[i].push_back(BLANK);
 		}
 	}
+	data.clear();
 }
 
 void Generator::firstNodes(){
@@ -285,8 +291,58 @@ Corner Generator::fillArea(Corner c1, Corner c2, RoomVariant rv){
 	return{ minRow, minCol };
 }
 
+void Generator::fillData(){
+	//Convert our grid coordinates to tile coordinates: offset and scale
+	for (size_t i = 0; i < adj.size(); i++){
+		adj[i].upperLeft.row -= gridMinRow;
+		adj[i].upperLeft.col -= gridMinCol;
+		adj[i].upperLeft.row *= 8;
+		adj[i].upperLeft.col *= 8;
+
+		adj[i].c.row -= gridMinRow;
+		adj[i].c.col -= gridMinCol;
+		adj[i].c.row *= 8;
+		adj[i].c.col *= 8;
+
+	}
+
+	//Initialize our tile data as an empty matrix
+	int width = gridMaxCol - gridMinCol + 1;
+	int height = gridMaxRow - gridMinRow + 1;
+	for (int row = 0; row < height * 8; row++){//Each cell in grid stands for 8x8 tiles
+		data.push_back(std::vector<int>());
+		for (int col = 0; col < width * 8; col++){
+			data[row].push_back(0);
+		}
+	}
+
+	//Fill tile data using the levelSheet
+	for (size_t i = 0; i < adj.size(); i++){
+		int row = adj[i].upperLeft.row;
+		int col = adj[i].upperLeft.col;
+
+		int roomWidth = 2;
+		int roomHeight = 4;
+		if (adj[i].rv == LEFTLARGE || adj[i].rv == RIGHTLARGE){ roomHeight = 2; }
+		else if (adj[i].rv == PATH1 || adj[i].rv == PATH2){ roomHeight = 1; }
+		else if (adj[i].rv == LEFTSMALL || adj[i].rv == RIGHTSMALL){
+			roomWidth = roomHeight = 1;
+		}
+		roomWidth *= 8;
+		roomHeight *= 8;
+
+		for (int tileRow = row; tileRow < row + roomHeight; tileRow++){
+			for (int tileCol = col; tileCol < col + roomWidth; tileCol++){
+				int templateRow = roomData[adj[i].rv].anchor.row + (tileRow - row);
+				int templateCol = roomData[adj[i].rv].anchor.col + (tileCol - col);
+				data[tileRow][tileCol] = levelSheet.data[templateRow][templateCol];
+			}
+		}
+	}
+}
+
 void Generator::fillGrid(){
-	size_t minNumLeaves = 10 + (rand() % 7);
+	size_t minNumLeaves = (NUMTANKS+3) + (rand() % 7);
 	size_t numLeaves = 1;
 	leaves.push(1);
 
@@ -329,66 +385,63 @@ void Generator::fillGrid(){
 	}
 }
 
+Corner Generator::getFinalCoor(size_t i, Corner target){
+	//Player: offset by anchor and then by upper left of node
+	Corner a = roomData[adj[i].rv].anchor;
+	int row = target.row - a.row + adj[i].upperLeft.row;
+	int col = target.col - a.col + adj[i].upperLeft.col;
+	return{ row, col };
+}
+
 void Generator::gen(){
 	clear();
 	firstNodes();
 	fillGrid();
-
-	//Initialize our tile data as an empty matrix
-	std::vector<std::vector<int> > data;
-	int width = gridMaxCol - gridMinCol + 1;
-	int height = gridMaxRow - gridMinRow + 1;
-	for (int row = 0; row < height*8; row++){//Each cell in grid stands for 8x8 tiles
-		data.push_back(std::vector<int>());
-		for (int col = 0; col < width*8; col++){			
-			data[row].push_back(1);//flare uses 1-based, so our Level class does too
-		}
-	}
+	fillData();
 	
-	//Fill tile data using the levelSheet
-	for (size_t i = 0; i < adj.size(); i++){
-		int row = adj[i].upperLeft.row - gridMinRow;
-		int col = adj[i].upperLeft.col - gridMinCol;
-		row *= 8;
-		col *= 8;
-		
-		int roomWidth = 2;
-		int roomHeight = 4;
-		if (adj[i].rv == LEFTLARGE || adj[i].rv == RIGHTLARGE){ roomHeight = 2; }
-		else if (adj[i].rv == PATH1 || adj[i].rv == PATH2){ roomHeight = 1; }
-		else if (adj[i].rv == LEFTSMALL || adj[i].rv == RIGHTSMALL){
-			roomWidth = roomHeight = 1;
-		}
-		roomWidth *= 8;
-		roomHeight *= 8;
-		
-		for (int tileRow = row; tileRow < row + roomHeight; tileRow++){
-			for (int tileCol = col; tileCol < col + roomWidth; tileCol++){
-				int templateRow = upperLefts[adj[i].rv].row + (tileRow - row);
-				int templateCol = upperLefts[adj[i].rv].col + (tileCol - col);
-				int input = levelSheet.data[templateRow][templateCol];
-				if (input < 1) { input = 1; }
-				data[tileRow][tileCol] = input;
-			}
-		}
-	}
-	
-
 	std::ofstream ofs("output.txt");
-	ofs << gridMinRow << ' ' << gridMinCol << std::endl;
-	ofs << gridMaxRow << ' ' << gridMaxCol << std::endl;
+	/*
 	for (size_t i = 0; i < LENGTH; i++){
 		for (size_t j = 0; j < LENGTH; j++){
 			ofs << grid[i][j] << ' ';
 		}
 		ofs << std::endl;
 	}
+	*/
+	ofs << "[header]\nwidth=" << data[0].size() << "\nheight=" << data.size() << std::endl;
+	ofs << "tilewidth=16\ntileHeight=16\norientation=orthogonal" << std::endl;
+	ofs << "[tilesets]\ntileset=mfTRO.png,16,16,0,0" << std::endl;
+	ofs << "[layer]\ntype=Tile Layer 1\ndata=" << std::endl;
+
 	for (size_t i = 0; i < data.size(); i++){
 		for (size_t j = 0; j < data[i].size(); j++){
-			ofs << data[i][j] << ' ';
+			int output = data[i][j];
+			if (output < 10) { ofs << "00" << std::to_string(output) << ','; }
+			else if (output < 100) { ofs << "0" << std::to_string(output) << ','; }
+			else{ ofs << output << ','; }
 		}
 		ofs << std::endl;
 	}
 	
+	Corner f = getFinalCoor(0, roomData[adj[0].rv].playerStart);
+	ofs << "[StartLocations]\n#ps\ntype=PlayerStart" << std::endl;
+	ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+
+	size_t pickupCounter = 1;
+	for (size_t i = 1; i < adj.size(); i++){
+		if (adj[i].neighbors.size() == 1){
+			std::string name = "foobar";
+			if (pickupCounter == YELLOW){ name = "yellow"; }
+			else if (pickupCounter == GREEN) { name = "green"; }
+			else if (pickupCounter == BLUE) { name = "blue"; }
+			if (pickupCounter <= NUMTANKS + 3){
+				pickupCounter++;
+				f = getFinalCoor(i, roomData[adj[i].rv].pickup);
+				ofs << "[StartLocations]\n#" << name << "\ntype=pickup" << std::endl;
+				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+			}
+		}
+	}
+
 	ofs.close();
 }

@@ -19,6 +19,7 @@
 #define TILECOUNTX 16//number of tiles in a row in mfTRO
 #define TILECOUNTY 24//number of tiles in a column in mfTRO
 
+enum BeamColor{ RED, YELLOW, GREEN, BLUE };
 enum GameState{ MENU, PLAY, LOSE, WIN, EXIT };
 
 float dist(float x1, float y1, float x2, float y2);

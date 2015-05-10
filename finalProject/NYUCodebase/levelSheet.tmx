@@ -1,22 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="75" height="40" tilewidth="16" tileheight="16" nextobjectid="50">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="75" height="40" tilewidth="16" tileheight="16" nextobjectid="54">
  <tileset firstgid="1" name="mfTRO" tilewidth="16" tileheight="16">
   <image source="mfTRO.png" trans="000000" width="257" height="384"/>
  </tileset>
  <layer name="Tile Layer 1" width="75" height="40">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <objectgroup name="StartLocations">
-  <object id="31" name="leftSmall" type="anchor" x="24.1667" y="23.1667"/>
-  <object id="32" name="rightSmall" type="anchor" x="170.833" y="26.5"/>
-  <object id="41" name="rightLarge" type="anchor" x="296.833" y="182.833"/>
-  <object id="42" name="leftLarge" type="anchor" x="23.5" y="184.833"/>
-  <object id="43" name="path2" type="anchor" x="585.667" y="21.6667"/>
-  <object id="44" name="path1" type="anchor" x="313.667" y="23"/>
-  <object id="45" name="quad" type="anchor" x="858.333" y="23.6667"/>
-  <object id="48" name="leftSmall" type="playerStart" x="74" y="86"/>
-  <object id="49" name="rightSmall" type="playerStart" x="231" y="89"/>
+  <object id="31" name="anchor" type="leftSmall" x="24.1667" y="23.1667"/>
+  <object id="32" name="anchor" type="rightSmall" x="170.833" y="26.5"/>
+  <object id="41" name="anchor" type="rightLarge" x="296.833" y="182.833"/>
+  <object id="42" name="anchor" type="leftLarge" x="23.5" y="184.833"/>
+  <object id="43" name="anchor" type="path2" x="585.667" y="21.6667"/>
+  <object id="44" name="anchor" type="path1" x="313.667" y="23"/>
+  <object id="45" name="anchor" type="quad" x="858.333" y="23.6667"/>
+  <object id="48" name="playerStart" type="leftSmall" x="74" y="86"/>
+  <object id="49" name="playerStart" type="rightSmall" x="231" y="89"/>
+  <object id="50" name="pickup" type="leftSmall" x="54" y="118"/>
+  <object id="51" name="pickup" type="rightSmall" x="247" y="117"/>
+  <object id="52" name="pickup" type="leftLarge" x="41" y="277"/>
+  <object id="53" name="pickup" type="rightLarge" x="518" y="280"/>
  </objectgroup>
 </map>

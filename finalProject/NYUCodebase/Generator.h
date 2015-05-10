@@ -2,6 +2,7 @@
 #include <queue>
 #include "Level.h"
 
+const int NUMTANKS = 6;
 const size_t LENGTH = 30;
 const int NUM_LARGE = 3;
 
@@ -13,13 +14,15 @@ struct Corner{
 };
 
 struct Node{
-	//size_t row, col;
 	std::vector<size_t> neighbors;
 	RoomVariant rv;
 	ParentDir pd;
 	Corner c, upperLeft;
 };
 
+struct RoomData{
+	Corner anchor, playerStart, pickup, enemy1, enemy2, enemy3;
+};
 
 class Generator{
 public:
@@ -27,13 +30,16 @@ public:
 	void gen();
 
 private:
-	std::vector<Corner> upperLefts;
+	Level levelSheet;
+	std::vector<RoomData> roomData;
+	void fillRoomData(RoomVariant rv, const WhereToStart* wts);
 
 	std::queue<size_t> leaves;
 	std::vector< Node > adj;
 	std::vector<std::vector<RoomVariant> > grid;
 	int gridMinRow, gridMinCol, gridMaxRow, gridMaxCol;
-	Level levelSheet;
+
+	std::vector<std::vector<int> > data;
 
 	void clear();
 	void firstNodes();
@@ -54,6 +60,10 @@ private:
 	
 		
 	void fillGrid();
+
+	void fillData();
+
+	Corner getFinalCoor(size_t i, Corner target);
 
 	void makeFlare();
 };

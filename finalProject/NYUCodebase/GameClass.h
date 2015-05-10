@@ -9,7 +9,6 @@
 
 #define BEAMSPEED 3.5f
 #define NUMBEAMS 10
-#define NUMTANKS 6
 
 #define GRAVITY -7.8f
 #define FRIC_Y 5.6f

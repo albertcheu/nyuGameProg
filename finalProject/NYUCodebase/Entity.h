@@ -42,8 +42,6 @@ public:
 	bool contains(float otherX, float otherY);
 };
 
-enum BeamColor{RED,YELLOW,GREEN,BLUE};
-
 enum EnemyType{ SAMUS, HOPPER, RUNNER, FLIER, BOSS, BOSS_BEAM };
 const int HEALTH_AMT[] = { 100, 5, 2, 2, 50, 0 };
 const int DAMAGE_AMT[] = { 0, -5, -1, -5, -10, -15 };
