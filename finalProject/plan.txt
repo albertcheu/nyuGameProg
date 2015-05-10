@@ -1,28 +1,27 @@
-After making the level tree, Generator assigns orientation/variation
-	Leaves/"cubbies"
-		Left/right small
-		Left/right large
-	Path
-		Platform
-		No platform
-	Quad (only one kind)
+enum{LEFTSMALL,RIGHTSMALL,LEFTLARGE,RIGHTLARGE,PATH1,PATH2,QUAD}
 
-struct{
-bool topLeft, topRight, bottomLeft, bottomRight
-} availableSpace
+struct node{
+coordinate
+neighbors
+parentDir
+}
 
-Pair every node with an availableSpace structure.
-Quads use all 4 slots, Paths use the first two, Cubbies one of the the first two
-Initialize all to false
-
-Root must be a small cubby
-	If left cubby, topRight = true
-	Else, topLeft = true
-Push in queue
-Traverse the tree in BFS order:
-	Pop node x
-	for every availableSpace:
-		mark it as unavailable
-		Open up available space for child
-		Close a slot that links with x (special restriction for quad-quad)
-		Push child in queue
+64x64 grid of ints (-1 is blank)
+select one corner as the start point
+Put either LEFTSMALL or RIGHTSMALL there
+Put another small cubby next to it and establish parentage
+Enqueue that leaf
+While we don't have enough leaves,
+	dequeue a leaf
+	Is there room to turn it into a quad?
+		2x4 box placed in one of two positions
+		not only must 7 more spots be empty, 3 neighbors must be as well
+		Enqueue the neighbors
+	is there room to turn it into a larger cubby?
+		2x2 box
+		3 more spots must be empty
+	is there room to turn it into a path?
+		2x1 box
+		not only must 1 more spot be empty, 1 neighbor must be as well
+		Enqueue the neighbor
+	put all these possiblities in a bucket and pick at random

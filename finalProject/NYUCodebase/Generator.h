@@ -2,6 +2,10 @@
 #include <queue>
 #include "Level.h"
 
+
+const size_t LENGTH = 30;
+const int NUM_LARGE = 3;
+
 enum RoomVariant{ BLANK, LEFTSMALL, RIGHTSMALL, LEFTLARGE, RIGHTLARGE, PATH1, PATH2, QUAD };
 enum ParentDir{PARENTLESS,P_LEFT,P_RIGHT};
 
@@ -30,9 +34,10 @@ private:
 	void firstNodes();
 
 	bool blankArea(Corner c1, Corner c2);
+
 	Corner checkQuad(Corner c, ParentDir pd);
-	bool checkQuadHelper(Corner c1, Corner c2, Corner parent);
-	void fillArea(Corner c1, Corner c2, RoomVariant rv);
+	bool checkQuadHelper(Corner c1, Corner c2, ParentDir pd);
+	std::vector<Corner> getPastQuad(Corner c1, Corner c2, ParentDir pd);
 
 	Corner getPastPath(Corner c, ParentDir pd);
 	Corner checkPath(Corner c, ParentDir pd);
@@ -40,6 +45,9 @@ private:
 
 	void toPath(size_t leaf, Corner c, ParentDir pd, Corner candidatePath);
 	void toLarge(size_t leaf, Corner c, ParentDir pd);
+	void toQuad(size_t leaf, Corner c, ParentDir pd, Corner candidateQuad);
+
+	void fillArea(Corner c1, Corner c2, RoomVariant rv);
 
 	Level levelSheet;
 	
