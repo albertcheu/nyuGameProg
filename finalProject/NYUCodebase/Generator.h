@@ -18,10 +18,13 @@ struct Node{
 	RoomVariant rv;
 	ParentDir pd;
 	Corner c, upperLeft;
+	bool visited;
+	BeamColor color1, color2;
+	size_t parent;
 };
 
 struct RoomData{
-	Corner anchor, playerStart, pickup, enemy1, enemy2, enemy3;
+	Corner anchor, playerStart, pickup, enemy1, enemy2, enemy3, door1, door2;	
 };
 
 class Generator{
@@ -64,6 +67,5 @@ private:
 	void fillData();
 
 	Corner getFinalCoor(size_t i, Corner target);
-
-	void makeFlare();
+	void traverseUp(size_t i, size_t pathType);
 };

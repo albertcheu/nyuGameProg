@@ -1,25 +1,16 @@
-We now have an outline of our final map
-The outline really only takes up a portion of the LENGTHxLENGTH grid
-Compute the size of that portion; each unit corresponds to 8 tiles
+Doors are left-centric
+In the template, every room that opens to the right has an entity marker
 
-Save the upperleft and lower right corners
-Allocate a widthxheight(x8) data grid
-For every node,
-	Retrieve its upperleft corner (functions as the uv-coordinate)
-	Offset by upper left corner of portion
-	From node's room variant, determine the room's dimensions
-	Copy the corresponding tile data from levelSheet
-
-We now have the skeleton of the level
-
-Pickups, player, enemies
-Each room variant has a structure of Corners:
-	anchor
-	PlayerStart
-	pickup
-	enemy1
-	enemy2
-	enemy3
-
-Placing doors:
-	???
+To assign color to those doors, work our way from leaf to root
+	We have a parent and a child
+	FInd out which is to the left; call it leftRoom
+	If leftRoom is a quad, discover which door connects with rightRoom
+	Otherwise, it is door1
+	
+	if the starting leaf is the boss room,
+		the door must be blue
+		every other door going up is random
+	if a weapon upgrade,
+		the door must be weaker
+		every other door going up is weak too
+	otherwise, random

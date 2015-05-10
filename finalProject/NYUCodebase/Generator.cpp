@@ -8,6 +8,9 @@ void Generator::fillRoomData(RoomVariant rv, const WhereToStart* wts){
 	else if (wts->name == "enemy1") { roomData[rv].enemy1 = { wts->row, wts->col }; }
 	else if (wts->name == "enemy2") { roomData[rv].enemy2 = { wts->row, wts->col }; }
 	else if (wts->name == "enemy3") { roomData[rv].enemy3 = { wts->row, wts->col }; }
+
+	else if (wts->name == "door1") { roomData[rv].door1 = { wts->row, wts->col }; }
+	else if (wts->name == "door2") { roomData[rv].door2 = { wts->row, wts->col }; }
 }
 
 Generator::Generator()
@@ -71,6 +74,8 @@ void Generator::firstNodes(){
 	}
 
 	adj[0].upperLeft = adj[0].c;
+	adj[1].parent = 0;
+
 	gridMinRow = gridMaxRow = adj[0].c.row;
 	gridMinCol = gridMaxCol = adj[0].c.col;
 
@@ -152,16 +157,10 @@ Corner Generator::checkQuad(Corner c, ParentDir pd){
 	int first = rand() % 2;
 
 	ans.row = c.row + diff[first];
-	//OutputDebugString(std::to_string(blankArea(c, ans)).c_str());
-	if (blankArea(c, ans) && getPastQuad(c, ans, pd).size() == 3){
-		return ans;
-	}
+	if (blankArea(c, ans) && getPastQuad(c, ans, pd).size() == 3){ return ans; }
 
 	ans.row = c.row + diff[(first + 1) % 2];
-	//OutputDebugString(std::to_string(blankArea(c, ans)).c_str());
-	if (blankArea(c, ans) && getPastQuad(c, ans, pd).size() == 3){
-		return ans;
-	}
+	if (blankArea(c, ans) && getPastQuad(c, ans, pd).size() == 3){ return ans; }
 
 	ans.row = -1; ans.col = -1;
 	return ans;
@@ -193,14 +192,6 @@ bool Generator::checkLarge(Corner c, ParentDir pd){
 	ans.col = c.col + 1;
 	//column determined by where we're coming from
 	if (pd == P_LEFT){ ans.col = c.col - 1; }
-	/*
-	OutputDebugString("From");
-	OutputDebugString(std::to_string(c.row).c_str());
-	OutputDebugString(std::to_string(c.col).c_str());
-	OutputDebugString("to");
-	OutputDebugString(std::to_string(ans.row).c_str());
-	OutputDebugString(std::to_string(ans.col).c_str());
-	*/	
 	return blankArea(c, ans);
 }
 
@@ -211,7 +202,8 @@ void Generator::toPath(size_t leaf, Corner c, ParentDir pd, Corner candidatePath
 	adj[node].c = adj[node].upperLeft = past;
 	adj[node].pd = pd;
 	adj[node].rv = adj[leaf].rv;
-	
+	adj[node].parent = leaf;
+
 	adj[node].neighbors.push_back(leaf);
 	adj[leaf].neighbors.push_back(node);
 	adj[leaf].rv = ((rand() % 2) ? PATH2 : PATH1);
@@ -250,6 +242,7 @@ void Generator::toQuad(size_t leaf, Corner c, ParentDir pd, Corner candidateQuad
 		adj.push_back(Node());
 		adj[leaf].neighbors.push_back(node);
 		adj[node].neighbors.push_back(leaf);
+		adj[node].parent = leaf;
 		adj[node].c = adj[node].upperLeft = newLocs[i];
 		if (adj[node].c.col > adj[leaf].c.col){
 			adj[node].rv = RIGHTSMALL;
@@ -397,6 +390,42 @@ Corner Generator::getFinalCoor(size_t i, Corner target){
 	return{ row, col };
 }
 
+void Generator::traverseUp(size_t i, size_t pathType){
+	size_t parent = -1;
+	while (i != 0 && !(adj[i].visited) ){
+		parent = adj[i].parent;
+
+		Node* leftRoom = &(adj[i]);
+		Node* rightRoom = &(adj[parent]);
+		if (adj[i].upperLeft.col > adj[parent].upperLeft.col){
+			leftRoom = &(adj[parent]);
+			rightRoom = &(adj[i]);
+		}
+
+		BeamColor* bc = &(leftRoom->color1);
+		if (leftRoom->rv == QUAD && leftRoom->upperLeft.row < rightRoom->upperLeft.row){
+			bc = &(leftRoom->color2);
+		}
+
+		//Boss = blue
+		if (pathType > BLUE){
+			if (adj[i].neighbors.size() == 1) { *bc = BLUE; }
+			else { *bc = (BeamColor)(rand() % 4); }
+		}
+		//Energy tank or empty
+		else if (pathType == RED){ *bc = (BeamColor)(rand() % 4); }
+		//path type = Yellow, green, or blue (1,2,3)
+		else{
+			if (adj[i].neighbors.size() == 1) { *bc = (BeamColor)(pathType-1); }
+			else { *bc = (BeamColor)(rand() % pathType); }
+		}
+
+		adj[i].visited = true;
+
+		i = parent;
+	}
+}
+
 void Generator::gen(){
 	clear();
 	firstNodes();
@@ -410,22 +439,18 @@ void Generator::gen(){
 	ofs << "\n[layer]\ntype=Tile Layer 1\ndata=" << std::endl;
 
 	for (size_t i = 0; i < data.size(); i++){
-		for (size_t j = 0; j < data[i].size(); j++){
-			int output = data[i][j];
-			/*
-			if (output < 10) { ofs << "00" << std::to_string(output) << ','; }
-			else if (output < 100) { ofs << "0" << std::to_string(output) << ','; }
-			else{ ofs << output << ','; }
-			*/
-			ofs << output+1 << ',';
-		}
+		for (size_t j = 0; j < data[i].size(); j++){ ofs << data[i][j] + 1 << ','; }
 		ofs << std::endl;
 	}
 	
 	Corner f = getFinalCoor(0, roomData[adj[0].rv].playerStart);
 	ofs << "\n[StartLocations]\n#ps\ntype=PlayerStart" << std::endl;
 	ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
-
+		
+	for (size_t i = 0; i < adj.size(); i++){
+		adj[i].visited = (i == 0);
+		adj[i].color1 = adj[i].color2 = RED;
+	}
 	size_t pickupCounter = 1;
 	bool putBoss = false;
 	for (size_t i = 1; i < adj.size(); i++){
@@ -436,24 +461,80 @@ void Generator::gen(){
 				f = getFinalCoor(i, roomData[adj[i].rv].enemy1);
 				ofs << "\n[StartLocations]\n#" << i << "\ntype=boss" << std::endl;
 				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+				traverseUp(i, ((size_t)BLUE) + 1);
 				continue;
 			}
 			std::string name = "foobar";
-			if (pickupCounter == YELLOW){ name = "yellow"; }
-			else if (pickupCounter == GREEN) { name = "green"; }
-			else if (pickupCounter == BLUE) { name = "blue"; }
+			if (pickupCounter == YELLOW){ traverseUp(i,pickupCounter); name = "yellow"; }
+			else if (pickupCounter == GREEN) { traverseUp(i, pickupCounter); name = "green"; }
+			else if (pickupCounter == BLUE) { traverseUp(i, pickupCounter); name = "blue"; }
+			else { traverseUp(i, 0); }
+
 			if (pickupCounter <= NUMTANKS + 3){
 				pickupCounter++;
 				f = getFinalCoor(i, roomData[adj[i].rv].pickup);
-				ofs << "\n[StartLocations]\n#" << name << "\ntype=pickup" << std::endl;
+				ofs << "\n[StartLocations]\n# " << name << "\ntype=pickup" << std::endl;
+				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+			}
+			if (adj[i].rv == LEFTSMALL || adj[i].rv == LEFTLARGE){
+				f = getFinalCoor(i, roomData[adj[i].rv].door1);
+				std::string doorColor = "red";
+				if (adj[i].color1 == YELLOW) { doorColor = "yellow"; }
+				else if (adj[i].color1 == GREEN) { doorColor = "green"; }
+				else if (adj[i].color1 == BLUE) { doorColor = "blue"; }
+				ofs << "\n[StartLocations]\n# blah\ntype=" << doorColor << std::endl;
 				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
 			}
 		}
+
 		//Path - joins two other rooms
-		else if (adj[i].neighbors.size() == 2 && rand()%2){
-			f = getFinalCoor(i, roomData[adj[i].rv].enemy1);
-			std::string type = (rand() % 2) ? "runner" : "hopper";
-			ofs << "\n[StartLocations]\n#"<<i<<"\ntype=" << type << std::endl;
+		else if (adj[i].neighbors.size() == 2){
+			if (rand() % 2){
+				f = getFinalCoor(i, roomData[adj[i].rv].enemy1);
+				std::string type = (rand() % 2) ? "runner" : "hopper";
+				ofs << "\n[StartLocations]\n#" << i << "\ntype=" << type << std::endl;
+				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+			}
+			f = getFinalCoor(i, roomData[adj[i].rv].door1);
+			std::string doorColor = "red";
+			if (adj[i].color1 == YELLOW) { doorColor = "yellow"; }
+			else if (adj[i].color1 == GREEN) { doorColor = "green"; }
+			else if (adj[i].color1 == BLUE) { doorColor = "blue"; }
+			ofs << "\n[StartLocations]\n# blah\ntype=" << doorColor << std::endl;
+			ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+		}
+
+		else if (adj[i].neighbors.size() == 4){
+			//enemy1 - must be flier or nothing
+			if (rand() % 2){
+				f = getFinalCoor(i, roomData[adj[i].rv].enemy1);
+				ofs << "\n[StartLocations]\n#" << i << "\ntype=flier" << std::endl;
+				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+			}
+			//2,3 runner or nothing
+			if (rand() % 2){
+				f = getFinalCoor(i, roomData[adj[i].rv].enemy2);
+				ofs << "\n[StartLocations]\n#" << i << "\ntype=runner" << std::endl;
+				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+			}
+			if (rand() % 2){
+				f = getFinalCoor(i, roomData[adj[i].rv].enemy3);
+				ofs << "\n[StartLocations]\n#" << i << "\ntype=runner" << std::endl;
+				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+			}
+			f = getFinalCoor(i, roomData[adj[i].rv].door1);
+			std::string doorColor = "red";
+			if (adj[i].color1 == YELLOW) { doorColor = "yellow"; }
+			else if (adj[i].color1 == GREEN) { doorColor = "green"; }
+			else if (adj[i].color1 == BLUE) { doorColor = "blue"; }
+			ofs << "\n[StartLocations]\n# blah\ntype=" << doorColor << std::endl;
+			ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+			f = getFinalCoor(i, roomData[adj[i].rv].door2);
+			doorColor = "red";
+			if (adj[i].color2 == YELLOW) { doorColor = "yellow"; }
+			else if (adj[i].color2 == GREEN) { doorColor = "green"; }
+			else if (adj[i].color2 == BLUE) { doorColor = "blue"; }
+			ofs << "\n[StartLocations]\n# blah\ntype=" << doorColor << std::endl;
 			ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
 		}
 	}
