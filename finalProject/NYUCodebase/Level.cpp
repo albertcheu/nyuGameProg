@@ -38,16 +38,19 @@ void Level::loadHeader(std::ifstream& infile){
 		if (key == "width") { width = atoi(value.c_str()); }
 		else if (key == "height"){ height = atoi(value.c_str()); }
 	}
-	//OutputDebugString((std::to_string(width) + ' ' + std::to_string(height)).c_str());
+	OutputDebugString((std::to_string(width) + ' ' + std::to_string(height)).c_str());
 	
 	offsetX = -TILEUNITS * width / 2;
 	offsetY = TILEUNITS * height / 2;
-	//OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
+	OutputDebugString((std::to_string(offsetX) + ' ' + std::to_string(offsetY)).c_str());
 
-	for (int i = 0; i < height; ++i) { data.push_back(std::vector<int>()); }
+	data.clear();
+	for (int i = 0; i < height; i++) { data.push_back(std::vector<int>()); }
+	OutputDebugString(std::to_string(data.size()).c_str());
 }
 
 void Level::loadLevel(std::ifstream& infile){
+	OutputDebugString("gonna loadLevel");
 	tileVerts.clear(); tileTexts.clear(); indices.clear();
 	std::string line;
 	while (getline(infile, line)) {
@@ -64,16 +67,17 @@ void Level::loadLevel(std::ifstream& infile){
 				for (int col = 0; col < width; col++) {
 					getline(lineStream, tile, ',');
 					int val = atoi(tile.c_str());
-					// be careful, the tiles in this format are indexed from 1 not 0
-					data[row].push_back(val - 1);					
+					data[row].push_back(val-1);
 				}
 			}
 		}
 	}
+	OutputDebugString("loadedLevel");
 	fillRenderVectors();
 }
 
 void Level::fillRenderVectors(){
+	OutputDebugString("gonna fillRenderVectors");
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			if (!data[y][x]) { continue; }
@@ -103,6 +107,7 @@ void Level::fillRenderVectors(){
 			indices.push_back(blah[j] + i / 2);
 		}
 	}
+	OutputDebugString("filledRenderVectors");
 }
 
 bool Level::solidTile(float x, float y){
@@ -158,6 +163,7 @@ void Level::draw(){
 }
 
 void Level::loadStarts(std::ifstream& infile){
+	//OutputDebugString("gonna loadStarts");
 	std::string line, name, typeName;
 	WhereToStart wts;
 	while (getline(infile, line)) {
@@ -181,6 +187,7 @@ void Level::loadStarts(std::ifstream& infile){
 			startLocs.push_back(wts);
 		}
 	}
+	//OutputDebugString("loadedStarts");
 }
 
 const WhereToStart* Level::getNext(){

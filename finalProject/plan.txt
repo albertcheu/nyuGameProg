@@ -11,9 +11,15 @@ For every node,
 	Copy the corresponding tile data from levelSheet
 
 We now have the skeleton of the level
-Now we need to place the player: somewhere in node 0.
-Place enemies:
-	Hoppers, runners, fliers are randomly placed based on levelSheet
-	Boss is put in one of the large leaves/cubbies
+
+Pickups, player, enemies
+Each room variant has a structure of Corners:
+	anchor
+	PlayerStart
+	pickup
+	enemy1
+	enemy2
+	enemy3
+
 Placing doors:
 	???

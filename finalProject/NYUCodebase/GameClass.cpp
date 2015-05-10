@@ -213,6 +213,7 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 	theLevel = Level(fname, texSource, TILEPIX, TILECOUNTX, TILECOUNTY);
 	const WhereToStart* wts;
 	while (wts = theLevel.getNext()){
+
 		if (wts->typeName == "PlayerStart") { player->setPos(wts->x, wts->y); }
 		//upgrades
 		else if (wts->typeName == "pickup") {
@@ -571,7 +572,6 @@ bool GameClass::run(){
 		while (state == PLAY && fixedElapsed >= TIMESTEP) {
 			fixedElapsed -= TIMESTEP;
 			physics();
-			//if (state == LOSE) { return false; }
 		}
 		leftover = fixedElapsed;
 
@@ -600,12 +600,16 @@ bool GameClass::run(){
 	}	
 	if (oldState == MENU && state == PLAY){
 		g.gen();
+		OutputDebugString("generated map");
 		for (size_t i = 0; i < pickups.size(); i++){ pickups[i].reset(); }
 		doors.clear();
 		enemies.clear();
 		healthDisplay.changeText(std::to_string(player->changeHealth(100, true)));
 		maxHealthDisplay.changeText(std::to_string(player->changeMaxHealth(100, true)));
-		loadLevel("levelOne.txt", pool);
+		OutputDebugString("reset variables");
+		
+		//loadLevel("levelOne.txt", pool);
+		loadLevel("output.txt", pool);
 		Mix_PlayMusic(music, -1);
 	}
 	return state != EXIT;

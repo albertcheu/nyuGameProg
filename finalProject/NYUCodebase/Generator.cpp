@@ -4,6 +4,10 @@ void Generator::fillRoomData(RoomVariant rv, const WhereToStart* wts){
 	if (wts->name == "anchor") { roomData[rv].anchor = { wts->row, wts->col }; }
 	else if (wts->name == "playerStart") { roomData[rv].playerStart = { wts->row, wts->col }; }
 	else if (wts->name == "pickup") { roomData[rv].pickup = { wts->row, wts->col }; }
+
+	else if (wts->name == "enemy1") { roomData[rv].enemy1 = { wts->row, wts->col }; }
+	else if (wts->name == "enemy2") { roomData[rv].enemy2 = { wts->row, wts->col }; }
+	else if (wts->name == "enemy3") { roomData[rv].enemy3 = { wts->row, wts->col }; }
 }
 
 Generator::Generator()
@@ -400,36 +404,40 @@ void Generator::gen(){
 	fillData();
 	
 	std::ofstream ofs("output.txt");
-	/*
-	for (size_t i = 0; i < LENGTH; i++){
-		for (size_t j = 0; j < LENGTH; j++){
-			ofs << grid[i][j] << ' ';
-		}
-		ofs << std::endl;
-	}
-	*/
 	ofs << "[header]\nwidth=" << data[0].size() << "\nheight=" << data.size() << std::endl;
 	ofs << "tilewidth=16\ntileHeight=16\norientation=orthogonal" << std::endl;
-	ofs << "[tilesets]\ntileset=mfTRO.png,16,16,0,0" << std::endl;
-	ofs << "[layer]\ntype=Tile Layer 1\ndata=" << std::endl;
+	ofs << "\n[tilesets]\ntileset=mfTRO.png,16,16,0,0" << std::endl;
+	ofs << "\n[layer]\ntype=Tile Layer 1\ndata=" << std::endl;
 
 	for (size_t i = 0; i < data.size(); i++){
 		for (size_t j = 0; j < data[i].size(); j++){
 			int output = data[i][j];
+			/*
 			if (output < 10) { ofs << "00" << std::to_string(output) << ','; }
 			else if (output < 100) { ofs << "0" << std::to_string(output) << ','; }
 			else{ ofs << output << ','; }
+			*/
+			ofs << output+1 << ',';
 		}
 		ofs << std::endl;
 	}
 	
 	Corner f = getFinalCoor(0, roomData[adj[0].rv].playerStart);
-	ofs << "[StartLocations]\n#ps\ntype=PlayerStart" << std::endl;
+	ofs << "\n[StartLocations]\n#ps\ntype=PlayerStart" << std::endl;
 	ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
 
 	size_t pickupCounter = 1;
+	bool putBoss = false;
 	for (size_t i = 1; i < adj.size(); i++){
+		//Cubby - one way in/out
 		if (adj[i].neighbors.size() == 1){
+			if (!putBoss && (adj[i].rv == LEFTLARGE || adj[i].rv == RIGHTLARGE)){
+				putBoss = true;
+				f = getFinalCoor(i, roomData[adj[i].rv].enemy1);
+				ofs << "\n[StartLocations]\n#" << i << "\ntype=boss" << std::endl;
+				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
+				continue;
+			}
 			std::string name = "foobar";
 			if (pickupCounter == YELLOW){ name = "yellow"; }
 			else if (pickupCounter == GREEN) { name = "green"; }
@@ -437,9 +445,16 @@ void Generator::gen(){
 			if (pickupCounter <= NUMTANKS + 3){
 				pickupCounter++;
 				f = getFinalCoor(i, roomData[adj[i].rv].pickup);
-				ofs << "[StartLocations]\n#" << name << "\ntype=pickup" << std::endl;
+				ofs << "\n[StartLocations]\n#" << name << "\ntype=pickup" << std::endl;
 				ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
 			}
+		}
+		//Path - joins two other rooms
+		else if (adj[i].neighbors.size() == 2 && rand()%2){
+			f = getFinalCoor(i, roomData[adj[i].rv].enemy1);
+			std::string type = (rand() % 2) ? "runner" : "hopper";
+			ofs << "\n[StartLocations]\n#"<<i<<"\ntype=" << type << std::endl;
+			ofs << "location=" << f.col << ',' << f.row << ",0,0" << std::endl;
 		}
 	}
 
