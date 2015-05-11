@@ -366,7 +366,8 @@ GameState GameClass::handleEvents(){
 				}
 				break;
 			case SDL_SCANCODE_ESCAPE:
-				ans = EXIT;
+				Mix_HaltMusic();
+				ans = MENU;
 				break;
 			case SDL_SCANCODE_Q:
 				playerShoot(whichRed, NUMBEAMS);
