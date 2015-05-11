@@ -59,17 +59,29 @@ GameState Menu::handleEvents(){
 		else if (event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.scancode){
 			case SDL_SCANCODE_SPACE:
-				if (whichSprite == 0){ ans = select(); Mix_PlayChannel(-1, switchSound, 0); }
+				if (whichSprite == 0){
+					ans = select();
+					Mix_PlayChannel(-1, switchSound, 0);
+				}
 				break;
 			case SDL_SCANCODE_RETURN:
-				if (whichSprite == 0){ ans = select(); Mix_PlayChannel(-1, switchSound, 0); }
+				if (whichSprite == 0){
+					ans = select();
+					Mix_PlayChannel(-1, switchSound, 0);
+				}
 				break;
 			case SDL_SCANCODE_LEFT:
-				if (whichSprite > 1){ whichSprite--; Mix_PlayChannel(-1, move, 0); }
+				if (whichSprite > 1){
+					whichSprite--;
+					Mix_PlayChannel(-1, move, 0);
+				}
 				else { Mix_PlayChannel(-1, bump, 0); }
 				break;
 			case SDL_SCANCODE_RIGHT:
-				if (whichSprite < sprites.size() - 1){ whichSprite++; Mix_PlayChannel(-1,move, 0); }
+				if (whichSprite > 0 && whichSprite < sprites.size() - 1){
+					whichSprite++;
+					Mix_PlayChannel(-1,move, 0);
+				}
 				else { Mix_PlayChannel(-1, bump, 0); }
 				break;
 			case SDL_SCANCODE_UP:
@@ -115,7 +127,6 @@ void Menu::renderMenu(GameState whichState){
 	float width;
 	switch (whichState){
 	case MENU:
-		//475x283, 418x283
 		width = 1.4f*(whichSprite == 0 ? 475.0f / 283.0f : 418.0f / 283.0f);
 		sprites[whichSprite].draw(width, 1.4f);
 		if (whichSprite == 0){

@@ -30,15 +30,16 @@ Samus::Samus(float x, float y, float width, float height, Sprite s, int swidth, 
 	cycles[RUNRIGHT].reorder(10, arr);
 
 	//Sitting
-	cycles.push_back(AnimCycle(6, 0.5f, 597.0f / sheight, -1, 28.02f / swidth, 27.0f / sheight));
-	cycles.push_back(AnimCycle(6, 0.5f, 597.0f / sheight, 1, 28.02f / swidth, 27.0f / sheight));
+	cycles.push_back(AnimCycle(1, 0.5f, 597.0f / sheight, -1, 28.2f / swidth, 27.0f / sheight));
+	cycles.push_back(AnimCycle(1, 0.5f, 597.0f / sheight, 1, 28.2f / swidth, 27.0f / sheight));
 	
 	//STANDLEFTUP//STANDRIGHTUP
 	cycles.push_back(AnimCycle(1, 0.5f, 632.0f / sheight, -1, 24.02f / swidth, 45.0f / sheight));
 	cycles.push_back(AnimCycle(1, 0.5f, 632.0f / sheight, 1, 24.02f / swidth, 45.0f / sheight));
 	
-	//RUNLEFTUP, RUNRIGHTUP
-
+	//INAIRLEFT, INAIRRIGHT
+	cycles.push_back(AnimCycle(1, 178.0f / swidth, 414.0f / sheight, -1, 35.0f / swidth, 35.0f / sheight));
+	cycles.push_back(AnimCycle(1, 272.0f / swidth, 414.0f / sheight, 1, 35.0f / swidth, 35.0f / sheight));
 }
 void Samus::standUp(){
 	standing = true;
@@ -51,8 +52,14 @@ void Samus::sitDown(){
 void Samus::nextFrame(){
 	SpriteFrame sf;
 	
-	//Stationary
-	if (ax == 0 || getLeft() || getRight()) {
+	//If in air
+	if (!getBottom()){
+		if (lookLeft) { sf = cycles[INAIRLEFT].getNext(); }
+		else { sf = cycles[INAIRRIGHT].getNext(); }
+	}
+
+	//Stationary (or walking into a wall)
+	else if (ax == 0 || getLeft() || getRight()) {
 		if (standing){
 			if (lookLeft) {
 				if (aimUp) { sf = cycles[STANDLEFTUP].getNext(); }
@@ -189,6 +196,7 @@ void GameClass::createPickups(){
 
 void GameClass::createBeams(){
 	TextureData btd = LoadTextureRGB("sprites/beams.png");
+	TextureData ptd = LoadTextureRGBA("sprites/particle.png");
 	for (unsigned int i = RED; i <= BLUE; i++){
 		//Color
 		BeamColor bc = (BeamColor)(RED + i);
@@ -200,6 +208,12 @@ void GameClass::createBeams(){
 		//Actually make the beams now
 		for (int j = 0; j < NUMBEAMS; j++){
 			beams.push_back(Beam(0.03f, 0.01f, b, bc, sound_ptr));
+		}
+		for (int j = 0; j < NUMBEAMS * 4; j++){
+			particles.push_back(Dynamic(0, 0, 0.02f, 0.02f,
+				Sprite(ptd.id, 0.25f*i, 0, 0.25f, 1), SAMUS)
+				);
+			particles.back().setVisibility(false);
 		}
 	}
 }
@@ -216,7 +230,7 @@ void GameClass::createEnemySprites(){
 	etd = LoadTextureRGBA("sprites/flier.png");
 	flierSprite = Sprite(etd.id, 0, 74.0f / 118.0f, 34.0f / 140.0f, 27.0f / 118.0f);
 
-	etd = LoadTextureRGBA("sprites/template.png");
+	etd = LoadTextureRGBA("sprites/boss.png");
 	bossSprite = Sprite(etd.id, 0, 1000.0f/1282.0f, 80.0f / 640.0f, 80.0f/1282.0f);
 
 	etd = LoadTextureRGBA("sprites/bossBeam.png");
@@ -502,6 +516,19 @@ void GameClass::weakenShield(){
 	Mix_PlayChannel(-1, hitShield, 0);
 }
 
+void GameClass::spawnParticles(size_t which, float x, float y){
+	size_t start = which * 4;
+	for (size_t i = 0; i < 4; i++){
+		size_t whichParticle = start + i;
+		particles[whichParticle].setPos(x, y);
+		particles[whichParticle].setVisibility(true);
+		//40-80%
+		float frac = 0.01f * (40 + (1 + (rand() % 40)));
+		particles[whichParticle].setVx(frac*BEAMSPEED*(i%2?-1:1));
+		particles[whichParticle].setVy(frac*BEAMSPEED*(i<2?-1:1));
+	}
+}
+
 void GameClass::physics(){
 	moveDynamic(*player);
 
@@ -526,6 +553,7 @@ void GameClass::physics(){
 	//Move beams
 	for (size_t i = 0; i < beams.size(); i++){
 		if (!beams[i].getVisibility()){ continue; }
+		bool beamHitSomething = false;
 		float radAngle = beams[i].getAngle() * M_PI / 180.0f;
 		float newX = beams[i].getX() + (TIMESTEP*BEAMSPEED)*cos(radAngle);
 		float newY = beams[i].getY() + (TIMESTEP*BEAMSPEED)*sin(radAngle);
@@ -533,11 +561,16 @@ void GameClass::physics(){
 
 		if (newX != theLevel.tileCollide(newX,beams[i].getY(),newX,0,false)){
 			beams[i].setVisibility(false);
+			beamHitSomething = true;
+		}
+		if (newY != theLevel.tileCollide(newX, beams[i].getY(), newY, 0, true)){
+			beams[i].setVisibility(false);
+			beamHitSomething = true;
 		}
 		
 		//Hit a door?
 		for (size_t j = 0; j < doors.size(); j++){
-			if (beams[i].hit(doors[j], hitDoor)) { break; }
+			if (beams[i].hit(doors[j], hitDoor)) { beamHitSomething = true; break; }
 		}
 
 		//Hit boss' shield?
@@ -545,20 +578,30 @@ void GameClass::physics(){
 			beams[i].setVisibility(false);
 			if (beams[i].getColor() != shieldRating) { continue; }
 			weakenShield();
+			continue;
 		}
 
 		//Hit an enemy?
 		for (size_t j = 0; j < enemies.size(); j++){
 			if (beams[i].hit(enemies[j])) {
+				beamHitSomething = true;
 				Mix_PlayChannel(-1, (enemies[j].getType() == RUNNER) ? hitRunner : hitHopper, 0);
 				if (enemies[j].getType() == BOSS && enemies[j].changeHealth(0) <= 0){
 					state = WIN;
 				}
 				break;
 			}
-		}	
+		}
+
+		if (beamHitSomething){ spawnParticles(i, beams[i].getX(), beams[i].getY()); }
 	}
 	
+	for (size_t i = 0; i < particles.size(); i++){
+		if (!particles[i].getVisibility()){ continue; }
+		moveDynamic(particles[i]);
+		if (particles[i].getTop() || particles[i].getBottom()){ particles[i].reset(); }
+	}
+
 	//Move doors (limited to x-axis)
 	for (size_t i = 0; i < doors.size(); i++){
 		if (!(doors[i].getVisibility() && doors[i].moving())){ continue; }
@@ -645,7 +688,10 @@ void GameClass::renderGame(){
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	glTranslatef(-player->getX(), -player->getY(), 0);
+	Matrix transl;
+	transl.m[3][0] = -player->getX();
+	transl.m[3][1] = -player->getY();
+	glMultMatrixf(transl.ml);
 
 	for (size_t i = 0; i < beams.size(); i++){ beams[i].draw(); }
 
@@ -661,6 +707,8 @@ void GameClass::renderGame(){
 	for (size_t i = 0; i < doors.size(); i++){ doors[i].draw(); }
 	
 	for (size_t i = 0; i < pickups.size(); i++){ pickups[i].draw(); }
+
+	for (size_t i = 0; i < particles.size(); i++){ particles[i].draw(); }
 
 	theLevel.draw();
 

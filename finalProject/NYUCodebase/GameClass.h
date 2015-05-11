@@ -26,7 +26,8 @@
 enum SamusCycles {
 	STANDLEFT, STANDRIGHT, RUNLEFT, RUNRIGHT,
 	SITLEFT, SITRIGHT,
-	STANDLEFTUP, STANDRIGHTUP
+	STANDLEFTUP, STANDRIGHTUP,
+	INAIRLEFT, INAIRRIGHT
 };
 
 class Samus : public Dynamic{
@@ -86,6 +87,8 @@ private:
 	std::vector<Beam> beams; size_t whichRed, whichYellow, whichGreen, whichBlue;
 	void createBeams();
 	void playerShoot(size_t& which, size_t cap);
+	std::vector<Dynamic> particles;
+	void spawnParticles(size_t which, float x, float y);
 
 	//Doors that open to weapon fire
 	std::vector<Door> doors;
