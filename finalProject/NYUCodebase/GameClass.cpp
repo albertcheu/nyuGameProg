@@ -209,7 +209,7 @@ void GameClass::createBeams(){
 		for (int j = 0; j < NUMBEAMS; j++){
 			beams.push_back(Beam(0.03f, 0.01f, b, bc, sound_ptr));
 		}
-		for (int j = 0; j < NUMBEAMS * 4; j++){
+		for (int j = 0; j < NUMBEAMS * NUMPARTICLES; j++){
 			particles.push_back(Dynamic(0, 0, 0.02f, 0.02f,
 				Sprite(ptd.id, 0.25f*i, 0, 0.25f, 1), SAMUS)
 				);
@@ -266,7 +266,7 @@ void GameClass::loadLevel(const char* fname, TextureData texSource){
 			enemies.push_back(Dynamic(wts->x, wts->y, 0.18f, 0.09f, hopperSprite, HOPPER));
 		}
 		else if (wts->typeName == "runner"){
-			enemies.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.09f, runnerSprite, RUNNER));
+			enemies.push_back(Dynamic(wts->x, wts->y, 0.07f, 0.082f, runnerSprite, RUNNER));
 		}
 		else if (wts->typeName == "flier"){
 			enemies.push_back(Dynamic(wts->x, wts->y, 0.12f, 0.11f, flierSprite, FLIER));
@@ -440,7 +440,7 @@ void GameClass::moveDynamic(Dynamic& d){
 	float hw = d.getHalfWidth();
 	float x = d.getX();
 	for (size_t j = 0; j < doors.size(); j++){
-		if (!(doors[j].getVisibility() && d.collide(doors[j]))) { continue; }
+		if (doors[j].getVisibility()){ d.collide(doors[j]); }		
 	}
 }
 void GameClass::moveHoriz(Dynamic& d){
@@ -518,15 +518,15 @@ void GameClass::weakenShield(){
 }
 
 void GameClass::spawnParticles(size_t which, float x, float y){
-	size_t start = which * 4;
-	for (size_t i = 0; i < 4; i++){
+	size_t start = which * NUMPARTICLES;
+	for (size_t i = 0; i < NUMPARTICLES; i++){
 		size_t whichParticle = start + i;
 		particles[whichParticle].setPos(x, y);
 		particles[whichParticle].setVisibility(true);
 		//40-80%
 		float frac = 0.01f * (40 + (1 + (rand() % 40)));
 		particles[whichParticle].setVx(frac*BEAMSPEED*(i%2?-1:1));
-		particles[whichParticle].setVy(frac*BEAMSPEED*(i<2?-1:1));
+		particles[whichParticle].setVy(frac*BEAMSPEED*(i*2<NUMPARTICLES?-1:1));
 	}
 }
 
@@ -534,7 +534,7 @@ void GameClass::physics(){
 	moveDynamic(*player);
 
 	for (size_t i = 0; i < enemies.size(); i++){
-		if (!enemies[i].getVisibility()){ continue; }
+		if (!enemies[i].getVisibility() || !inScreen(enemies[i])){ continue; }
 		moveDynamic(enemies[i]);
 		moveEnemy(enemies[i]);
 		if (player->collideBounce(enemies[i], HITSPEED)) {
@@ -621,6 +621,26 @@ void GameClass::physics(){
 	}
 }
 
+bool GameClass::inScreen(Entity& subject){
+	float leftEdge = player->getX() - UNIT_WIDTH;
+	float rightEdge = player->getX() + UNIT_WIDTH;
+	float topEdge = player->getY() - UNIT_HEIGHT;
+	float bottomEdge = player->getY() + UNIT_HEIGHT;
+	float x = subject.getX();
+	float y = subject.getY();
+	//not in screen = coordinate not in screen AND corners not in screen
+	if (x > leftEdge && x < rightEdge && y > topEdge && y < bottomEdge){ return true; }
+
+	//corners
+	float hw = subject.getHalfWidth();
+	float hh = subject.getHalfHeight();
+	if (x+hw > leftEdge && x+hw < rightEdge && y-hh > topEdge && y-hh < bottomEdge){ return true; }
+	if (x+hw > leftEdge && x+hw < rightEdge && y+hh > topEdge && y+hh < bottomEdge){ return true; }
+	if (x - hw > leftEdge && x - hw < rightEdge && y - hh > topEdge && y - hh < bottomEdge){ return true; }
+	if (x - hw > leftEdge && x - hw < rightEdge && y + hh > topEdge && y + hh < bottomEdge){ return true; }
+	return false;
+}
+
 bool GameClass::run(){
 	float ticks, fixedElapsed;
 	GameState oldState = state;
@@ -698,6 +718,8 @@ void GameClass::renderGame(){
 
 	player->draw();
 	for (size_t i = 0; i < enemies.size(); i++){
+		if (!inScreen(enemies[i])) { continue; }
+
 		enemies[i].draw();
 		if (enemies[i].getType() == BOSS) {
 			shield.setPos(enemies[i].getX(),enemies[i].getY());
@@ -705,11 +727,17 @@ void GameClass::renderGame(){
 		}
 	}
 
-	for (size_t i = 0; i < doors.size(); i++){ doors[i].draw(); }
+	for (size_t i = 0; i < doors.size(); i++){
+		if (inScreen(doors[i])) { doors[i].draw(); }
+	}
 	
-	for (size_t i = 0; i < pickups.size(); i++){ pickups[i].draw(); }
+	for (size_t i = 0; i < pickups.size(); i++){
+		if (inScreen(pickups[i])) { pickups[i].draw(); }
+	}
 
-	for (size_t i = 0; i < particles.size(); i++){ particles[i].draw(); }
+	for (size_t i = 0; i < particles.size(); i++){
+		if (inScreen(particles[i])) { particles[i].draw(); }
+	}
 
 	theLevel.draw();
 

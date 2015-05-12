@@ -68,4 +68,7 @@ private:
 
 	Corner getFinalCoor(size_t i, Corner target);
 	void traverseUp(size_t i, size_t pathType);
+	void writeDoors(std::ofstream& ofs);
+	void writeObject(std::ofstream& ofs, std::string name, std::string typeName,
+		int row, int col);
 };

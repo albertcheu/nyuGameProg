@@ -8,7 +8,8 @@
 #define MAX_STEPS 6
 
 #define BEAMSPEED 3.5f
-#define NUMBEAMS 10
+#define NUMBEAMS 4
+#define NUMPARTICLES 8
 
 #define GRAVITY -7.8f
 #define FRIC_Y 5.6f
@@ -112,4 +113,6 @@ private:
 	void animate();
 	
 	void renderGame();
+
+	bool inScreen(Entity& subject);
 };
